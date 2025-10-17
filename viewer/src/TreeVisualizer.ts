@@ -37,6 +37,9 @@ export class TreeVisualizer {
   private focusedDirectory: DirectoryNode | null = null;
   private labelMode: 'always' | 'hover' = 'always';
   private colorMode: ColorMode = 'fileType';
+  private highlightedFiles: Set<string> = new Set();
+  private edges: THREE.Line[] = [];
+  private edgeNodeMap: Map<THREE.Line, { parent: TreeNode; child: TreeNode }> = new Map();
   private onFileClick?: (file: FileNode) => void;
   private onDirClick?: (dir: DirectoryNode) => void;
   private onHover?: (node: TreeNode | null, event?: MouseEvent) => void;
@@ -148,6 +151,97 @@ export class TreeVisualizer {
     this.colorMode = mode;
     if (this.layoutNodes.length > 0) {
       this.rebuildVisualization();
+    }
+  }
+
+  /**
+   * Highlight specific files by path
+   */
+  highlightFiles(filePaths: string[]) {
+    this.highlightedFiles = new Set(filePaths);
+    this.updateHighlighting();
+  }
+
+  /**
+   * Clear all file highlighting
+   */
+  clearHighlight() {
+    this.highlightedFiles.clear();
+    this.updateHighlighting();
+  }
+
+  /**
+   * Update visual highlighting of files based on highlightedFiles set
+   */
+  private updateHighlighting() {
+    // Iterate through all file meshes and update their appearance
+    for (const [mesh, fileNode] of this.fileObjects.entries()) {
+      const material = mesh.material as THREE.MeshPhongMaterial;
+
+      if (this.highlightedFiles.size === 0) {
+        // No highlighting active - restore normal appearance (may still be hidden)
+        const layoutNode = this.layoutNodes.find(ln => ln.mesh === mesh);
+        const isHidden = layoutNode ? this.isNodeHidden(layoutNode) : false;
+        material.opacity = isHidden ? 0.0 : 1.0;
+        material.transparent = isHidden;
+        material.emissiveIntensity = 0.2;
+        mesh.scale.set(1, 1, 1);
+        mesh.visible = !isHidden;
+      } else if (this.highlightedFiles.has(fileNode.path)) {
+        // This file is highlighted - SUPER BRIGHT, scaled up, and FORCE VISIBLE
+        material.opacity = 1.0;
+        material.transparent = false;
+        material.emissiveIntensity = 1.5; // Very bright glow
+        material.emissive.setHex(0xffff00); // Bright yellow/white glow
+        mesh.scale.set(1.3, 1.3, 1.3); // Scale up 30%
+        mesh.visible = true; // Force visible even if normally hidden
+      } else {
+        // This file is NOT highlighted - make it nearly invisible
+        material.opacity = 0.08;
+        material.transparent = true;
+        material.emissiveIntensity = 0.0;
+        mesh.scale.set(1, 1, 1);
+        mesh.visible = true; // Keep visible but very dim
+      }
+
+      material.needsUpdate = true;
+    }
+
+    // Update edges to highlight connections to highlighted files
+    for (const edge of this.edges) {
+      const edgeInfo = this.edgeNodeMap.get(edge);
+      if (!edgeInfo) continue;
+
+      const material = edge.material as THREE.LineBasicMaterial;
+      const childIsFile = edgeInfo.child.type === 'file';
+      const childPath = childIsFile ? (edgeInfo.child as FileNode).path : '';
+
+      // Find layout nodes to check if they're hidden
+      const parentLayout = this.layoutNodes.find(ln => ln.node === edgeInfo.parent);
+      const childLayout = this.layoutNodes.find(ln => ln.node === edgeInfo.child);
+      const shouldBeHidden = !parentLayout || !childLayout ||
+                            this.isNodeHidden(parentLayout) ||
+                            this.isNodeHidden(childLayout);
+
+      if (this.highlightedFiles.size === 0) {
+        // No highlighting - restore normal edge appearance based on node visibility
+        material.color.setHex(0xaaaaaa);
+        material.opacity = shouldBeHidden ? 0.0 : 0.6;
+        material.linewidth = 1;
+        edge.visible = !shouldBeHidden;
+      } else if (childIsFile && this.highlightedFiles.has(childPath)) {
+        // Edge connects to highlighted file - make it BRIGHT, THICK, and VISIBLE
+        material.color.setHex(0xffff00); // Bright yellow
+        material.opacity = 1.0;
+        material.linewidth = 3; // Note: linewidth may not work on all platforms
+        edge.visible = true; // Force visible even if normally hidden
+      } else {
+        // Edge doesn't connect to highlighted file - make it nearly invisible
+        material.opacity = 0.05;
+        edge.visible = true; // Keep visible but very dim
+      }
+
+      material.needsUpdate = true;
     }
   }
 
@@ -441,26 +535,34 @@ export class TreeVisualizer {
 
     // Create edges first (so they render behind nodes)
     const edgeGroup = new THREE.Group();
-    for (const layoutNode of layoutNodes) {
-      // Skip edges if node or child is hidden
-      if (this.isNodeHidden(layoutNode)) continue;
+    this.edges = [];
+    this.edgeNodeMap.clear();
 
+    for (const layoutNode of layoutNodes) {
       if (layoutNode.node.type === 'directory') {
         const dirNode = layoutNode.node;
         for (const child of dirNode.children) {
           const childLayout = layoutNodes.find(ln => ln.node === child);
-          if (childLayout && !this.isNodeHidden(childLayout)) {
+          if (childLayout) {
             const geometry = new THREE.BufferGeometry().setFromPoints([
               layoutNode.position,
               childLayout.position
             ]);
+
+            // Start edges as hidden/dim if nodes are hidden
+            const isHidden = this.isNodeHidden(layoutNode) || this.isNodeHidden(childLayout);
             const material = new THREE.LineBasicMaterial({
               color: 0xaaaaaa,
               transparent: true,
-              opacity: 0.6
+              opacity: isHidden ? 0.0 : 0.6
             });
             const line = new THREE.Line(geometry, material);
+            line.visible = !isHidden;
             edgeGroup.add(line);
+
+            // Store edge and its nodes for later highlighting
+            this.edges.push(line);
+            this.edgeNodeMap.set(line, { parent: dirNode, child });
           }
         }
       }
@@ -469,8 +571,8 @@ export class TreeVisualizer {
 
     // Create nodes
     for (const layoutNode of layoutNodes) {
-      // Skip hidden nodes
-      if (this.isNodeHidden(layoutNode)) continue;
+      const isHidden = this.isNodeHidden(layoutNode);
+
       if (layoutNode.node.type === 'file') {
         const fileNode = layoutNode.node;
 
@@ -485,10 +587,13 @@ export class TreeVisualizer {
         const material = new THREE.MeshPhongMaterial({
           color,
           emissive: color,
-          emissiveIntensity: 0.2
+          emissiveIntensity: 0.2,
+          transparent: isHidden,
+          opacity: isHidden ? 0.0 : 1.0
         });
         const mesh = new THREE.Mesh(geometry, material);
         mesh.position.copy(layoutNode.position);
+        mesh.visible = !isHidden;
 
         this.scene.add(mesh);
         this.fileObjects.set(mesh, fileNode);
@@ -531,10 +636,11 @@ export class TreeVisualizer {
           emissive: color,
           emissiveIntensity: 0.3,
           transparent: true,
-          opacity: 0.85
+          opacity: isHidden ? 0.0 : 0.85
         });
         const mesh = new THREE.Mesh(geometry, material);
         mesh.position.copy(layoutNode.position);
+        mesh.visible = !isHidden;
 
         this.scene.add(mesh);
         this.dirObjects.set(mesh, dirNode);

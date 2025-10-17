@@ -1,7 +1,7 @@
 import { TreeVisualizer } from './TreeVisualizer';
 import { RepositorySnapshot, FileNode, DirectoryNode, TreeNode } from './types';
 import { FILE_COLORS, DIRECTORY_COLOR } from './colorScheme';
-import { ColorMode, getLegendItems, getColorModeName, getColorForFile } from './colorModeManager';
+import { ColorMode, getLegendItems, getColorModeName, getColorForFile, assignAuthorColors } from './colorModeManager';
 
 /**
  * Get list of available repositories
@@ -71,8 +71,9 @@ function showFileDetails(file: FileNode) {
     : 'Unknown';
 
   const authorStr = file.lastAuthor || 'Unknown';
+  const commitHashStr = file.lastCommitHash ? file.lastCommitHash.substring(0, 7) : 'Unknown';
 
-  contentEl.innerHTML = `
+  let detailsHtml = `
     <div class="info-row">
       <span class="label">Type</span>
       <span class="value">File</span>
@@ -97,7 +98,65 @@ function showFileDetails(file: FileNode) {
       <span class="label">Last Author</span>
       <span class="value">${authorStr}</span>
     </div>
+    <div class="info-row">
+      <span class="label">Last Commit</span>
+      <span class="value">${commitHashStr}</span>
+    </div>
   `;
+
+  // Handle commit sibling highlighting with toggle behavior
+  if (highlightCommitEnabled && file.lastCommitHash) {
+    // Check if clicking on a file that's part of the currently highlighted commit
+    if (currentHighlightedCommit === file.lastCommitHash) {
+      // Toggle OFF - clear highlighting
+      if (currentVisualizer) {
+        currentVisualizer.clearHighlight();
+      }
+      currentHighlightedCommit = null;
+    } else {
+      // New commit or first time - show highlighting
+      const commitSiblings = commitToFilesIndex.get(file.lastCommitHash) || [];
+      const otherFiles = commitSiblings.filter(f => f.path !== file.path);
+
+      if (otherFiles.length > 0) {
+        detailsHtml += `
+          <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+            <div style="font-size: 12px; font-weight: 600; color: #4a9eff; margin-bottom: 8px;">
+              Commit Siblings (${otherFiles.length} file${otherFiles.length !== 1 ? 's' : ''})
+            </div>
+            <div style="max-height: 200px; overflow-y: auto; font-size: 11px;">
+        `;
+
+        for (const sibling of otherFiles) {
+          detailsHtml += `
+            <div style="padding: 4px 0; color: #ccc; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+              ${sibling.path}
+            </div>
+          `;
+        }
+
+        detailsHtml += `
+            </div>
+          </div>
+        `;
+      }
+
+      // Apply visual highlighting to all files in the commit (including the selected file)
+      if (currentVisualizer) {
+        const allCommitFiles = commitSiblings.map(f => f.path);
+        currentVisualizer.highlightFiles(allCommitFiles);
+      }
+      currentHighlightedCommit = file.lastCommitHash;
+    }
+  } else {
+    // Clear highlighting if mode is off
+    if (currentVisualizer) {
+      currentVisualizer.clearHighlight();
+    }
+    currentHighlightedCommit = null;
+  }
+
+  contentEl.innerHTML = detailsHtml;
 
   panel.classList.add('visible');
 }
@@ -371,7 +430,13 @@ function populateStats(snapshot: RepositorySnapshot) {
  */
 function populateLegend(snapshot: RepositorySnapshot) {
   const legendContent = document.getElementById('legend-content');
+  const legendTitle = document.getElementById('legend-title');
   if (!legendContent) return;
+
+  // Update legend title for file type mode
+  if (legendTitle) {
+    legendTitle.textContent = 'File Type';
+  }
 
   // Clear previous legend content
   legendContent.innerHTML = '';
@@ -441,6 +506,37 @@ function hideLoading() {
 
 let currentVisualizer: TreeVisualizer | null = null;
 let currentSnapshot: RepositorySnapshot | null = null;
+let commitToFilesIndex: Map<string, FileNode[]> = new Map();
+let highlightCommitEnabled: boolean = false;
+let currentHighlightedCommit: string | null = null;
+
+/**
+ * Build an index mapping commit hashes to files
+ * This allows quick lookup of all files changed in the same commit
+ */
+function buildCommitIndex(tree: DirectoryNode): Map<string, FileNode[]> {
+  const index = new Map<string, FileNode[]>();
+
+  const processNode = (node: TreeNode) => {
+    if (node.type === 'file') {
+      if (node.lastCommitHash) {
+        const files = index.get(node.lastCommitHash) || [];
+        files.push(node);
+        index.set(node.lastCommitHash, files);
+      }
+    } else {
+      for (const child of node.children) {
+        processNode(child);
+      }
+    }
+  };
+
+  for (const child of tree.children) {
+    processNode(child);
+  }
+
+  return index;
+}
 
 /**
  * Load and display a repository
@@ -459,10 +555,18 @@ async function loadRepository(repoName: string) {
 
     console.log('Data loaded:', snapshot);
 
+    // Build commit hash index
+    commitToFilesIndex = buildCommitIndex(snapshot.tree);
+    console.log(`Built commit index: ${commitToFilesIndex.size} unique commits`);
+
     // Clear UI state from previous repo
     const infoPanel = document.getElementById('info-panel');
     if (infoPanel) {
       infoPanel.classList.remove('visible');
+    }
+    currentHighlightedCommit = null;
+    if (currentVisualizer) {
+      currentVisualizer.clearHighlight();
     }
 
     updateHeader(snapshot);
@@ -610,6 +714,32 @@ async function main() {
       }
     });
   }
+
+  // Set up highlight commit toggle
+  const highlightCommitToggle = document.getElementById('highlight-commit-toggle') as HTMLButtonElement;
+  if (highlightCommitToggle) {
+    // Load saved preference from localStorage
+    const savedHighlightCommit = localStorage.getItem('highlightCommit') === 'true';
+    highlightCommitEnabled = savedHighlightCommit;
+
+    // Set button text to match saved mode
+    highlightCommitToggle.textContent = highlightCommitEnabled ? 'On' : 'Off';
+
+    // Handle toggle clicks
+    highlightCommitToggle.addEventListener('click', () => {
+      highlightCommitEnabled = !highlightCommitEnabled;
+      highlightCommitToggle.textContent = highlightCommitEnabled ? 'On' : 'Off';
+      localStorage.setItem('highlightCommit', highlightCommitEnabled.toString());
+
+      // Clear any existing commit highlighting when toggled off
+      if (!highlightCommitEnabled && currentVisualizer) {
+        currentVisualizer.clearHighlight();
+        currentHighlightedCommit = null;
+      }
+
+      console.log('Highlight commit mode:', highlightCommitEnabled ? 'enabled' : 'disabled');
+    });
+  }
 }
 
 /**
@@ -617,7 +747,13 @@ async function main() {
  */
 function updateLegendForColorMode(mode: ColorMode) {
   const legendContent = document.getElementById('legend-content');
+  const legendTitle = document.getElementById('legend-title');
   if (!legendContent) return;
+
+  // Update legend title to match color mode
+  if (legendTitle) {
+    legendTitle.textContent = getColorModeName(mode);
+  }
 
   legendContent.innerHTML = '';
 
@@ -648,28 +784,40 @@ function updateLegendForColorMode(mode: ColorMode) {
     };
     collectAuthors(currentSnapshot.tree);
 
-    // Sort by file count (descending), then show top 15
+    // Sort by file count (descending), then show top 20
     const sortedAuthors = Array.from(authorCounts.entries())
-      .sort((a, b) => b[1] - a[1]) // Sort by count descending
-      .map(([author]) => author);
-    const displayAuthors = sortedAuthors.slice(0, 15);
+      .sort((a, b) => b[1] - a[1]); // Sort by count descending
 
-    for (const author of displayAuthors) {
+    // Assign colors based on contributor rank (most active get most distinct colors)
+    const authorNames = sortedAuthors.map(([author]) => author);
+    assignAuthorColors(authorNames);
+
+    const displayAuthors = sortedAuthors.slice(0, 20);
+
+    const totalFiles = currentSnapshot.stats.totalFiles;
+
+    for (const [author, count] of displayAuthors) {
+      const percentage = ((count / totalFiles) * 100).toFixed(1);
       const colorInfo = getColorForFile({ lastAuthor: author } as FileNode, 'author');
       const legendItem = document.createElement('div');
       legendItem.className = 'legend-item';
+      const fileLabel = count === 1 ? 'file' : 'files';
       legendItem.innerHTML = `
         <div class="legend-color" style="background: ${colorInfo.hex};"></div>
-        <span class="legend-label">${author}</span>
+        <span class="legend-label">${author} <span style="color: #888;">(${count} ${fileLabel}, ${percentage}%)</span></span>
       `;
       legendContent.appendChild(legendItem);
     }
 
-    if (sortedAuthors.length > 15) {
+    if (sortedAuthors.length > 20) {
+      // Calculate coverage of top 20
+      const top20FileCount = displayAuthors.reduce((sum, [, count]) => sum + count, 0);
+      const coveragePercent = ((top20FileCount / totalFiles) * 100).toFixed(1);
+
       const legendItem = document.createElement('div');
       legendItem.className = 'legend-item';
       legendItem.innerHTML = `
-        <span class="legend-label" style="color: #888; font-style: italic;">...and ${sortedAuthors.length - 15} more</span>
+        <span class="legend-label" style="color: #888; font-style: italic;">...and ${sortedAuthors.length - 20} more (${coveragePercent}% coverage shown)</span>
       `;
       legendContent.appendChild(legendItem);
     }
