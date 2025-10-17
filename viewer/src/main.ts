@@ -118,25 +118,51 @@ function showFileDetails(file: FileNode) {
       const commitSiblings = commitToFilesIndex.get(file.lastCommitHash) || [];
       const otherFiles = commitSiblings.filter(f => f.path !== file.path);
 
-      if (otherFiles.length > 0) {
+      // Get commit message if available
+      const commitMessage = currentSnapshot?.commitMessages?.[file.lastCommitHash];
+
+      if (commitMessage || otherFiles.length > 0) {
         detailsHtml += `
           <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+        `;
+
+        // Show commit info if message is available
+        if (commitMessage) {
+          detailsHtml += `
+            <div style="margin-bottom: 12px;">
+              <div style="font-size: 11px; color: #888; margin-bottom: 4px;">
+                Commit: <span style="color: #4a9eff; font-family: monospace;">${commitHashStr}</span>
+              </div>
+              <div style="font-size: 12px; color: #ddd; font-style: italic; line-height: 1.4;">
+                "${commitMessage}"
+              </div>
+            </div>
+          `;
+        }
+
+        // Show commit siblings if any
+        if (otherFiles.length > 0) {
+          detailsHtml += `
             <div style="font-size: 12px; font-weight: 600; color: #4a9eff; margin-bottom: 8px;">
               Commit Siblings (${otherFiles.length} file${otherFiles.length !== 1 ? 's' : ''})
             </div>
             <div style="max-height: 200px; overflow-y: auto; font-size: 11px;">
-        `;
+          `;
 
-        for (const sibling of otherFiles) {
+          for (const sibling of otherFiles) {
+            detailsHtml += `
+              <div style="padding: 4px 0; color: #ccc; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                ${sibling.path}
+              </div>
+            `;
+          }
+
           detailsHtml += `
-            <div style="padding: 4px 0; color: #ccc; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
-              ${sibling.path}
             </div>
           `;
         }
 
         detailsHtml += `
-            </div>
           </div>
         `;
       }
