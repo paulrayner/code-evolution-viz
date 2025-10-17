@@ -1,6 +1,7 @@
 import { TreeVisualizer } from './TreeVisualizer';
 import { RepositorySnapshot, FileNode, DirectoryNode, TreeNode } from './types';
 import { FILE_COLORS, DIRECTORY_COLOR } from './colorScheme';
+import { ColorMode, getLegendItems, getColorModeName } from './colorModeManager';
 
 /**
  * Get list of available repositories
@@ -381,7 +382,6 @@ async function loadRepository(repoName: string) {
 
     updateHeader(snapshot);
     populateStats(snapshot);
-    populateLegend(snapshot);
 
     // Initialize or reuse visualizer
     const canvas = document.getElementById('canvas') as HTMLCanvasElement;
@@ -403,12 +403,26 @@ async function loadRepository(repoName: string) {
         currentVisualizer.setLabelMode(savedMode);
       }
 
+      // Load saved color mode
+      const savedColorMode = localStorage.getItem('colorMode') as ColorMode | null;
+      if (savedColorMode) {
+        currentVisualizer.setColorMode(savedColorMode);
+      }
+
       // Start animation
       currentVisualizer.start();
     }
 
     // Visualize the tree
     currentVisualizer.visualize(snapshot.tree);
+
+    // Update legend based on current color mode
+    const currentColorMode = (localStorage.getItem('colorMode') as ColorMode) || 'fileType';
+    if (currentColorMode === 'fileType') {
+      populateLegend(snapshot);
+    } else {
+      updateLegendForColorMode(currentColorMode);
+    }
 
     hideLoading();
 
@@ -460,6 +474,30 @@ async function main() {
     });
   }
 
+  // Set up color mode selector
+  const colorModeSelector = document.getElementById('color-mode-selector') as HTMLSelectElement;
+  if (colorModeSelector) {
+    // Load saved preference from localStorage
+    const savedColorMode = localStorage.getItem('colorMode') as ColorMode | null;
+    if (savedColorMode) {
+      colorModeSelector.value = savedColorMode;
+    }
+
+    // Handle color mode change
+    colorModeSelector.addEventListener('change', (e) => {
+      const target = e.target as HTMLSelectElement;
+      const newMode = target.value as ColorMode;
+      localStorage.setItem('colorMode', newMode);
+
+      if (currentVisualizer) {
+        currentVisualizer.setColorMode(newMode);
+      }
+
+      // Update legend for new color mode
+      updateLegendForColorMode(newMode);
+    });
+  }
+
   // Set up label toggle (after first repo loads so currentVisualizer exists)
   const labelToggle = document.getElementById('label-toggle') as HTMLButtonElement;
   if (labelToggle) {
@@ -483,6 +521,32 @@ async function main() {
       }
     });
   }
+}
+
+/**
+ * Update legend based on color mode
+ */
+function updateLegendForColorMode(mode: ColorMode) {
+  const legendContent = document.getElementById('legend-content');
+  if (!legendContent) return;
+
+  legendContent.innerHTML = '';
+
+  const items = getLegendItems(mode);
+
+  if (items.length > 0) {
+    // Show color mode specific legend
+    for (const item of items) {
+      const legendItem = document.createElement('div');
+      legendItem.className = 'legend-item';
+      legendItem.innerHTML = `
+        <div class="legend-color" style="background: ${item.hex};"></div>
+        <span class="legend-label">${item.name}</span>
+      `;
+      legendContent.appendChild(legendItem);
+    }
+  }
+  // Note: For fileType mode, legend is populated by populateLegend() which shows actual files present
 }
 
 // Start the application

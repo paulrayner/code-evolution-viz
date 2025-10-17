@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 import { DirectoryNode, FileNode, TreeNode } from './types';
 import { getColorForExtension, DIRECTORY_COLOR } from './colorScheme';
+import { ColorMode, getColorForFile } from './colorModeManager';
 
 interface LayoutNode {
   node: TreeNode;
@@ -35,6 +36,7 @@ export class TreeVisualizer {
   private collapsedDirs: Set<DirectoryNode> = new Set();
   private focusedDirectory: DirectoryNode | null = null;
   private labelMode: 'always' | 'hover' = 'always';
+  private colorMode: ColorMode = 'fileType';
   private onFileClick?: (file: FileNode) => void;
   private onDirClick?: (dir: DirectoryNode) => void;
   private onHover?: (node: TreeNode | null, event?: MouseEvent) => void;
@@ -136,6 +138,15 @@ export class TreeVisualizer {
         }
       }
     });
+  }
+
+  /**
+   * Set color mode and rebuild visualization
+   */
+  setColorMode(mode: ColorMode) {
+    console.log(`Setting color mode to: ${mode}`);
+    this.colorMode = mode;
+    this.rebuildVisualization();
   }
 
   /**
@@ -434,8 +445,9 @@ export class TreeVisualizer {
         // Scale based on LOC (normalized)
         const normalizedSize = Math.max(0.3, (fileNode.loc / maxFileLoc) * 2);
 
-        // Color based on extension
-        const color = getColorForExtension(fileNode.extension).numeric;
+        // Color based on current mode
+        const colorInfo = getColorForFile(fileNode, this.colorMode);
+        const color = parseInt(colorInfo.hex.replace('#', ''), 16);
 
         const geometry = new THREE.SphereGeometry(normalizedSize, 16, 16);
         const material = new THREE.MeshPhongMaterial({
