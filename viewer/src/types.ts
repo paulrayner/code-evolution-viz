@@ -10,6 +10,7 @@ export interface FileNode {
   extension: string;
   lastModified: string | null;
   lastAuthor: string | null;
+  lastCommitHash: string | null;
 }
 
 export interface DirectoryNode {

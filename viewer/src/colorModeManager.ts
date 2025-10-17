@@ -9,55 +9,85 @@ export interface ColorInfo {
 }
 
 /**
- * Generate a consistent color for an author name using hash-based HSL
+ * Palette of maximally distinct colors for author visualization
+ * Ordered to maximize contrast between adjacent colors
+ */
+const AUTHOR_COLORS = [
+  '#e6194B', // Red
+  '#3cb44b', // Green
+  '#4363d8', // Blue
+  '#f58231', // Orange
+  '#911eb4', // Purple
+  '#42d4f4', // Cyan
+  '#f032e6', // Magenta
+  '#bfef45', // Lime
+  '#800000', // Maroon
+  '#aaffc3', // Mint
+  '#000075', // Navy
+  '#ffe119', // Yellow
+  '#469990', // Teal
+  '#fabed4', // Pink
+  '#9A6324', // Brown
+  '#dcbeff', // Lavender
+  '#808000', // Olive
+  '#00ffff', // Aqua
+  '#a9a9a9', // Gray
+  '#ffd8b1', // Apricot
+  '#e6beff', // Mauve
+  '#aa6e28', // Tan
+  '#fffac8', // Beige
+  '#ffffff', // White
+];
+
+/**
+ * Cache for author name to color index mapping
+ * Used to ensure consistent colors across the application
+ */
+const authorColorCache = new Map<string, number>();
+let nextColorIndex = 0;
+
+/**
+ * Reset the author color cache
+ * Called when switching repositories
+ */
+export function resetAuthorColors(): void {
+  authorColorCache.clear();
+  nextColorIndex = 0;
+}
+
+/**
+ * Pre-assign colors to authors based on their rank (by file count)
+ * This ensures top contributors get the most distinct colors
+ */
+export function assignAuthorColors(authorsByRank: string[]): void {
+  resetAuthorColors();
+  for (const author of authorsByRank) {
+    if (!authorColorCache.has(author)) {
+      authorColorCache.set(author, nextColorIndex % AUTHOR_COLORS.length);
+      nextColorIndex++;
+    }
+  }
+}
+
+/**
+ * Generate a consistent color for an author name using a distinct color palette
+ * Colors are assigned based on first-seen order (typically by contributor rank)
  */
 function getColorForAuthor(author: string | null): ColorInfo {
   if (!author) {
     return { hex: '#666666', name: 'Unknown' };
   }
 
-  // Simple string hash function
-  let hash = 0;
-  for (let i = 0; i < author.length; i++) {
-    hash = author.charCodeAt(i) + ((hash << 5) - hash);
-    hash = hash & hash; // Convert to 32-bit integer
+  // Get or assign color index
+  let index = authorColorCache.get(author);
+  if (index === undefined) {
+    index = nextColorIndex % AUTHOR_COLORS.length;
+    authorColorCache.set(author, index);
+    nextColorIndex++;
   }
 
-  // Map hash to hue (60-300° to avoid red which is used for other things)
-  const hue = (Math.abs(hash) % 240) + 60;
-  const saturation = 70;
-  const lightness = 60;
+  const hex = AUTHOR_COLORS[index];
 
-  // Convert HSL to hex
-  const h = hue / 360;
-  const s = saturation / 100;
-  const l = lightness / 100;
-
-  let r, g, b;
-  if (s === 0) {
-    r = g = b = l;
-  } else {
-    const hue2rgb = (p: number, q: number, t: number) => {
-      if (t < 0) t += 1;
-      if (t > 1) t -= 1;
-      if (t < 1/6) return p + (q - p) * 6 * t;
-      if (t < 1/2) return q;
-      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-      return p;
-    };
-    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-    const p = 2 * l - q;
-    r = hue2rgb(p, q, h + 1/3);
-    g = hue2rgb(p, q, h);
-    b = hue2rgb(p, q, h - 1/3);
-  }
-
-  const toHex = (x: number) => {
-    const hex = Math.round(x * 255).toString(16);
-    return hex.length === 1 ? '0' + hex : hex;
-  };
-
-  const hex = '#' + toHex(r) + toHex(g) + toHex(b);
   return { hex, name: author };
 }
 
