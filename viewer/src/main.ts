@@ -490,7 +490,7 @@ function hideLoading() {
 let currentVisualizer: TreeVisualizer | null = null;
 let currentSnapshot: RepositorySnapshot | null = null;
 let commitToFilesIndex: Map<string, FileNode[]> = new Map();
-let highlightCommitEnabled: boolean = false;
+let highlightCommitEnabled: boolean = true;
 let currentHighlightedCommit: string | null = null;
 
 /**
@@ -708,9 +708,9 @@ async function main() {
   // Set up label toggle (after first repo loads so currentVisualizer exists)
   const labelToggle = document.getElementById('label-toggle') as HTMLButtonElement;
   if (labelToggle) {
-    // Load saved preference from localStorage
+    // Load saved preference from localStorage, default to 'hover'
     const savedMode = localStorage.getItem('labelMode') as 'always' | 'hover' | null;
-    const initialMode = savedMode || 'always';
+    const initialMode = savedMode || 'hover';
 
     // Set button text to match saved mode
     labelToggle.textContent = initialMode === 'always' ? 'Always On' : 'Hover Only';
@@ -732,9 +732,9 @@ async function main() {
   // Set up highlight commit toggle
   const highlightCommitToggle = document.getElementById('highlight-commit-toggle') as HTMLButtonElement;
   if (highlightCommitToggle) {
-    // Load saved preference from localStorage
-    const savedHighlightCommit = localStorage.getItem('highlightCommit') === 'true';
-    highlightCommitEnabled = savedHighlightCommit;
+    // Load saved preference from localStorage, default to true if not set
+    const savedHighlightCommit = localStorage.getItem('highlightCommit');
+    highlightCommitEnabled = savedHighlightCommit !== null ? savedHighlightCommit === 'true' : true;
 
     // Set button text to match saved mode
     highlightCommitToggle.textContent = highlightCommitEnabled ? 'On' : 'Off';

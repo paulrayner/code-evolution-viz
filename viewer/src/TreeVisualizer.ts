@@ -35,7 +35,7 @@ export class TreeVisualizer {
   private hoveredObjects: Set<THREE.Object3D> = new Set();
   private collapsedDirs: Set<DirectoryNode> = new Set();
   private focusedDirectory: DirectoryNode | null = null;
-  private labelMode: 'always' | 'hover' = 'always';
+  private labelMode: 'always' | 'hover' = 'hover';
   private colorMode: ColorMode = 'fileType';
   private highlightedFiles: Set<string> = new Set();
   private edges: THREE.Line[] = [];
