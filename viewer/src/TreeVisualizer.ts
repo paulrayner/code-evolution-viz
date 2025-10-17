@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { DirectoryNode, FileNode, TreeNode } from './types';
+import { getColorForExtension, DIRECTORY_COLOR } from './colorScheme';
 
 interface LayoutNode {
   node: TreeNode;
@@ -20,6 +21,8 @@ export class TreeVisualizer {
   private dirObjects: Map<THREE.Object3D, DirectoryNode> = new Map();
   private selectedObject: THREE.Object3D | null = null;
   private onFileClick?: (file: FileNode) => void;
+  private onDirClick?: (dir: DirectoryNode) => void;
+  private onHover?: (node: TreeNode | null, event?: MouseEvent) => void;
 
   constructor(canvas: HTMLCanvasElement) {
     // Scene setup
@@ -72,6 +75,20 @@ export class TreeVisualizer {
    */
   setOnFileClick(callback: (file: FileNode) => void) {
     this.onFileClick = callback;
+  }
+
+  /**
+   * Set callback for directory clicks
+   */
+  setOnDirClick(callback: (dir: DirectoryNode) => void) {
+    this.onDirClick = callback;
+  }
+
+  /**
+   * Set callback for hover events
+   */
+  setOnHover(callback: (node: TreeNode | null, event?: MouseEvent) => void) {
+    this.onHover = callback;
   }
 
   /**
@@ -163,7 +180,7 @@ export class TreeVisualizer {
         const normalizedSize = Math.max(0.3, (fileNode.loc / maxLoc) * 2);
 
         // Color based on extension
-        const color = this.getColorForExtension(fileNode.extension);
+        const color = getColorForExtension(fileNode.extension).numeric;
 
         const geometry = new THREE.SphereGeometry(normalizedSize, 16, 16);
         const material = new THREE.MeshPhongMaterial({
@@ -178,12 +195,14 @@ export class TreeVisualizer {
         this.fileObjects.set(mesh, fileNode);
         layoutNode.mesh = mesh;
       } else {
-        // Directory node - smaller, dimmer
-        const geometry = new THREE.SphereGeometry(0.5, 8, 8);
+        // Directory node - cube shape for distinction
+        const geometry = new THREE.BoxGeometry(1, 1, 1);
         const material = new THREE.MeshPhongMaterial({
-          color: 0x666666,
+          color: DIRECTORY_COLOR.numeric,
+          emissive: DIRECTORY_COLOR.numeric,
+          emissiveIntensity: 0.2,
           transparent: true,
-          opacity: 0.6
+          opacity: 0.8
         });
         const mesh = new THREE.Mesh(geometry, material);
         mesh.position.copy(layoutNode.position);
@@ -199,33 +218,6 @@ export class TreeVisualizer {
     this.scene.add(gridHelper);
   }
 
-  /**
-   * Get color for file extension
-   */
-  private getColorForExtension(ext: string): number {
-    const colorMap: Record<string, number> = {
-      'js': 0xf7df1e,
-      'ts': 0x3178c6,
-      'jsx': 0x61dafb,
-      'tsx': 0x61dafb,
-      'py': 0x3776ab,
-      'cpp': 0x00599c,
-      'c': 0x555555,
-      'h': 0x555555,
-      'java': 0xf89820,
-      'html': 0xe34c26,
-      'css': 0x264de4,
-      'json': 0x292929,
-      'md': 0x083fa1,
-      'sh': 0x89e051,
-      'go': 0x00add8,
-      'rs': 0xdea584,
-      'rb': 0xcc342d,
-      'php': 0x777bb4,
-      'default': 0x888888
-    };
-    return colorMap[ext] || colorMap['default'];
-  }
 
   /**
    * Visualize repository tree
@@ -282,7 +274,10 @@ export class TreeVisualizer {
     this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
     this.raycaster.setFromCamera(this.mouse, this.camera);
-    const intersects = this.raycaster.intersectObjects(Array.from(this.fileObjects.keys()));
+
+    // Check both files and directories
+    const allObjects = [...Array.from(this.fileObjects.keys()), ...Array.from(this.dirObjects.keys())];
+    const intersects = this.raycaster.intersectObjects(allObjects);
 
     // Reset all materials
     for (const [mesh] of this.fileObjects) {
@@ -290,13 +285,30 @@ export class TreeVisualizer {
         (mesh as THREE.Mesh).material = (mesh as THREE.Mesh).material;
       }
     }
+    for (const [mesh] of this.dirObjects) {
+      if (mesh !== this.selectedObject) {
+        (mesh as THREE.Mesh).material = (mesh as THREE.Mesh).material;
+      }
+    }
 
-    // Highlight hovered
+    // Highlight hovered and trigger callback
     if (intersects.length > 0) {
       const mesh = intersects[0].object as THREE.Mesh;
       if (mesh !== this.selectedObject) {
         (mesh.material as THREE.MeshPhongMaterial).emissiveIntensity = 0.5;
       }
+
+      // Trigger hover callback with node info
+      const fileNode = this.fileObjects.get(mesh);
+      const dirNode = this.dirObjects.get(mesh);
+      const node = fileNode || dirNode;
+
+      if (node && this.onHover) {
+        this.onHover(node, event);
+      }
+    } else if (this.onHover) {
+      // No hover
+      this.onHover(null);
     }
   }
 
@@ -308,25 +320,31 @@ export class TreeVisualizer {
     this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
     this.raycaster.setFromCamera(this.mouse, this.camera);
-    const intersects = this.raycaster.intersectObjects(Array.from(this.fileObjects.keys()));
+
+    // Check both files and directories
+    const allObjects = [...Array.from(this.fileObjects.keys()), ...Array.from(this.dirObjects.keys())];
+    const intersects = this.raycaster.intersectObjects(allObjects);
 
     if (intersects.length > 0) {
       const mesh = intersects[0].object;
       const file = this.fileObjects.get(mesh);
+      const dir = this.dirObjects.get(mesh);
+
+      // Deselect previous
+      if (this.selectedObject) {
+        const mat = (this.selectedObject as THREE.Mesh).material as THREE.MeshPhongMaterial;
+        mat.emissiveIntensity = 0.2;
+      }
+
+      // Select new
+      this.selectedObject = mesh;
+      const mat = (mesh as THREE.Mesh).material as THREE.MeshPhongMaterial;
+      mat.emissiveIntensity = 0.8;
 
       if (file && this.onFileClick) {
-        // Deselect previous
-        if (this.selectedObject) {
-          const mat = (this.selectedObject as THREE.Mesh).material as THREE.MeshPhongMaterial;
-          mat.emissiveIntensity = 0.2;
-        }
-
-        // Select new
-        this.selectedObject = mesh;
-        const mat = (mesh as THREE.Mesh).material as THREE.MeshPhongMaterial;
-        mat.emissiveIntensity = 0.8;
-
         this.onFileClick(file);
+      } else if (dir && this.onDirClick) {
+        this.onDirClick(dir);
       }
     }
   }

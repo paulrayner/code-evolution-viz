@@ -150,6 +150,89 @@
       font-size: 12px;
       color: #aaa;
     }
+
+    #legend {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 15px 20px;
+      border-radius: 8px;
+      backdrop-filter: blur(10px);
+      pointer-events: auto;
+      min-width: 200px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    #legend.collapsed {
+      max-height: 40px;
+      overflow: hidden;
+    }
+
+    #legend h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: #4a9eff;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #legend h3::after {
+      content: '▼';
+      font-size: 10px;
+      transition: transform 0.2s;
+    }
+
+    #legend.collapsed h3::after {
+      transform: rotate(-90deg);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      font-size: 11px;
+      margin: 5px 0;
+      padding: 3px 0;
+    }
+
+    .legend-color {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      margin-right: 10px;
+      flex-shrink: 0;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .legend-cube {
+      width: 16px;
+      height: 16px;
+      margin-right: 10px;
+      flex-shrink: 0;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .legend-label {
+      color: #ccc;
+    }
+
+    #tooltip {
+      position: absolute;
+      background: rgba(0, 0, 0, 0.9);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      pointer-events: none;
+      display: none;
+      z-index: 1000;
+      white-space: nowrap;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
   </style>
 </head>
 <body>
@@ -174,8 +257,17 @@
       </div>
 
       <div id="controls">
-        <strong>Controls:</strong> Left-click + drag to rotate | Right-click + drag to pan | Scroll to zoom | Click file for details
+        <strong>Controls:</strong> Left-click + drag to rotate | Right-click + drag to pan | Scroll to zoom | Click nodes for details
       </div>
+
+      <div id="legend">
+        <h3>Legend</h3>
+        <div id="legend-content">
+          <!-- Populated dynamically by main.ts -->
+        </div>
+      </div>
+
+      <div id="tooltip"></div>
     </div>
   </div>
 

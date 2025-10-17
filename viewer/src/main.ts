@@ -1,5 +1,6 @@
 import { TreeVisualizer } from './TreeVisualizer';
-import { RepositorySnapshot, FileNode } from './types';
+import { RepositorySnapshot, FileNode, DirectoryNode, TreeNode } from './types';
+import { FILE_COLORS, DIRECTORY_COLOR } from './colorScheme';
 
 /**
  * Load repository data
@@ -47,6 +48,10 @@ function showFileDetails(file: FileNode) {
 
   contentEl.innerHTML = `
     <div class="info-row">
+      <span class="label">Type</span>
+      <span class="value">File</span>
+    </div>
+    <div class="info-row">
       <span class="label">Path</span>
       <span class="value">${file.path}</span>
     </div>
@@ -61,6 +66,131 @@ function showFileDetails(file: FileNode) {
   `;
 
   panel.classList.add('visible');
+}
+
+/**
+ * Show directory details panel
+ */
+function showDirectoryDetails(dir: DirectoryNode) {
+  const panel = document.getElementById('info-panel');
+  const nameEl = document.getElementById('selected-name');
+  const contentEl = document.getElementById('info-content');
+
+  if (!panel || !nameEl || !contentEl) return;
+
+  nameEl.textContent = dir.name;
+
+  const fileCount = dir.children.filter(c => c.type === 'file').length;
+  const dirCount = dir.children.filter(c => c.type === 'directory').length;
+
+  contentEl.innerHTML = `
+    <div class="info-row">
+      <span class="label">Type</span>
+      <span class="value">Directory</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Path</span>
+      <span class="value">${dir.path || '(root)'}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Files</span>
+      <span class="value">${fileCount}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Subdirectories</span>
+      <span class="value">${dirCount}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Total Children</span>
+      <span class="value">${dir.children.length}</span>
+    </div>
+  `;
+
+  panel.classList.add('visible');
+}
+
+/**
+ * Show tooltip on hover
+ */
+function showTooltip(node: TreeNode | null, event?: MouseEvent) {
+  const tooltip = document.getElementById('tooltip');
+  if (!tooltip) return;
+
+  if (!node || !event) {
+    tooltip.style.display = 'none';
+    return;
+  }
+
+  if (node.type === 'file') {
+    tooltip.textContent = `📄 ${node.name} (${node.loc} LOC)`;
+  } else {
+    tooltip.textContent = `📁 ${node.name} (${node.children.length} items)`;
+  }
+
+  tooltip.style.display = 'block';
+  tooltip.style.left = `${event.clientX + 15}px`;
+  tooltip.style.top = `${event.clientY + 15}px`;
+}
+
+/**
+ * Populate legend with file extension colors
+ * See viewer/docs/color-scheme.md for design rationale
+ */
+function populateLegend(snapshot: RepositorySnapshot) {
+  const legendContent = document.getElementById('legend-content');
+  if (!legendContent) return;
+
+  // Get unique extensions present in this repo
+  const extensions = Object.keys(snapshot.stats.filesByExtension);
+  const presentExtensions = extensions
+    .filter(ext => FILE_COLORS[ext])
+    .sort((a, b) => snapshot.stats.filesByExtension[b] - snapshot.stats.filesByExtension[a]);
+
+  // Add directory entry first
+  const dirItem = document.createElement('div');
+  dirItem.className = 'legend-item';
+  dirItem.innerHTML = `
+    <div class="legend-cube" style="background: ${DIRECTORY_COLOR.hex};"></div>
+    <span class="legend-label">${DIRECTORY_COLOR.name}</span>
+  `;
+  legendContent.appendChild(dirItem);
+
+  // Add present extensions
+  for (const ext of presentExtensions) {
+    const info = FILE_COLORS[ext];
+    const count = snapshot.stats.filesByExtension[ext];
+    const item = document.createElement('div');
+    item.className = 'legend-item';
+    item.innerHTML = `
+      <div class="legend-color" style="background: ${info.hex};"></div>
+      <span class="legend-label">${info.name} (${count})</span>
+    `;
+    legendContent.appendChild(item);
+  }
+
+  // Add "Other" if there are unknown extensions
+  const unknownCount = extensions
+    .filter(ext => !FILE_COLORS[ext])
+    .reduce((sum, ext) => sum + snapshot.stats.filesByExtension[ext], 0);
+
+  if (unknownCount > 0) {
+    const item = document.createElement('div');
+    item.className = 'legend-item';
+    item.innerHTML = `
+      <div class="legend-color" style="background: #aaa;"></div>
+      <span class="legend-label">Other (${unknownCount})</span>
+    `;
+    legendContent.appendChild(item);
+  }
+
+  // Make legend collapsible
+  const legendHeader = document.querySelector('#legend h3');
+  const legend = document.getElementById('legend');
+  if (legendHeader && legend) {
+    legendHeader.addEventListener('click', () => {
+      legend.classList.toggle('collapsed');
+    });
+  }
 }
 
 /**
@@ -83,6 +213,7 @@ async function main() {
 
     console.log('Data loaded:', snapshot);
     updateHeader(snapshot);
+    populateLegend(snapshot);
 
     // Initialize visualizer
     const canvas = document.getElementById('canvas') as HTMLCanvasElement;
@@ -92,8 +223,10 @@ async function main() {
 
     const visualizer = new TreeVisualizer(canvas);
 
-    // Set up file click handler
+    // Set up interaction handlers
     visualizer.setOnFileClick(showFileDetails);
+    visualizer.setOnDirClick(showDirectoryDetails);
+    visualizer.setOnHover(showTooltip);
 
     // Visualize the tree
     visualizer.visualize(snapshot.tree);
