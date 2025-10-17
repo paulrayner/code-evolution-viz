@@ -1,7 +1,7 @@
 import { TreeVisualizer } from './TreeVisualizer';
 import { RepositorySnapshot, FileNode, DirectoryNode, TreeNode } from './types';
 import { FILE_COLORS, DIRECTORY_COLOR } from './colorScheme';
-import { ColorMode, getLegendItems, getColorModeName, getColorForFile, assignAuthorColors } from './colorModeManager';
+import { ColorMode, getLegendItems, getColorModeName, getColorForFile, assignAuthorColors, calculateLastModifiedIntervals, isUsingPercentileIntervals } from './colorModeManager';
 
 /**
  * Get list of available repositories
@@ -414,14 +414,6 @@ function populateStats(snapshot: RepositorySnapshot) {
     langBreakdown.appendChild(bar);
   }
 
-  // Make stats panel collapsible
-  const statsPanel = document.getElementById('stats-panel');
-  const statsHeader = document.querySelector('#stats-panel h3');
-  if (statsHeader && statsPanel) {
-    statsHeader.addEventListener('click', () => {
-      statsPanel.classList.toggle('collapsed');
-    });
-  }
 }
 
 /**
@@ -483,15 +475,6 @@ function populateLegend(snapshot: RepositorySnapshot) {
     `;
     legendContent.appendChild(item);
   }
-
-  // Make legend collapsible
-  const legendHeader = document.querySelector('#legend h3');
-  const legend = document.getElementById('legend');
-  if (legendHeader && legend) {
-    legendHeader.addEventListener('click', () => {
-      legend.classList.toggle('collapsed');
-    });
-  }
 }
 
 /**
@@ -539,6 +522,32 @@ function buildCommitIndex(tree: DirectoryNode): Map<string, FileNode[]> {
 }
 
 /**
+ * Collect all lastModified dates from the tree
+ * Used to calculate percentile-based color intervals
+ */
+function collectModificationDates(tree: DirectoryNode): string[] {
+  const dates: string[] = [];
+
+  const processNode = (node: TreeNode) => {
+    if (node.type === 'file') {
+      if (node.lastModified) {
+        dates.push(node.lastModified);
+      }
+    } else {
+      for (const child of node.children) {
+        processNode(child);
+      }
+    }
+  };
+
+  for (const child of tree.children) {
+    processNode(child);
+  }
+
+  return dates;
+}
+
+/**
  * Load and display a repository
  */
 async function loadRepository(repoName: string) {
@@ -558,6 +567,11 @@ async function loadRepository(repoName: string) {
     // Build commit hash index
     commitToFilesIndex = buildCommitIndex(snapshot.tree);
     console.log(`Built commit index: ${commitToFilesIndex.size} unique commits`);
+
+    // Calculate percentile-based intervals for last modified dates
+    const modificationDates = collectModificationDates(snapshot.tree);
+    calculateLastModifiedIntervals(modificationDates);
+    console.log(`Calculated last modified intervals from ${modificationDates.length} files`);
 
     // Clear UI state from previous repo
     const infoPanel = document.getElementById('info-panel');
@@ -740,6 +754,23 @@ async function main() {
       console.log('Highlight commit mode:', highlightCommitEnabled ? 'enabled' : 'disabled');
     });
   }
+
+  // Set up collapsible panels (one-time setup)
+  const statsPanel = document.getElementById('stats-panel');
+  const statsHeader = document.querySelector('#stats-panel h3');
+  if (statsHeader && statsPanel) {
+    statsHeader.addEventListener('click', () => {
+      statsPanel.classList.toggle('collapsed');
+    });
+  }
+
+  const legendHeader = document.querySelector('#legend h3');
+  const legend = document.getElementById('legend');
+  if (legendHeader && legend) {
+    legendHeader.addEventListener('click', () => {
+      legend.classList.toggle('collapsed');
+    });
+  }
 }
 
 /**
@@ -752,15 +783,50 @@ function updateLegendForColorMode(mode: ColorMode) {
 
   // Update legend title to match color mode
   if (legendTitle) {
-    legendTitle.textContent = getColorModeName(mode);
+    let modeTitle = getColorModeName(mode);
+    if (mode === 'lastModified' && isUsingPercentileIntervals()) {
+      modeTitle = 'Last Modified (Relative)';
+    }
+    legendTitle.textContent = modeTitle;
   }
 
   legendContent.innerHTML = '';
 
   const items = getLegendItems(mode);
 
-  if (items.length > 0) {
-    // Show color mode specific legend (e.g., lastModified time ranges)
+  if (items.length > 0 && mode === 'lastModified' && currentSnapshot) {
+    // Calculate file counts for each interval
+    const intervalCounts = new Map<string, number>();
+    const collectIntervalCounts = (node: TreeNode) => {
+      if (node.type === 'file' && node.lastModified) {
+        const colorInfo = getColorForFile(node, 'lastModified');
+        intervalCounts.set(colorInfo.name, (intervalCounts.get(colorInfo.name) || 0) + 1);
+      } else if (node.type === 'directory') {
+        for (const child of node.children) {
+          collectIntervalCounts(child);
+        }
+      }
+    };
+    collectIntervalCounts(currentSnapshot.tree);
+
+    const totalFiles = currentSnapshot.stats.totalFiles;
+
+    // Show intervals with counts and percentages
+    for (const item of items) {
+      const count = intervalCounts.get(item.name) || 0;
+      const percentage = ((count / totalFiles) * 100).toFixed(1);
+      const fileLabel = count === 1 ? 'file' : 'files';
+
+      const legendItem = document.createElement('div');
+      legendItem.className = 'legend-item';
+      legendItem.innerHTML = `
+        <div class="legend-color" style="background: ${item.hex};"></div>
+        <span class="legend-label">${item.name} <span style="color: #888;">(${count} ${fileLabel}, ${percentage}%)</span></span>
+      `;
+      legendContent.appendChild(legendItem);
+    }
+  } else if (items.length > 0) {
+    // Show color mode specific legend without counts (fallback for other modes)
     for (const item of items) {
       const legendItem = document.createElement('div');
       legendItem.className = 'legend-item';
