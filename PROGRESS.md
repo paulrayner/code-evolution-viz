@@ -471,24 +471,28 @@ code-evolution-viz/
 
 Building git metadata visualizations incrementally, delivering one complete feature at a time:
 
-#### MVP Slice 1: Last Modified Date Coloring (IN PROGRESS)
-- [ ] Add `lastModified` date to processor (git log per file)
-- [ ] Update FileNode type definition with lastModified field
-- [ ] Create colorModeManager.ts with date coloring logic
-- [ ] Add UI dropdown with 2 modes: "File Type" and "Last Modified"
-- [ ] Re-analyze Gource and React repositories
-- [ ] Test date coloring works correctly
+#### MVP Slice 1: Last Modified Date Coloring ✅ COMPLETE
+- [x] Add `lastModified` date to processor (git log per file) - commit 03ccf59
+- [x] Update FileNode type definition with lastModified field - commit 03ccf59
+- [x] Create colorModeManager.ts with date coloring logic - commit 87603cc, enhanced af32d02
+- [x] Add UI dropdown with 2 modes: "File Type" and "Last Modified" - commit 87603cc
+- [x] Re-analyze Gource repository - Oct 17 22:39 ✅
+- [ ] Re-analyze React repository with lastCommitHash field
+- [ ] Test all features on both repositories
 
-**Value:** See which files were recently touched (day/week/month/3mo/older)
+**Value:** See which files were recently touched with adaptive time buckets
+**Bonus:** Adaptive intervals for active vs stale repos (commit af32d02)
 
-#### MVP Slice 2: Commit Author Coloring (NOT STARTED)
-- [ ] Add `lastAuthor` to processor
-- [ ] Add author coloring to color mode manager
-- [ ] Add "By Author" mode to UI dropdown
-- [ ] Re-analyze repos
-- [ ] Test author coloring
+#### MVP Slice 2: Commit Author Coloring ✅ COMPLETE
+- [x] Add `lastAuthor` to processor - commit 3172875
+- [x] Add author coloring to color mode manager - commit 3172875
+- [x] Add "By Author" mode to UI dropdown - commit 3172875
+- [x] Re-analyze Gource repository - Oct 17 22:39 ✅
+- [ ] Re-analyze React repository with lastCommitHash field
+- [ ] Test author coloring on both repos
 
-**Value:** See who last touched each file
+**Value:** See who last touched each file with consistent hash-based colors
+**Bonus:** Commit siblings highlighting feature (commit c71b03d) - shows files changed together in same commit
 
 #### MVP Slice 3: Commit Frequency (Churn) Coloring (NOT STARTED)
 - [ ] Add `commitCount` to processor
@@ -567,6 +571,6 @@ Building git metadata visualizations incrementally, delivering one complete feat
 
 ---
 
-*Last Updated: 2025-10-17*
-*Current Slice: 1 (In Progress - Git Metadata Phase)*
-*Next Slice: 2 (Not Started)*
+*Last Updated: 2025-10-18*
+*Current Slice: 1 & 2 Complete (need React re-analysis and testing)*
+*Next Slice: 3 (Commit Frequency/Churn) or original Slice 2 (Animate History)*
