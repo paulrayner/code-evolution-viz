@@ -8,6 +8,7 @@ interface LayoutNode {
   node: TreeNode;
   position: THREE.Vector3;
   mesh?: THREE.Mesh;
+  parent?: LayoutNode;
 }
 
 interface DirectoryStats {
@@ -30,6 +31,8 @@ export class TreeVisualizer {
   private dirObjects: Map<THREE.Object3D, DirectoryNode> = new Map();
   private dirStats: Map<DirectoryNode, DirectoryStats> = new Map();
   private selectedObject: THREE.Object3D | null = null;
+  private hoveredObjects: Set<THREE.Object3D> = new Set();
+  private collapsedDirs: Set<DirectoryNode> = new Set();
   private onFileClick?: (file: FileNode) => void;
   private onDirClick?: (dir: DirectoryNode) => void;
   private onHover?: (node: TreeNode | null, event?: MouseEvent) => void;
@@ -157,8 +160,9 @@ export class TreeVisualizer {
   private calculateRadius(childCount: number): number {
     // Base radius scales with child count to avoid overlap
     // Formula: base + sqrt(count) * multiplier
+    // Increased multiplier from 2 to 4 to fix overlapping in dense directories
     const baseRadius = 8;
-    const multiplier = 2;
+    const multiplier = 4;
     return baseRadius + Math.sqrt(childCount) * multiplier;
   }
 
@@ -176,14 +180,15 @@ export class TreeVisualizer {
    * Layout tree nodes in 3D space
    * Uses adaptive radial layout for directories and children
    */
-  private layoutTree(node: DirectoryNode, position: THREE.Vector3, level: number, angleStart: number, angleEnd: number): LayoutNode[] {
+  private layoutTree(node: DirectoryNode, position: THREE.Vector3, level: number, angleStart: number, angleEnd: number, parentLayout?: LayoutNode): LayoutNode[] {
     const nodes: LayoutNode[] = [];
 
     // Adaptive spacing based on content
     const radius = this.calculateRadius(node.children.length);
     const verticalSpacing = this.calculateVerticalSpacing(level);
 
-    nodes.push({ node, position });
+    const currentLayout: LayoutNode = { node, position, parent: parentLayout };
+    nodes.push(currentLayout);
 
     if (node.children.length === 0) return nodes;
 
@@ -201,15 +206,29 @@ export class TreeVisualizer {
         // Recursively layout subdirectories
         const childAngleStart = angle - angleStep / 2;
         const childAngleEnd = angle + angleStep / 2;
-        const childNodes = this.layoutTree(child, childPosition, level + 1, childAngleStart, childAngleEnd);
+        const childNodes = this.layoutTree(child, childPosition, level + 1, childAngleStart, childAngleEnd, currentLayout);
         nodes.push(...childNodes);
       } else {
         // File node
-        nodes.push({ node: child, position: childPosition });
+        nodes.push({ node: child, position: childPosition, parent: currentLayout });
       }
     });
 
     return nodes;
+  }
+
+  /**
+   * Check if a layout node should be hidden (ancestor is collapsed)
+   */
+  private isNodeHidden(layoutNode: LayoutNode): boolean {
+    let current = layoutNode.parent;
+    while (current) {
+      if (current.node.type === 'directory' && this.collapsedDirs.has(current.node)) {
+        return true;
+      }
+      current = current.parent;
+    }
+    return false;
   }
 
   /**
@@ -232,11 +251,14 @@ export class TreeVisualizer {
     // Create edges first (so they render behind nodes)
     const edgeGroup = new THREE.Group();
     for (const layoutNode of layoutNodes) {
+      // Skip edges if node or child is hidden
+      if (this.isNodeHidden(layoutNode)) continue;
+
       if (layoutNode.node.type === 'directory') {
         const dirNode = layoutNode.node;
         for (const child of dirNode.children) {
           const childLayout = layoutNodes.find(ln => ln.node === child);
-          if (childLayout) {
+          if (childLayout && !this.isNodeHidden(childLayout)) {
             const geometry = new THREE.BufferGeometry().setFromPoints([
               layoutNode.position,
               childLayout.position
@@ -256,6 +278,8 @@ export class TreeVisualizer {
 
     // Create nodes
     for (const layoutNode of layoutNodes) {
+      // Skip hidden nodes
+      if (this.isNodeHidden(layoutNode)) continue;
       if (layoutNode.node.type === 'file') {
         const fileNode = layoutNode.node;
 
@@ -307,11 +331,15 @@ export class TreeVisualizer {
 
         this.scene.add(mesh);
         this.dirObjects.set(mesh, dirNode);
+        layoutNode.mesh = mesh;
 
-        // Add text label above directory
+        // Add text label above directory with collapse indicator
+        const isCollapsed = this.collapsedDirs.has(dirNode);
+        const indicator = isCollapsed ? '+ ' : '− ';
+
         const labelDiv = document.createElement('div');
         labelDiv.className = 'dir-label';
-        labelDiv.textContent = dirNode.name;
+        labelDiv.textContent = indicator + dirNode.name;
         labelDiv.style.color = '#ffffff';
         labelDiv.style.fontSize = '12px';
         labelDiv.style.fontFamily = 'monospace';
@@ -427,6 +455,8 @@ export class TreeVisualizer {
 
   /**
    * Handle mouse move for hover effects
+   * Files: highlight file + all ancestors
+   * Directories: highlight directory + all ancestors + all descendants
    */
   private onMouseMove(event: MouseEvent) {
     this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -438,32 +468,56 @@ export class TreeVisualizer {
     const allObjects = [...Array.from(this.fileObjects.keys()), ...Array.from(this.dirObjects.keys())];
     const intersects = this.raycaster.intersectObjects(allObjects);
 
-    // Reset all materials
-    for (const [mesh] of this.fileObjects) {
+    // Reset previously hovered objects
+    for (const mesh of this.hoveredObjects) {
       if (mesh !== this.selectedObject) {
-        (mesh as THREE.Mesh).material = (mesh as THREE.Mesh).material;
+        const mat = (mesh as THREE.Mesh).material as THREE.MeshPhongMaterial;
+        const fileNode = this.fileObjects.get(mesh);
+        const dirNode = this.dirObjects.get(mesh);
+
+        // Reset to default emissive intensity
+        if (fileNode) {
+          mat.emissiveIntensity = 0.2;
+        } else if (dirNode) {
+          mat.emissiveIntensity = 0.3;
+        }
       }
     }
-    for (const [mesh] of this.dirObjects) {
-      if (mesh !== this.selectedObject) {
-        (mesh as THREE.Mesh).material = (mesh as THREE.Mesh).material;
-      }
-    }
+    this.hoveredObjects.clear();
 
     // Highlight hovered and trigger callback
     if (intersects.length > 0) {
       const mesh = intersects[0].object as THREE.Mesh;
-      if (mesh !== this.selectedObject) {
-        (mesh.material as THREE.MeshPhongMaterial).emissiveIntensity = 0.5;
-      }
-
-      // Trigger hover callback with node info
       const fileNode = this.fileObjects.get(mesh);
       const dirNode = this.dirObjects.get(mesh);
       const node = fileNode || dirNode;
 
-      if (node && this.onHover) {
-        this.onHover(node, event);
+      if (node) {
+        // Find the layout node for this mesh
+        const layoutNode = this.layoutNodes.find(ln => ln.mesh === mesh);
+
+        if (layoutNode) {
+          // Highlight ancestors (for both files and directories)
+          let current: LayoutNode | undefined = layoutNode;
+          while (current) {
+            if (current.mesh && current.mesh !== this.selectedObject) {
+              const mat = (current.mesh.material as THREE.MeshPhongMaterial);
+              mat.emissiveIntensity = 0.6;
+              this.hoveredObjects.add(current.mesh);
+            }
+            current = current.parent;
+          }
+
+          // If hovering a directory, also highlight all descendants
+          if (dirNode) {
+            this.highlightDescendants(layoutNode);
+          }
+        }
+
+        // Trigger hover callback
+        if (this.onHover) {
+          this.onHover(node, event);
+        }
       }
     } else if (this.onHover) {
       // No hover
@@ -472,7 +526,33 @@ export class TreeVisualizer {
   }
 
   /**
+   * Recursively highlight all descendants of a directory
+   */
+  private highlightDescendants(layoutNode: LayoutNode) {
+    if (layoutNode.node.type === 'directory') {
+      const dirNode = layoutNode.node;
+
+      // Find all child layout nodes
+      for (const child of dirNode.children) {
+        const childLayout = this.layoutNodes.find(ln => ln.node === child);
+        if (childLayout && childLayout.mesh && childLayout.mesh !== this.selectedObject) {
+          const mat = (childLayout.mesh.material as THREE.MeshPhongMaterial);
+          mat.emissiveIntensity = 0.6;
+          this.hoveredObjects.add(childLayout.mesh);
+
+          // Recursively highlight descendants
+          if (child.type === 'directory') {
+            this.highlightDescendants(childLayout);
+          }
+        }
+      }
+    }
+  }
+
+  /**
    * Handle click for selection
+   * Directories: toggle collapse/expand
+   * Files: show details
    */
   private onClick(event: MouseEvent) {
     this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -489,23 +569,47 @@ export class TreeVisualizer {
       const file = this.fileObjects.get(mesh);
       const dir = this.dirObjects.get(mesh);
 
-      // Deselect previous
-      if (this.selectedObject) {
-        const mat = (this.selectedObject as THREE.Mesh).material as THREE.MeshPhongMaterial;
-        mat.emissiveIntensity = 0.2;
-      }
+      if (dir) {
+        // Toggle collapse state for directory
+        if (this.collapsedDirs.has(dir)) {
+          this.collapsedDirs.delete(dir);
+        } else {
+          this.collapsedDirs.add(dir);
+        }
 
-      // Select new
-      this.selectedObject = mesh;
-      const mat = (mesh as THREE.Mesh).material as THREE.MeshPhongMaterial;
-      mat.emissiveIntensity = 0.8;
+        // Rebuild visualization with new collapsed state
+        this.rebuildVisualization();
 
-      if (file && this.onFileClick) {
-        this.onFileClick(file);
-      } else if (dir && this.onDirClick) {
-        this.onDirClick(dir);
+        // Still call the callback
+        if (this.onDirClick) {
+          this.onDirClick(dir);
+        }
+      } else if (file) {
+        // Deselect previous
+        if (this.selectedObject) {
+          const mat = (this.selectedObject as THREE.Mesh).material as THREE.MeshPhongMaterial;
+          const prevFile = this.fileObjects.get(this.selectedObject);
+          mat.emissiveIntensity = prevFile ? 0.2 : 0.3;
+        }
+
+        // Select new
+        this.selectedObject = mesh;
+        const mat = (mesh as THREE.Mesh).material as THREE.MeshPhongMaterial;
+        mat.emissiveIntensity = 0.8;
+
+        if (this.onFileClick) {
+          this.onFileClick(file);
+        }
       }
     }
+  }
+
+  /**
+   * Rebuild visualization (used after collapse/expand)
+   */
+  private rebuildVisualization() {
+    const maxLoc = this.findMaxLoc(this.layoutNodes[0].node);
+    this.createVisuals(this.layoutNodes, maxLoc);
   }
 
   /**

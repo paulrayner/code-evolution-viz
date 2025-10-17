@@ -244,6 +244,13 @@
       backdrop-filter: blur(10px);
       pointer-events: auto;
       min-width: 200px;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+
+    #stats-panel.collapsed {
+      max-height: 40px;
+      overflow: hidden;
     }
 
     #stats-panel h3 {
@@ -251,6 +258,20 @@
       font-weight: 600;
       margin-bottom: 10px;
       color: #4a9eff;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #stats-panel h3::after {
+      content: '▼';
+      font-size: 10px;
+      transition: transform 0.2s;
+    }
+
+    #stats-panel.collapsed h3::after {
+      transform: rotate(-90deg);
     }
 
     #stats-panel .stat-row {
