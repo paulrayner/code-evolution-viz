@@ -1,0 +1,34 @@
+/**
+ * Shared types for repository analysis
+ */
+
+export interface FileNode {
+  path: string;
+  name: string;
+  type: 'file';
+  loc: number;
+  extension: string;
+}
+
+export interface DirectoryNode {
+  path: string;
+  name: string;
+  type: 'directory';
+  children: TreeNode[];
+}
+
+export type TreeNode = FileNode | DirectoryNode;
+
+export interface RepositorySnapshot {
+  repositoryPath: string;
+  commit: string;
+  timestamp: string;
+  author: string;
+  message: string;
+  tree: DirectoryNode;
+  stats: {
+    totalFiles: number;
+    totalLoc: number;
+    filesByExtension: Record<string, number>;
+  };
+}

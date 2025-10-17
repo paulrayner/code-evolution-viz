@@ -1,0 +1,10 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+
+# Processor output
+processor/output/*.json
+
+# Viewer data
+viewer/public/data/*.json
