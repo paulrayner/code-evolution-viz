@@ -33,6 +33,7 @@ export class TreeVisualizer {
   private selectedObject: THREE.Object3D | null = null;
   private hoveredObjects: Set<THREE.Object3D> = new Set();
   private collapsedDirs: Set<DirectoryNode> = new Set();
+  private focusedDirectory: DirectoryNode | null = null;
   private onFileClick?: (file: FileNode) => void;
   private onDirClick?: (dir: DirectoryNode) => void;
   private onHover?: (node: TreeNode | null, event?: MouseEvent) => void;
@@ -156,46 +157,48 @@ export class TreeVisualizer {
 
   /**
    * Calculate adaptive radius based on number of children
+   * Keep orbits tight - files need to stay close to parent for visual grouping
    */
   private calculateRadius(childCount: number): number {
-    // Base radius scales with child count to avoid overlap
-    // Formula: base + sqrt(count) * multiplier
-    // Increased multiplier from 2 to 4 to fix overlapping in dense directories
-    const baseRadius = 8;
-    const multiplier = 4;
-    return baseRadius + Math.sqrt(childCount) * multiplier;
+    const baseRadius = 6;
+
+    // Use sqrt scaling to keep files close even for dense directories
+    // 35 files: 6 + sqrt(35) * 2.5 = ~20.8 radius
+    return baseRadius + Math.sqrt(childCount) * 2.5;
   }
 
   /**
    * Calculate adaptive vertical spacing based on tree depth
+   * Moderate spacing to keep parent-child relationship clear
    */
   private calculateVerticalSpacing(level: number): number {
-    // Deeper levels have less spacing (creates visual hierarchy)
-    const baseSpacing = 4;
-    const depthFactor = Math.max(0.5, 1 - level * 0.1);
+    // Moderate vertical spacing - close enough to see relationship
+    const baseSpacing = 12;
+    const depthFactor = Math.max(0.7, 1 - level * 0.1);
     return baseSpacing * depthFactor;
   }
 
+
   /**
    * Layout tree nodes in 3D space
-   * Uses adaptive radial layout for directories and children
+   * Solar system metaphor: directories are planets, files orbit in rings around them
+   * Each directory uses full 360° circle for its children (no angular subdivision)
    */
   private layoutTree(node: DirectoryNode, position: THREE.Vector3, level: number, angleStart: number, angleEnd: number, parentLayout?: LayoutNode): LayoutNode[] {
     const nodes: LayoutNode[] = [];
-
-    // Adaptive spacing based on content
-    const radius = this.calculateRadius(node.children.length);
-    const verticalSpacing = this.calculateVerticalSpacing(level);
 
     const currentLayout: LayoutNode = { node, position, parent: parentLayout };
     nodes.push(currentLayout);
 
     if (node.children.length === 0) return nodes;
 
-    const angleStep = (angleEnd - angleStart) / node.children.length;
+    // Single ring layout: full 360° circle for all children
+    const radius = this.calculateRadius(node.children.length);
+    const verticalSpacing = this.calculateVerticalSpacing(level);
+    const angleStep = (Math.PI * 2) / node.children.length; // Full circle
 
     node.children.forEach((child, index) => {
-      const angle = angleStart + angleStep * (index + 0.5);
+      const angle = angleStep * index;
       const childPosition = new THREE.Vector3(
         position.x + Math.cos(angle) * radius,
         position.y - verticalSpacing,
@@ -203,10 +206,8 @@ export class TreeVisualizer {
       );
 
       if (child.type === 'directory') {
-        // Recursively layout subdirectories
-        const childAngleStart = angle - angleStep / 2;
-        const childAngleEnd = angle + angleStep / 2;
-        const childNodes = this.layoutTree(child, childPosition, level + 1, childAngleStart, childAngleEnd, currentLayout);
+        // Subdirectory gets its own full circle for its children
+        const childNodes = this.layoutTree(child, childPosition, level + 1, 0, Math.PI * 2, currentLayout);
         nodes.push(...childNodes);
       } else {
         // File node
@@ -218,9 +219,11 @@ export class TreeVisualizer {
   }
 
   /**
-   * Check if a layout node should be hidden (ancestor is collapsed)
+   * Check if a layout node should be hidden
+   * Hidden if: ancestor is collapsed OR outside focus scope
    */
   private isNodeHidden(layoutNode: LayoutNode): boolean {
+    // Check collapsed ancestors
     let current = layoutNode.parent;
     while (current) {
       if (current.node.type === 'directory' && this.collapsedDirs.has(current.node)) {
@@ -228,6 +231,122 @@ export class TreeVisualizer {
       }
       current = current.parent;
     }
+
+    // Check focus scope
+    if (this.focusedDirectory === null) {
+      // No focus: show root + level 1 only
+      const depth = this.getNodeDepth(layoutNode);
+      return depth > 1;
+    } else {
+      // Focused: show only focused directory + its direct children
+      return !this.isInFocusScope(layoutNode);
+    }
+  }
+
+  /**
+   * Get depth of a layout node in the tree
+   */
+  private getNodeDepth(layoutNode: LayoutNode): number {
+    let depth = 0;
+    let current = layoutNode.parent;
+    while (current) {
+      depth++;
+      current = current.parent;
+    }
+    return depth;
+  }
+
+  /**
+   * Check if node is within focus scope
+   */
+  private isInFocusScope(layoutNode: LayoutNode): boolean {
+    const node = layoutNode.node;
+
+    // The focused directory itself
+    if (node === this.focusedDirectory) {
+      return true;
+    }
+
+    // All ancestors of focused directory (for context/navigation)
+    if (this.isAncestorOfFocused(layoutNode)) {
+      return true;
+    }
+
+    // Siblings of focused directory (at same level, not cluttering)
+    if (this.isSiblingOfFocused(layoutNode)) {
+      return true;
+    }
+
+    // All siblings of all ancestors (show all nodes at ancestor levels)
+    if (this.isSiblingOfAncestor(layoutNode)) {
+      return true;
+    }
+
+    // Direct children of focused directory
+    if (layoutNode.parent && layoutNode.parent.node === this.focusedDirectory) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Check if node is an ancestor of the focused directory
+   */
+  private isAncestorOfFocused(layoutNode: LayoutNode): boolean {
+    if (!this.focusedDirectory) return false;
+
+    // Find the focused layout node
+    const focusedLayout = this.layoutNodes.find(ln => ln.node === this.focusedDirectory);
+    if (!focusedLayout) return false;
+
+    // Walk up from focused to see if we hit this node
+    let current = focusedLayout.parent;
+    while (current) {
+      if (current.node === layoutNode.node) {
+        return true;
+      }
+      current = current.parent;
+    }
+
+    return false;
+  }
+
+  /**
+   * Check if node is a sibling of the focused directory (shares same parent)
+   */
+  private isSiblingOfFocused(layoutNode: LayoutNode): boolean {
+    if (!this.focusedDirectory) return false;
+
+    // Find the focused layout node
+    const focusedLayout = this.layoutNodes.find(ln => ln.node === this.focusedDirectory);
+    if (!focusedLayout) return false;
+
+    // Same parent = siblings
+    return layoutNode.parent === focusedLayout.parent && layoutNode.node !== this.focusedDirectory;
+  }
+
+  /**
+   * Check if node is a sibling of any ancestor of the focused directory
+   * This ensures all nodes at ancestor levels remain visible
+   */
+  private isSiblingOfAncestor(layoutNode: LayoutNode): boolean {
+    if (!this.focusedDirectory) return false;
+
+    // Find the focused layout node
+    const focusedLayout = this.layoutNodes.find(ln => ln.node === this.focusedDirectory);
+    if (!focusedLayout) return false;
+
+    // Walk up ancestors and check if layoutNode is a sibling of any
+    let current = focusedLayout.parent;
+    while (current) {
+      // Check if layoutNode shares the same parent as this ancestor
+      if (layoutNode.parent === current.parent && layoutNode.node !== current.node) {
+        return true;
+      }
+      current = current.parent;
+    }
+
     return false;
   }
 
@@ -235,7 +354,11 @@ export class TreeVisualizer {
    * Create visual representation of the tree
    */
   private createVisuals(layoutNodes: LayoutNode[], maxLoc: number) {
-    // Clear existing objects
+    // Clear existing objects and CSS2D labels
+    // CSS2DRenderer maintains DOM elements that need explicit cleanup
+    while (this.labelRenderer.domElement.firstChild) {
+      this.labelRenderer.domElement.removeChild(this.labelRenderer.domElement.firstChild);
+    }
     this.scene.clear();
     this.fileObjects.clear();
     this.dirObjects.clear();
@@ -551,7 +674,7 @@ export class TreeVisualizer {
 
   /**
    * Handle click for selection
-   * Directories: toggle collapse/expand
+   * Directories: toggle focus (drill down/up)
    * Files: show details
    */
   private onClick(event: MouseEvent) {
@@ -570,14 +693,22 @@ export class TreeVisualizer {
       const dir = this.dirObjects.get(mesh);
 
       if (dir) {
-        // Toggle collapse state for directory
-        if (this.collapsedDirs.has(dir)) {
-          this.collapsedDirs.delete(dir);
+        // Toggle focus: drill down into directory or back up to parent
+        if (this.focusedDirectory === dir) {
+          // Already focused - go back to parent or root view
+          const layoutNode = this.layoutNodes.find(ln => ln.node === dir);
+          if (layoutNode && layoutNode.parent && layoutNode.parent.node.type === 'directory') {
+            this.focusedDirectory = layoutNode.parent.node;
+          } else {
+            // No parent directory, go to overview
+            this.focusedDirectory = null;
+          }
         } else {
-          this.collapsedDirs.add(dir);
+          // Focus on this directory
+          this.focusedDirectory = dir;
         }
 
-        // Rebuild visualization with new collapsed state
+        // Rebuild visualization with new focus
         this.rebuildVisualization();
 
         // Still call the callback
@@ -605,11 +736,31 @@ export class TreeVisualizer {
   }
 
   /**
-   * Rebuild visualization (used after collapse/expand)
+   * Rebuild visualization (used after collapse/expand or focus change)
    */
   private rebuildVisualization() {
     const maxLoc = this.findMaxLoc(this.layoutNodes[0].node);
     this.createVisuals(this.layoutNodes, maxLoc);
+  }
+
+  /**
+   * Move camera to focus on current view
+   */
+  private focusCamera() {
+    if (this.focusedDirectory === null) {
+      // Overview: show full tree
+      const boundingBox = this.calculateBoundingBox(this.layoutNodes.filter(ln => !this.isNodeHidden(ln)));
+      this.autoFrameCamera(boundingBox);
+    } else {
+      // Focused: zoom to focused directory
+      const focusedLayout = this.layoutNodes.find(ln => ln.node === this.focusedDirectory);
+      if (focusedLayout) {
+        // Get visible children
+        const visibleNodes = this.layoutNodes.filter(ln => !this.isNodeHidden(ln));
+        const boundingBox = this.calculateBoundingBox(visibleNodes);
+        this.autoFrameCamera(boundingBox);
+      }
+    }
   }
 
   /**
