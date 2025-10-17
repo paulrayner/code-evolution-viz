@@ -36,9 +36,14 @@ class RepositoryAnalyzer {
   }
 
   /**
-   * Get git metadata for a file (date, author, and commit hash from most recent commit)
+   * Get git metadata for a file (date, author, commit hash, and message from most recent commit)
    */
-  private async getGitMetadata(filePath: string): Promise<{ lastModified: string | null; lastAuthor: string | null; lastCommitHash: string | null }> {
+  private async getGitMetadata(filePath: string): Promise<{
+    lastModified: string | null;
+    lastAuthor: string | null;
+    lastCommitHash: string | null;
+    lastCommitMessage: string | null;
+  }> {
     try {
       // Get the most recent commit that modified this file
       const log = await this.git.log({ file: filePath, maxCount: 1 });
@@ -46,13 +51,14 @@ class RepositoryAnalyzer {
         return {
           lastModified: log.latest.date,
           lastAuthor: log.latest.author_name,
-          lastCommitHash: log.latest.hash
+          lastCommitHash: log.latest.hash,
+          lastCommitMessage: log.latest.message
         };
       }
     } catch (error) {
       console.log(`Could not get git history for ${filePath}`);
     }
-    return { lastModified: null, lastAuthor: null, lastCommitHash: null };
+    return { lastModified: null, lastAuthor: null, lastCommitHash: null, lastCommitMessage: null };
   }
 
   /**
@@ -164,6 +170,8 @@ class RepositoryAnalyzer {
     // Calculate LOC and get git metadata for each file
     console.log('Collecting git metadata...');
     const filesWithMetadata = [];
+    const commitMessages: Record<string, string> = {};
+
     for (let i = 0; i < fileInfos.length; i++) {
       const f = fileInfos[i];
       const metadata = await this.getGitMetadata(f.path);
@@ -174,6 +182,13 @@ class RepositoryAnalyzer {
         lastAuthor: metadata.lastAuthor,
         lastCommitHash: metadata.lastCommitHash
       });
+
+      // Collect unique commit messages
+      if (metadata.lastCommitHash && metadata.lastCommitMessage) {
+        if (!commitMessages[metadata.lastCommitHash]) {
+          commitMessages[metadata.lastCommitHash] = metadata.lastCommitMessage;
+        }
+      }
 
       // Progress indicator for large repos
       if ((i + 1) % 100 === 0) {
@@ -194,6 +209,8 @@ class RepositoryAnalyzer {
       filesByExtension[ext] = (filesByExtension[ext] || 0) + 1;
     }
 
+    console.log(`Collected ${Object.keys(commitMessages).length} unique commit messages`);
+
     const snapshot: RepositorySnapshot = {
       repositoryPath: this.repoPath,
       commit: headCommit.hash,
@@ -201,6 +218,7 @@ class RepositoryAnalyzer {
       author: headCommit.author_name,
       message: headCommit.message,
       tree,
+      commitMessages,
       stats: {
         totalFiles: filesWithMetadata.length,
         totalLoc,
