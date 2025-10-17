@@ -36,29 +36,50 @@ class RepositoryAnalyzer {
   }
 
   /**
-   * Get git metadata for a file (date, author, commit hash, and message from most recent commit)
+   * Get git metadata for a file (all metrics for visualization)
    */
   private async getGitMetadata(filePath: string): Promise<{
     lastModified: string | null;
     lastAuthor: string | null;
     lastCommitHash: string | null;
     lastCommitMessage: string | null;
+    commitCount: number | null;
+    contributorCount: number | null;
+    firstCommitDate: string | null;
   }> {
     try {
-      // Get the most recent commit that modified this file
-      const log = await this.git.log({ file: filePath, maxCount: 1 });
-      if (log.latest) {
+      // Get full git log for this file (--follow to track renames)
+      const log = await this.git.log({ file: filePath, '--follow': null });
+
+      if (log.all.length > 0 && log.latest) {
+        const latest = log.latest;
+        const oldest = log.all[log.all.length - 1];
+
+        // Get unique contributors
+        const uniqueAuthors = new Set(log.all.map(commit => commit.author_name));
+
         return {
-          lastModified: log.latest.date,
-          lastAuthor: log.latest.author_name,
-          lastCommitHash: log.latest.hash,
-          lastCommitMessage: log.latest.message
+          lastModified: latest.date,
+          lastAuthor: latest.author_name,
+          lastCommitHash: latest.hash,
+          lastCommitMessage: latest.message,
+          commitCount: log.total,
+          contributorCount: uniqueAuthors.size,
+          firstCommitDate: oldest.date
         };
       }
     } catch (error) {
       console.log(`Could not get git history for ${filePath}`);
     }
-    return { lastModified: null, lastAuthor: null, lastCommitHash: null, lastCommitMessage: null };
+    return {
+      lastModified: null,
+      lastAuthor: null,
+      lastCommitHash: null,
+      lastCommitMessage: null,
+      commitCount: null,
+      contributorCount: null,
+      firstCommitDate: null
+    };
   }
 
   /**
@@ -94,7 +115,16 @@ class RepositoryAnalyzer {
   /**
    * Build hierarchical tree structure from flat file list
    */
-  private buildTree(files: Array<{ path: string; loc: number; lastModified: string | null; lastAuthor: string | null; lastCommitHash: string | null }>): DirectoryNode {
+  private buildTree(files: Array<{
+    path: string;
+    loc: number;
+    lastModified: string | null;
+    lastAuthor: string | null;
+    lastCommitHash: string | null;
+    commitCount: number | null;
+    contributorCount: number | null;
+    firstCommitDate: string | null;
+  }>): DirectoryNode {
     const root: DirectoryNode = {
       path: '',
       name: 'root',
@@ -138,7 +168,10 @@ class RepositoryAnalyzer {
         extension: this.getExtension(fileName),
         lastModified: file.lastModified,
         lastAuthor: file.lastAuthor,
-        lastCommitHash: file.lastCommitHash
+        lastCommitHash: file.lastCommitHash,
+        commitCount: file.commitCount,
+        contributorCount: file.contributorCount,
+        firstCommitDate: file.firstCommitDate
       };
       currentNode.children.push(fileNode);
     }
@@ -180,7 +213,10 @@ class RepositoryAnalyzer {
         loc: this.countLinesOfCode(f.content),
         lastModified: metadata.lastModified,
         lastAuthor: metadata.lastAuthor,
-        lastCommitHash: metadata.lastCommitHash
+        lastCommitHash: metadata.lastCommitHash,
+        commitCount: metadata.commitCount,
+        contributorCount: metadata.contributorCount,
+        firstCommitDate: metadata.firstCommitDate
       });
 
       // Collect unique commit messages
