@@ -146,7 +146,9 @@ export class TreeVisualizer {
   setColorMode(mode: ColorMode) {
     console.log(`Setting color mode to: ${mode}`);
     this.colorMode = mode;
-    this.rebuildVisualization();
+    if (this.layoutNodes.length > 0) {
+      this.rebuildVisualization();
+    }
   }
 
   /**
@@ -189,6 +191,36 @@ export class TreeVisualizer {
     }
 
     return stats;
+  }
+
+  /**
+   * Find the most recently modified file in a directory tree
+   */
+  private findMostRecentFile(dir: DirectoryNode): FileNode | null {
+    let mostRecent: FileNode | null = null;
+    let mostRecentDate: Date | null = null;
+
+    const processNode = (node: TreeNode) => {
+      if (node.type === 'file') {
+        if (node.lastModified) {
+          const date = new Date(node.lastModified);
+          if (!mostRecentDate || date > mostRecentDate) {
+            mostRecentDate = date;
+            mostRecent = node;
+          }
+        }
+      } else {
+        for (const child of node.children) {
+          processNode(child);
+        }
+      }
+    };
+
+    for (const child of dir.children) {
+      processNode(child);
+    }
+
+    return mostRecent;
   }
 
   /**
@@ -477,8 +509,21 @@ export class TreeVisualizer {
         const ratio = Math.sqrt(stats.totalLoc / maxDirLoc);
         const normalizedSize = 0.5 + (ratio * 2.5); // Range: 0.5 to 3.0
 
-        // Color based on dominant file type
-        const color = stats.dominantColor;
+        // Color based on current mode
+        let color: number;
+        if (this.colorMode === 'lastModified') {
+          // Find most recently modified file in directory
+          const mostRecentFile = this.findMostRecentFile(dirNode);
+          if (mostRecentFile && mostRecentFile.lastModified) {
+            const colorInfo = getColorForFile(mostRecentFile, this.colorMode);
+            color = parseInt(colorInfo.hex.replace('#', ''), 16);
+          } else {
+            color = 0x666666; // Gray for unknown
+          }
+        } else {
+          // File type mode - use dominant file type color
+          color = stats.dominantColor;
+        }
 
         const geometry = new THREE.BoxGeometry(normalizedSize, normalizedSize, normalizedSize);
         const material = new THREE.MeshPhongMaterial({

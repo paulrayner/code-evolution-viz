@@ -61,6 +61,15 @@ function showFileDetails(file: FileNode) {
 
   nameEl.textContent = file.name;
 
+  // Format last modified date
+  const lastModifiedStr = file.lastModified
+    ? new Date(file.lastModified).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      })
+    : 'Unknown';
+
   contentEl.innerHTML = `
     <div class="info-row">
       <span class="label">Type</span>
@@ -77,6 +86,10 @@ function showFileDetails(file: FileNode) {
     <div class="info-row">
       <span class="label">Extension</span>
       <span class="value">.${file.extension}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Last Modified</span>
+      <span class="value">${lastModifiedStr}</span>
     </div>
   `;
 
@@ -136,6 +149,31 @@ function showDirectoryDetails(dir: DirectoryNode) {
 
   const dominantName = FILE_COLORS[dominantExt]?.name || dominantExt;
 
+  // Find most recently modified file in directory
+  let mostRecentDate: string | null = null;
+  const findMostRecent = (node: TreeNode) => {
+    if (node.type === 'file' && node.lastModified) {
+      if (!mostRecentDate || new Date(node.lastModified) > new Date(mostRecentDate)) {
+        mostRecentDate = node.lastModified;
+      }
+    } else if (node.type === 'directory') {
+      for (const child of node.children) {
+        findMostRecent(child);
+      }
+    }
+  };
+  for (const child of dir.children) {
+    findMostRecent(child);
+  }
+
+  const lastModifiedStr = mostRecentDate
+    ? new Date(mostRecentDate).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      })
+    : 'Unknown';
+
   contentEl.innerHTML = `
     <div class="info-row">
       <span class="label">Type</span>
@@ -161,6 +199,10 @@ function showDirectoryDetails(dir: DirectoryNode) {
       <span class="label">Dominant Type</span>
       <span class="value">${dominantName}</span>
     </div>
+    <div class="info-row">
+      <span class="label">Last Modified</span>
+      <span class="value">${lastModifiedStr}</span>
+    </div>
   `;
 
   panel.classList.add('visible');
@@ -179,9 +221,32 @@ function showTooltip(node: TreeNode | null, event?: MouseEvent) {
   }
 
   if (node.type === 'file') {
-    tooltip.textContent = `📄 ${node.name} (${node.loc} LOC)`;
+    const lastModified = node.lastModified
+      ? new Date(node.lastModified).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+      : 'Unknown';
+    tooltip.textContent = `📄 ${node.name} | ${node.loc} LOC | ${lastModified}`;
   } else {
-    tooltip.textContent = `📁 ${node.name} (${node.children.length} items)`;
+    // Find most recent file in directory
+    let mostRecentDate: string | null = null;
+    const findMostRecent = (n: TreeNode) => {
+      if (n.type === 'file' && n.lastModified) {
+        if (!mostRecentDate || new Date(n.lastModified) > new Date(mostRecentDate)) {
+          mostRecentDate = n.lastModified;
+        }
+      } else if (n.type === 'directory') {
+        for (const child of n.children) {
+          findMostRecent(child);
+        }
+      }
+    };
+    for (const child of node.children) {
+      findMostRecent(child);
+    }
+
+    const lastModified = mostRecentDate
+      ? new Date(mostRecentDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+      : 'Unknown';
+    tooltip.textContent = `📁 ${node.name} | ${node.children.length} items | ${lastModified}`;
   }
 
   tooltip.style.display = 'block';
