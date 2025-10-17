@@ -9,6 +9,7 @@ export interface FileNode {
   loc: number;
   extension: string;
   lastModified: string | null;
+  lastAuthor: string | null;
 }
 
 export interface DirectoryNode {
