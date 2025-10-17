@@ -34,6 +34,7 @@ export class TreeVisualizer {
   private hoveredObjects: Set<THREE.Object3D> = new Set();
   private collapsedDirs: Set<DirectoryNode> = new Set();
   private focusedDirectory: DirectoryNode | null = null;
+  private labelMode: 'always' | 'hover' = 'always';
   private onFileClick?: (file: FileNode) => void;
   private onDirClick?: (dir: DirectoryNode) => void;
   private onHover?: (node: TreeNode | null, event?: MouseEvent) => void;
@@ -111,6 +112,30 @@ export class TreeVisualizer {
    */
   setOnHover(callback: (node: TreeNode | null, event?: MouseEvent) => void) {
     this.onHover = callback;
+  }
+
+  /**
+   * Set label display mode
+   */
+  setLabelMode(mode: 'always' | 'hover') {
+    console.log(`Setting label mode to: ${mode}`);
+    this.labelMode = mode;
+
+    // Update all existing labels
+    const allLabels = this.labelRenderer.domElement.querySelectorAll('.dir-label');
+    console.log(`Found ${allLabels.length} labels to update`);
+
+    allLabels.forEach(labelDiv => {
+      if (labelDiv instanceof HTMLDivElement) {
+        if (mode === 'always') {
+          labelDiv.style.visibility = 'visible';
+          labelDiv.style.display = 'block';
+        } else {
+          labelDiv.style.visibility = 'hidden';
+          labelDiv.style.display = 'none';
+        }
+      }
+    });
   }
 
   /**
@@ -353,7 +378,7 @@ export class TreeVisualizer {
   /**
    * Create visual representation of the tree
    */
-  private createVisuals(layoutNodes: LayoutNode[], maxLoc: number) {
+  private createVisuals(layoutNodes: LayoutNode[], maxFileLoc: number, maxDirLoc: number) {
     // Clear existing objects and CSS2D labels
     // CSS2DRenderer maintains DOM elements that need explicit cleanup
     while (this.labelRenderer.domElement.firstChild) {
@@ -387,9 +412,9 @@ export class TreeVisualizer {
               childLayout.position
             ]);
             const material = new THREE.LineBasicMaterial({
-              color: 0x444444,
+              color: 0xaaaaaa,
               transparent: true,
-              opacity: 0.3
+              opacity: 0.6
             });
             const line = new THREE.Line(geometry, material);
             edgeGroup.add(line);
@@ -407,7 +432,7 @@ export class TreeVisualizer {
         const fileNode = layoutNode.node;
 
         // Scale based on LOC (normalized)
-        const normalizedSize = Math.max(0.3, (fileNode.loc / maxLoc) * 2);
+        const normalizedSize = Math.max(0.3, (fileNode.loc / maxFileLoc) * 2);
 
         // Color based on extension
         const color = getColorForExtension(fileNode.extension).numeric;
@@ -435,8 +460,8 @@ export class TreeVisualizer {
           this.dirStats.set(dirNode, stats);
         }
 
-        // Size based on total LOC (normalized, with min/max bounds)
-        const normalizedSize = Math.max(0.8, Math.min(3, (stats.totalLoc / maxLoc) * 3));
+        // Size based on total LOC (normalized against max directory, with min/max bounds)
+        const normalizedSize = Math.max(0.8, Math.min(3, (stats.totalLoc / maxDirLoc) * 3));
 
         // Color based on dominant file type
         const color = stats.dominantColor;
@@ -470,6 +495,12 @@ export class TreeVisualizer {
         labelDiv.style.background = 'rgba(0, 0, 0, 0.6)';
         labelDiv.style.borderRadius = '3px';
         labelDiv.style.whiteSpace = 'nowrap';
+
+        // Set initial visibility based on label mode
+        if (this.labelMode === 'hover') {
+          labelDiv.style.visibility = 'hidden';
+          labelDiv.style.display = 'none';
+        }
 
         const label = new CSS2DObject(labelDiv);
         label.position.set(0, normalizedSize / 2 + 0.8, 0);
@@ -534,9 +565,16 @@ export class TreeVisualizer {
   visualize(tree: DirectoryNode) {
     console.log('Visualizing tree...');
 
+    // Reset state when loading new repository
+    this.focusedDirectory = null;
+    this.collapsedDirs.clear();
+    this.selectedObject = null;
+    this.hoveredObjects.clear();
+
     // Calculate max LOC for normalization
-    const maxLoc = this.findMaxLoc(tree);
-    console.log(`Max LOC: ${maxLoc}`);
+    const maxFileLoc = this.findMaxLoc(tree);
+    const maxDirLoc = this.findMaxDirectoryLoc(tree);
+    console.log(`Max file LOC: ${maxFileLoc}, Max directory LOC: ${maxDirLoc}`);
 
     // Layout the tree
     const rootPosition = new THREE.Vector3(0, 10, 0);
@@ -544,15 +582,20 @@ export class TreeVisualizer {
     console.log(`Laid out ${this.layoutNodes.length} nodes`);
 
     // Create visuals
-    this.createVisuals(this.layoutNodes, maxLoc);
+    this.createVisuals(this.layoutNodes, maxFileLoc, maxDirLoc);
 
-    // Auto-frame camera to show entire tree
-    const boundingBox = this.calculateBoundingBox(this.layoutNodes);
+    // Auto-frame camera to show entire tree (only visible nodes)
+    const visibleNodes = this.layoutNodes.filter(ln => !this.isNodeHidden(ln));
+    const boundingBox = this.calculateBoundingBox(visibleNodes);
     this.autoFrameCamera(boundingBox);
+
+    // Set controls target to root position (center of rotation)
+    this.controls.target.copy(rootPosition);
+    this.controls.update();
   }
 
   /**
-   * Find maximum LOC in tree (for normalization)
+   * Find maximum file LOC in tree (for file normalization)
    */
   private findMaxLoc(node: TreeNode): number {
     if (node.type === 'file') {
@@ -563,6 +606,33 @@ export class TreeVisualizer {
     for (const child of node.children) {
       max = Math.max(max, this.findMaxLoc(child));
     }
+    return max;
+  }
+
+  /**
+   * Find maximum directory LOC in tree (for directory normalization)
+   */
+  private findMaxDirectoryLoc(node: TreeNode): number {
+    if (node.type === 'file') {
+      return 0;
+    }
+
+    // Get stats for this directory
+    let stats = this.dirStats.get(node);
+    if (!stats) {
+      stats = this.calculateDirectoryStats(node);
+      this.dirStats.set(node, stats);
+    }
+
+    let max = stats.totalLoc;
+
+    // Check all child directories
+    for (const child of node.children) {
+      if (child.type === 'directory') {
+        max = Math.max(max, this.findMaxDirectoryLoc(child));
+      }
+    }
+
     return max;
   }
 
@@ -604,6 +674,15 @@ export class TreeVisualizer {
         } else if (dirNode) {
           mat.emissiveIntensity = 0.3;
         }
+
+        // Hide label if in hover mode
+        if (this.labelMode === 'hover' && dirNode) {
+          const label = mesh.children.find(child => child instanceof CSS2DObject) as CSS2DObject | undefined;
+          if (label && label.element instanceof HTMLDivElement) {
+            label.element.style.visibility = 'hidden';
+            label.element.style.display = 'none';
+          }
+        }
       }
     }
     this.hoveredObjects.clear();
@@ -627,6 +706,15 @@ export class TreeVisualizer {
               const mat = (current.mesh.material as THREE.MeshPhongMaterial);
               mat.emissiveIntensity = 0.6;
               this.hoveredObjects.add(current.mesh);
+
+              // Show label if in hover mode
+              if (this.labelMode === 'hover') {
+                const label = current.mesh.children.find(child => child instanceof CSS2DObject) as CSS2DObject | undefined;
+                if (label && label.element instanceof HTMLDivElement) {
+                  label.element.style.visibility = 'visible';
+                  label.element.style.display = 'block';
+                }
+              }
             }
             current = current.parent;
           }
@@ -739,8 +827,9 @@ export class TreeVisualizer {
    * Rebuild visualization (used after collapse/expand or focus change)
    */
   private rebuildVisualization() {
-    const maxLoc = this.findMaxLoc(this.layoutNodes[0].node);
-    this.createVisuals(this.layoutNodes, maxLoc);
+    const maxFileLoc = this.findMaxLoc(this.layoutNodes[0].node);
+    const maxDirLoc = this.findMaxDirectoryLoc(this.layoutNodes[0].node);
+    this.createVisuals(this.layoutNodes, maxFileLoc, maxDirLoc);
   }
 
   /**
