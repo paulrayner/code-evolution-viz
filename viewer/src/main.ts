@@ -639,6 +639,8 @@ async function loadRepository(repoName: string) {
     if (timelineControls) {
       if (currentTimelineData) {
         timelineControls.style.display = 'flex';
+        // Set up timeline controls (only once per load)
+        setupTimelineControls();
       } else {
         timelineControls.style.display = 'none';
       }
@@ -947,6 +949,180 @@ function updateLegendForColorMode(mode: ColorMode) {
     }
   }
   // Note: For fileType mode, legend is populated by populateLegend() which shows actual files present
+}
+
+/**
+ * Timeline playback functions
+ */
+function updateTimelineUI() {
+  if (!currentTimelineData) return;
+
+  const commits = currentTimelineData.timeline.baseSampling.commits;
+  const commit = commits[timelineIndex];
+
+  // Update progress bar
+  const progress = ((timelineIndex + 1) / commits.length) * 100;
+  const progressBar = document.getElementById('timeline-progress');
+  if (progressBar) {
+    progressBar.style.width = `${progress}%`;
+  }
+
+  // Update commit info
+  const commitIndexEl = document.getElementById('timeline-commit-index');
+  const commitTotalEl = document.getElementById('timeline-commit-total');
+  const dateInfoEl = document.getElementById('timeline-date-info');
+  const messageInfoEl = document.getElementById('timeline-message-info');
+
+  if (commitIndexEl) commitIndexEl.textContent = (timelineIndex + 1).toString();
+  if (commitTotalEl) commitTotalEl.textContent = commits.length.toString();
+
+  if (dateInfoEl) {
+    const date = new Date(commit.date);
+    dateInfoEl.textContent = date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  }
+
+  if (messageInfoEl) {
+    const shortMessage = commit.message.split('\n')[0];
+    messageInfoEl.textContent = shortMessage.length > 60
+      ? shortMessage.substring(0, 57) + '...'
+      : shortMessage;
+    messageInfoEl.title = commit.message; // Full message on hover
+  }
+
+  // Update header to show current commit
+  const commitInfo = document.getElementById('commit-info');
+  if (commitInfo && currentSnapshot) {
+    const date = new Date(commit.date).toLocaleDateString();
+    commitInfo.textContent = `${commit.hash.substring(0, 7)} • ${date} • ${currentSnapshot.stats.totalFiles} files • ${currentSnapshot.stats.totalLoc.toLocaleString()} LOC`;
+  }
+
+  console.log(`Timeline: commit ${timelineIndex + 1}/${commits.length} - ${commit.hash.substring(0, 7)}`);
+}
+
+function stepForward() {
+  if (!currentTimelineData) return;
+
+  const commits = currentTimelineData.timeline.baseSampling.commits;
+  if (timelineIndex < commits.length - 1) {
+    timelineIndex++;
+    updateTimelineUI();
+  }
+}
+
+function stepBackward() {
+  if (!currentTimelineData) return;
+
+  if (timelineIndex > 0) {
+    timelineIndex--;
+    updateTimelineUI();
+  }
+}
+
+function togglePlayPause() {
+  if (!currentTimelineData) return;
+
+  const playPauseBtn = document.getElementById('play-pause-btn');
+
+  if (timelinePlaying) {
+    // Pause
+    timelinePlaying = false;
+    if (timelineIntervalId !== null) {
+      clearInterval(timelineIntervalId);
+      timelineIntervalId = null;
+    }
+    if (playPauseBtn) {
+      playPauseBtn.textContent = '▶ Play';
+    }
+  } else {
+    // Play
+    timelinePlaying = true;
+    if (playPauseBtn) {
+      playPauseBtn.textContent = '⏸ Pause';
+    }
+
+    const baseInterval = 2000; // 2 seconds per commit at 1x speed
+    const interval = baseInterval / timelineSpeed;
+
+    timelineIntervalId = window.setInterval(() => {
+      const commits = currentTimelineData!.timeline.baseSampling.commits;
+      if (timelineIndex < commits.length - 1) {
+        stepForward();
+      } else {
+        // Reached end, stop playing
+        togglePlayPause();
+      }
+    }, interval);
+  }
+}
+
+function seekTimeline(percentage: number) {
+  if (!currentTimelineData) return;
+
+  const commits = currentTimelineData.timeline.baseSampling.commits;
+  const newIndex = Math.floor((percentage / 100) * commits.length);
+  timelineIndex = Math.max(0, Math.min(newIndex, commits.length - 1));
+  updateTimelineUI();
+}
+
+function setupTimelineControls() {
+  if (!currentTimelineData) return;
+
+  // Initialize UI
+  const commitTotalEl = document.getElementById('timeline-commit-total');
+  if (commitTotalEl) {
+    commitTotalEl.textContent = currentTimelineData.timeline.baseSampling.commits.length.toString();
+  }
+
+  // Play/Pause button
+  const playPauseBtn = document.getElementById('play-pause-btn');
+  if (playPauseBtn) {
+    playPauseBtn.addEventListener('click', togglePlayPause);
+  }
+
+  // Step buttons
+  const stepBackBtn = document.getElementById('step-back-btn');
+  if (stepBackBtn) {
+    stepBackBtn.addEventListener('click', stepBackward);
+  }
+
+  const stepForwardBtn = document.getElementById('step-forward-btn');
+  if (stepForwardBtn) {
+    stepForwardBtn.addEventListener('click', stepForward);
+  }
+
+  // Speed selector
+  const speedSelector = document.getElementById('speed-selector') as HTMLSelectElement;
+  if (speedSelector) {
+    speedSelector.addEventListener('change', (e) => {
+      const target = e.target as HTMLSelectElement;
+      timelineSpeed = parseFloat(target.value);
+
+      // If currently playing, restart with new speed
+      if (timelinePlaying) {
+        togglePlayPause(); // Stop
+        togglePlayPause(); // Start with new speed
+      }
+    });
+  }
+
+  // Timeline scrubber
+  const scrubber = document.getElementById('timeline-scrubber');
+  if (scrubber) {
+    scrubber.addEventListener('click', (e) => {
+      const rect = scrubber.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const percentage = (x / rect.width) * 100;
+      seekTimeline(percentage);
+    });
+  }
+
+  // Set initial state
+  timelineIndex = 0;
+  updateTimelineUI();
 }
 
 // Start the application
