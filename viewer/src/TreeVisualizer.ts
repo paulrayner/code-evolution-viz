@@ -126,18 +126,23 @@ export class TreeVisualizer {
     console.log(`Setting label mode to: ${mode}`);
     this.labelMode = mode;
 
-    // Update all existing labels
-    const allLabels = this.labelRenderer.domElement.querySelectorAll('.dir-label');
-    console.log(`Found ${allLabels.length} labels to update`);
-
-    allLabels.forEach(labelDiv => {
-      if (labelDiv instanceof HTMLDivElement) {
+    // Update all existing labels, respecting parent mesh visibility
+    this.dirObjects.forEach((dirNode, mesh) => {
+      const label = mesh.children.find(child => child instanceof CSS2DObject) as CSS2DObject | undefined;
+      if (label && label.element instanceof HTMLDivElement) {
         if (mode === 'always') {
-          labelDiv.style.visibility = 'visible';
-          labelDiv.style.display = 'block';
+          // Only show label if parent mesh is visible
+          if (mesh.visible) {
+            label.element.style.visibility = 'visible';
+            label.element.style.display = 'block';
+          } else {
+            label.element.style.visibility = 'hidden';
+            label.element.style.display = 'none';
+          }
         } else {
-          labelDiv.style.visibility = 'hidden';
-          labelDiv.style.display = 'none';
+          // Hover mode: hide all labels initially
+          label.element.style.visibility = 'hidden';
+          label.element.style.display = 'none';
         }
       }
     });
@@ -661,8 +666,8 @@ export class TreeVisualizer {
         labelDiv.style.borderRadius = '3px';
         labelDiv.style.whiteSpace = 'nowrap';
 
-        // Set initial visibility based on label mode
-        if (this.labelMode === 'hover') {
+        // Set initial visibility based on label mode AND node visibility
+        if (this.labelMode === 'hover' || isHidden) {
           labelDiv.style.visibility = 'hidden';
           labelDiv.style.display = 'none';
         }
