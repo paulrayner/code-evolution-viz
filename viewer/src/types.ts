@@ -11,6 +11,9 @@ export interface FileNode {
   lastModified: string | null;
   lastAuthor: string | null;
   lastCommitHash: string | null;
+  commitCount: number | null;        // Total commits for this file (churn)
+  contributorCount: number | null;   // Number of unique contributors
+  firstCommitDate: string | null;    // Date of first commit (file age)
 }
 
 export interface DirectoryNode {
@@ -35,4 +38,62 @@ export interface RepositorySnapshot {
     totalLoc: number;
     filesByExtension: Record<string, number>;
   };
+}
+
+/**
+ * Timeline format with adaptive sampling (Slice 2)
+ */
+export interface TimelineData {
+  format: 'timeline-v1';
+  repositoryPath: string;
+  headSnapshot: RepositorySnapshot;  // Backward compatibility - same as static format
+  timeline: {
+    totalCommits: number;
+    dateRange: {
+      first: string;
+      last: string;
+    };
+    baseSampling: {
+      algorithm: 'adaptive-v2';
+      targetCount: number;
+      actualCount: number;
+      commits: CommitSnapshot[];
+    };
+    drillDownLayers?: DrillDownLayer[];  // Optional - for time-range detail
+  };
+}
+
+/**
+ * Single commit snapshot with delta information
+ */
+export interface CommitSnapshot {
+  hash: string;
+  date: string;
+  author: string;
+  message: string;
+  tags: string[];
+  isMergeCommit: boolean;
+  importanceScore: number;
+  changes: {
+    filesAdded: string[];
+    filesModified: string[];
+    filesDeleted: string[];
+    totalFilesChanged: number;
+    linesAdded: number;
+    linesDeleted: number;
+  };
+  tree?: DirectoryNode;  // Optional - full tree for keyframes only
+}
+
+/**
+ * Drill-down layer for detailed time range analysis
+ */
+export interface DrillDownLayer {
+  id: string;
+  label: string;
+  dateRange: {
+    start: string;
+    end: string;
+  };
+  commits: CommitSnapshot[];  // All commits in this range
 }
