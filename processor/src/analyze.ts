@@ -3,7 +3,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import simpleGit, { SimpleGit } from 'simple-git';
-import { DirectoryNode, FileNode, RepositorySnapshot, TreeNode } from './types';
+import { DirectoryNode, FileNode, RepositorySnapshot, TreeNode, TimelineData } from './types';
+import { TimelineAnalyzer } from './timeline-analyzer.js';
 
 interface FileInfo {
   path: string;
@@ -272,26 +273,75 @@ class RepositoryAnalyzer {
  */
 async function main() {
   const args = process.argv.slice(2);
-  const repoPath = args[0] || process.cwd();
-  const outputPath = args[1] || path.join(__dirname, '../output/repo-data.json');
+
+  // Parse flags
+  let timelineMode = false;
+  let targetCommitCount = 200;
+  const positionalArgs: string[] = [];
+
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === '--timeline') {
+      timelineMode = true;
+    } else if (arg === '--target-commits') {
+      targetCommitCount = parseInt(args[++i], 10);
+    } else if (!arg.startsWith('--')) {
+      positionalArgs.push(arg);
+    }
+  }
+
+  const repoPath = positionalArgs[0] || process.cwd();
+  const outputPath = positionalArgs[1] || path.join(__dirname, '../output/repo-data.json');
 
   try {
-    const analyzer = new RepositoryAnalyzer(repoPath);
-    const snapshot = await analyzer.analyze();
+    if (timelineMode) {
+      // Timeline mode: Generate adaptive timeline with HEAD snapshot
+      console.log('=== TIMELINE MODE ===');
+      console.log(`Target commits: ${targetCommitCount}\n`);
 
-    // Ensure output directory exists
-    const outputDir = path.dirname(outputPath);
-    if (!fs.existsSync(outputDir)) {
-      fs.mkdirSync(outputDir, { recursive: true });
+      // First generate HEAD snapshot
+      const analyzer = new RepositoryAnalyzer(repoPath);
+      const headSnapshot = await analyzer.analyze();
+
+      // Then generate timeline data
+      const timelineAnalyzer = new TimelineAnalyzer(repoPath);
+      const timelineData = await timelineAnalyzer.analyzeTimeline(targetCommitCount, headSnapshot);
+
+      // Ensure output directory exists
+      const outputDir = path.dirname(outputPath);
+      if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true });
+      }
+
+      // Write output
+      fs.writeFileSync(outputPath, JSON.stringify(timelineData, null, 2));
+      console.log(`Output written to: ${outputPath}`);
+      console.log(`\nTimeline Stats:`);
+      console.log(`  Total commits in repo: ${timelineData.timeline.totalCommits}`);
+      console.log(`  Commits in base sampling: ${timelineData.timeline.baseSampling.actualCount}`);
+      console.log(`  Date range: ${timelineData.timeline.dateRange.first} to ${timelineData.timeline.dateRange.last}`);
+      console.log(`\nHEAD Snapshot Stats:`);
+      console.log(`  Total files: ${timelineData.headSnapshot.stats.totalFiles}`);
+      console.log(`  Total LOC: ${timelineData.headSnapshot.stats.totalLoc}`);
+    } else {
+      // Static mode: Generate HEAD snapshot only (backward compatible)
+      const analyzer = new RepositoryAnalyzer(repoPath);
+      const snapshot = await analyzer.analyze();
+
+      // Ensure output directory exists
+      const outputDir = path.dirname(outputPath);
+      if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true });
+      }
+
+      // Write output
+      fs.writeFileSync(outputPath, JSON.stringify(snapshot, null, 2));
+      console.log(`\nOutput written to: ${outputPath}`);
+      console.log(`\nStats:`);
+      console.log(`  Total files: ${snapshot.stats.totalFiles}`);
+      console.log(`  Total LOC: ${snapshot.stats.totalLoc}`);
+      console.log(`  Files by extension:`, snapshot.stats.filesByExtension);
     }
-
-    // Write output
-    fs.writeFileSync(outputPath, JSON.stringify(snapshot, null, 2));
-    console.log(`\nOutput written to: ${outputPath}`);
-    console.log(`\nStats:`);
-    console.log(`  Total files: ${snapshot.stats.totalFiles}`);
-    console.log(`  Total LOC: ${snapshot.stats.totalLoc}`);
-    console.log(`  Files by extension:`, snapshot.stats.filesByExtension);
   } catch (error) {
     console.error('Error analyzing repository:', error);
     process.exit(1);
