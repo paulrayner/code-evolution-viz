@@ -256,6 +256,15 @@ function populateStats(snapshot: RepositorySnapshot) {
     `;
     langBreakdown.appendChild(bar);
   }
+
+  // Make stats panel collapsible
+  const statsPanel = document.getElementById('stats-panel');
+  const statsHeader = document.querySelector('#stats-panel h3');
+  if (statsHeader && statsPanel) {
+    statsHeader.addEventListener('click', () => {
+      statsPanel.classList.toggle('collapsed');
+    });
+  }
 }
 
 /**
