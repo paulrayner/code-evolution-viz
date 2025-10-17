@@ -113,6 +113,19 @@ A web-based 3D visualization tool for exploring code repository structure, inspi
 - `a4b9b67`: Major UX improvements (camera framing, adaptive layout, stats, labels)
 - `c23ce55`: Advanced interaction (hover highlighting, collapse/expand)
 - `9de1632`: Hierarchical focus mode with solar system visualization
+- `d851d18`: Fix directory sizing and add label toggle
+- `bdd5bf3`: Improve directory sizing with square root scaling
+- `03ccf59`: MVP Slice 1 part 1: Add lastModified date to processor
+- `87603cc`: MVP Slice 1 part 2: Color mode UI and manager
+- `1241f52`: Apply color mode to all tree nodes and add lastModified to UI
+- `3172875`: MVP Slice 2: Add commit author coloring and visualization
+- `eb05d1a`: Sort author legend by file count instead of alphabetically
+- `c71b03d`: Add commit siblings highlighting feature
+- `af32d02`: Adaptive "Last Modified" color mode with extended time intervals
+- `027821a`: Fix label visibility bug for invisible nodes
+- `ee66046`: Update README with comprehensive project documentation
+- `efe81b4`: Change UI defaults: enable Highlight Commit and set labels to Hover Only
+- `0eb8751`: Add commit message display in highlight commit mode
 
 ---
 
@@ -476,9 +489,9 @@ Building git metadata visualizations incrementally, delivering one complete feat
 - [x] Update FileNode type definition with lastModified field - commit 03ccf59
 - [x] Create colorModeManager.ts with date coloring logic - commit 87603cc, enhanced af32d02
 - [x] Add UI dropdown with 2 modes: "File Type" and "Last Modified" - commit 87603cc
-- [x] Re-analyze Gource repository - Oct 17 22:39 ✅
-- [ ] Re-analyze React repository with lastCommitHash field
-- [ ] Test all features on both repositories
+- [x] Re-analyze Gource repository with all metadata - Oct 18 00:57 ✅
+- [x] Re-analyze React repository with all metadata - Oct 18 01:05 ✅
+- [x] Test all features on both repositories ✅
 
 **Value:** See which files were recently touched with adaptive time buckets
 **Bonus:** Adaptive intervals for active vs stale repos (commit af32d02)
@@ -487,12 +500,17 @@ Building git metadata visualizations incrementally, delivering one complete feat
 - [x] Add `lastAuthor` to processor - commit 3172875
 - [x] Add author coloring to color mode manager - commit 3172875
 - [x] Add "By Author" mode to UI dropdown - commit 3172875
-- [x] Re-analyze Gource repository - Oct 17 22:39 ✅
-- [ ] Re-analyze React repository with lastCommitHash field
-- [ ] Test author coloring on both repos
+- [x] Re-analyze Gource repository - Oct 18 00:57 ✅
+- [x] Re-analyze React repository - Oct 18 01:05 ✅
+- [x] Test author coloring on both repos ✅
 
 **Value:** See who last touched each file with consistent hash-based colors
-**Bonus:** Commit siblings highlighting feature (commit c71b03d) - shows files changed together in same commit
+
+**Bonus Features Implemented:**
+- Commit siblings highlighting (commit c71b03d) - shows files changed together in same commit
+- Commit message display (commit 0eb8751) - shows commit message in info panel with repository-level index
+- UI defaults optimized (commit efe81b4) - Highlight Commit on by default, Labels set to Hover Only
+- Label visibility bug fix (commit 027821a) - labels hidden for invisible nodes in Always On mode
 
 #### MVP Slice 3: Commit Frequency (Churn) Coloring (NOT STARTED)
 - [ ] Add `commitCount` to processor
@@ -551,14 +569,20 @@ Building git metadata visualizations incrementally, delivering one complete feat
 - 6,784 files total
 - 918,533 lines of code
 - Mixed file types: JS (3,762), MD (1,850), TS (408), TSX (121), CSS (108)
+- 1,173 unique commit messages at HEAD
 - Repository switching tested and working
 
 **Performance:**
-- Gource: Loads and renders in <500ms
-- React: Loads in ~2s (56x larger)
+- Gource: Loads and renders in <500ms, 53 KB JSON (65 unique commits)
+- React: Loads in ~2s (56x larger), 4.4 MB JSON (1,173 unique commits)
 - Smooth 60fps interaction on both
 - Hot-reload works reliably
 - Repository switching without page reload functional
+
+**Git Metadata Collection:**
+- Gource: 65 unique commits covering 120 files
+- React: 1,173 unique commits covering 6,784 files
+- Commit messages stored in repository-level index (0.2% file size increase vs 9% for per-file storage)
 
 ---
 
@@ -572,5 +596,6 @@ Building git metadata visualizations incrementally, delivering one complete feat
 ---
 
 *Last Updated: 2025-10-18*
-*Current Slice: 1 & 2 Complete (need React re-analysis and testing)*
+*Current Slice: 1 & 2 COMPLETE ✅ (all features tested and working)*
+*Bonus Features: Commit siblings highlighting, commit message display, UI defaults optimization*
 *Next Slice: 3 (Commit Frequency/Churn) or original Slice 2 (Animate History)*
