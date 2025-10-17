@@ -151,6 +151,86 @@
       color: #aaa;
     }
 
+    #timeline-controls {
+      position: absolute;
+      bottom: 70px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.7);
+      padding: 15px 20px;
+      border-radius: 8px;
+      backdrop-filter: blur(10px);
+      pointer-events: auto;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 600px;
+    }
+
+    #timeline-controls .timeline-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #timeline-controls button {
+      padding: 6px 12px;
+      background: rgba(74, 158, 255, 0.2);
+      color: white;
+      border: 1px solid #4a9eff;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background 0.2s;
+    }
+
+    #timeline-controls button:hover {
+      background: rgba(74, 158, 255, 0.4);
+    }
+
+    #timeline-controls button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    #timeline-scrubber {
+      flex: 1;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
+      position: relative;
+      cursor: pointer;
+    }
+
+    #timeline-progress {
+      height: 100%;
+      background: #4a9eff;
+      border-radius: 3px;
+      position: relative;
+      transition: width 0.1s linear;
+    }
+
+    #timeline-progress::after {
+      content: '';
+      position: absolute;
+      right: -6px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 12px;
+      height: 12px;
+      background: #4a9eff;
+      border-radius: 50%;
+      border: 2px solid white;
+    }
+
+    #timeline-info {
+      color: #aaa;
+      font-size: 11px;
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
     #legend {
       position: absolute;
       bottom: 20px;
@@ -386,6 +466,31 @@
       <div id="loading">
         <div class="spinner"></div>
         <p>Loading visualization...</p>
+      </div>
+
+      <div id="timeline-controls">
+        <div class="timeline-row">
+          <button id="play-pause-btn">▶ Play</button>
+          <button id="step-back-btn">◀ Step</button>
+          <button id="step-forward-btn">Step ▶</button>
+          <label style="font-size: 11px; color: #aaa; margin-left: 10px;">Speed:</label>
+          <select id="speed-selector" style="padding: 4px 8px; background: rgba(255,255,255,0.1); color: white; border: 1px solid #4a9eff; border-radius: 4px; cursor: pointer; font-size: 11px;">
+            <option value="0.5">0.5x</option>
+            <option value="1" selected>1x</option>
+            <option value="2">2x</option>
+            <option value="5">5x</option>
+          </select>
+        </div>
+        <div class="timeline-row">
+          <div id="timeline-scrubber">
+            <div id="timeline-progress" style="width: 0%"></div>
+          </div>
+        </div>
+        <div id="timeline-info">
+          <span id="timeline-commit-info">Commit <span id="timeline-commit-index">1</span> of <span id="timeline-commit-total">-</span></span>
+          <span id="timeline-date-info">-</span>
+          <span id="timeline-message-info">-</span>
+        </div>
       </div>
 
       <div id="controls">

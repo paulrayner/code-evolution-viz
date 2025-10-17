@@ -1,5 +1,5 @@
 import { TreeVisualizer } from './TreeVisualizer';
-import { RepositorySnapshot, FileNode, DirectoryNode, TreeNode } from './types';
+import { RepositorySnapshot, FileNode, DirectoryNode, TreeNode, TimelineData } from './types';
 import { FILE_COLORS, DIRECTORY_COLOR } from './colorScheme';
 import { ColorMode, getLegendItems, getColorModeName, getColorForFile, assignAuthorColors, calculateLastModifiedIntervals, isUsingPercentileIntervals } from './colorModeManager';
 
@@ -20,9 +20,9 @@ async function getAvailableRepos(): Promise<string[]> {
 }
 
 /**
- * Load repository data
+ * Load repository data (supports both static and timeline formats)
  */
-async function loadData(repoName: string = 'gource'): Promise<RepositorySnapshot> {
+async function loadData(repoName: string = 'gource'): Promise<RepositorySnapshot | TimelineData> {
   const response = await fetch(`/data/${repoName}.json`);
 
   if (!response.ok) {
@@ -515,9 +515,16 @@ function hideLoading() {
 
 let currentVisualizer: TreeVisualizer | null = null;
 let currentSnapshot: RepositorySnapshot | null = null;
+let currentTimelineData: TimelineData | null = null; // Timeline format if loaded
 let commitToFilesIndex: Map<string, FileNode[]> = new Map();
 let highlightCommitEnabled: boolean = true;
 let currentHighlightedCommit: string | null = null;
+
+// Timeline playback state
+let timelineIndex: number = 0;
+let timelinePlaying: boolean = false;
+let timelineIntervalId: number | null = null;
+let timelineSpeed: number = 1; // 1x speed
 
 /**
  * Build an index mapping commit hashes to files
@@ -585,9 +592,24 @@ async function loadRepository(repoName: string) {
 
   try {
     console.log(`Loading repository: ${repoName}`);
-    const snapshot = await loadData(repoName);
-    currentSnapshot = snapshot;
+    const data = await loadData(repoName);
 
+    // Detect format and extract snapshot
+    let snapshot: RepositorySnapshot;
+    if ('format' in data && data.format === 'timeline-v1') {
+      // Timeline format
+      console.log('Timeline format detected');
+      currentTimelineData = data;
+      snapshot = data.headSnapshot;
+      console.log(`Timeline data: ${data.timeline.totalCommits} total commits, ${data.timeline.baseSampling.actualCount} sampled`);
+    } else {
+      // Static snapshot format
+      console.log('Static snapshot format detected');
+      currentTimelineData = null;
+      snapshot = data as RepositorySnapshot;
+    }
+
+    currentSnapshot = snapshot;
     console.log('Data loaded:', snapshot);
 
     // Build commit hash index
@@ -611,6 +633,16 @@ async function loadRepository(repoName: string) {
 
     updateHeader(snapshot);
     populateStats(snapshot);
+
+    // Show/hide timeline controls based on format
+    const timelineControls = document.getElementById('timeline-controls');
+    if (timelineControls) {
+      if (currentTimelineData) {
+        timelineControls.style.display = 'flex';
+      } else {
+        timelineControls.style.display = 'none';
+      }
+    }
 
     // Initialize or reuse visualizer
     const canvas = document.getElementById('canvas') as HTMLCanvasElement;
