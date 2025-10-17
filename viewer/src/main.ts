@@ -69,6 +69,31 @@ function showFileDetails(file: FileNode) {
 }
 
 /**
+ * Calculate directory statistics (total LOC, file types)
+ */
+function calculateDirectoryStats(dir: DirectoryNode): { totalLoc: number; filesByExt: Record<string, number> } {
+  const stats = { totalLoc: 0, filesByExt: {} as Record<string, number> };
+
+  const processNode = (node: TreeNode) => {
+    if (node.type === 'file') {
+      stats.totalLoc += node.loc;
+      const ext = node.extension;
+      stats.filesByExt[ext] = (stats.filesByExt[ext] || 0) + 1;
+    } else {
+      for (const child of node.children) {
+        processNode(child);
+      }
+    }
+  };
+
+  for (const child of dir.children) {
+    processNode(child);
+  }
+
+  return stats;
+}
+
+/**
  * Show directory details panel
  */
 function showDirectoryDetails(dir: DirectoryNode) {
@@ -82,6 +107,19 @@ function showDirectoryDetails(dir: DirectoryNode) {
 
   const fileCount = dir.children.filter(c => c.type === 'file').length;
   const dirCount = dir.children.filter(c => c.type === 'directory').length;
+  const stats = calculateDirectoryStats(dir);
+
+  // Find dominant file type
+  let dominantExt = 'none';
+  let maxCount = 0;
+  for (const [ext, count] of Object.entries(stats.filesByExt)) {
+    if (count > maxCount) {
+      maxCount = count;
+      dominantExt = ext;
+    }
+  }
+
+  const dominantName = FILE_COLORS[dominantExt]?.name || dominantExt;
 
   contentEl.innerHTML = `
     <div class="info-row">
@@ -93,6 +131,10 @@ function showDirectoryDetails(dir: DirectoryNode) {
       <span class="value">${dir.path || '(root)'}</span>
     </div>
     <div class="info-row">
+      <span class="label">Total LOC</span>
+      <span class="value">${stats.totalLoc.toLocaleString()}</span>
+    </div>
+    <div class="info-row">
       <span class="label">Files</span>
       <span class="value">${fileCount}</span>
     </div>
@@ -101,8 +143,8 @@ function showDirectoryDetails(dir: DirectoryNode) {
       <span class="value">${dirCount}</span>
     </div>
     <div class="info-row">
-      <span class="label">Total Children</span>
-      <span class="value">${dir.children.length}</span>
+      <span class="label">Dominant Type</span>
+      <span class="value">${dominantName}</span>
     </div>
   `;
 
@@ -130,6 +172,90 @@ function showTooltip(node: TreeNode | null, event?: MouseEvent) {
   tooltip.style.display = 'block';
   tooltip.style.left = `${event.clientX + 15}px`;
   tooltip.style.top = `${event.clientY + 15}px`;
+}
+
+/**
+ * Calculate max tree depth
+ */
+function calculateMaxDepth(node: TreeNode, depth: number = 0): number {
+  if (node.type === 'file') return depth;
+
+  let maxDepth = depth;
+  for (const child of node.children) {
+    maxDepth = Math.max(maxDepth, calculateMaxDepth(child, depth + 1));
+  }
+  return maxDepth;
+}
+
+/**
+ * Count directories in tree
+ */
+function countDirectories(node: TreeNode): number {
+  if (node.type === 'file') return 0;
+
+  let count = 1; // This directory
+  for (const child of node.children) {
+    count += countDirectories(child);
+  }
+  return count;
+}
+
+/**
+ * Populate statistics panel
+ */
+function populateStats(snapshot: RepositorySnapshot) {
+  document.getElementById('stat-files')!.textContent = snapshot.stats.totalFiles.toLocaleString();
+  document.getElementById('stat-loc')!.textContent = snapshot.stats.totalLoc.toLocaleString();
+  document.getElementById('stat-dirs')!.textContent = (countDirectories(snapshot.tree) - 1).toString(); // -1 for root
+  document.getElementById('stat-depth')!.textContent = calculateMaxDepth(snapshot.tree).toString();
+
+  // Calculate LOC by language for top languages
+  const locByExt: Record<string, { loc: number; name: string; color: string }> = {};
+
+  const processNode = (node: TreeNode) => {
+    if (node.type === 'file') {
+      const ext = node.extension;
+      const colorInfo = FILE_COLORS[ext];
+      if (!locByExt[ext]) {
+        locByExt[ext] = {
+          loc: 0,
+          name: colorInfo?.name || ext,
+          color: colorInfo?.hex || '#888'
+        };
+      }
+      locByExt[ext].loc += node.loc;
+    } else {
+      for (const child of node.children) {
+        processNode(child);
+      }
+    }
+  };
+
+  processNode(snapshot.tree);
+
+  // Sort by LOC and take top 5
+  const topLanguages = Object.values(locByExt)
+    .sort((a, b) => b.loc - a.loc)
+    .slice(0, 5);
+
+  const totalLoc = snapshot.stats.totalLoc;
+  const langBreakdown = document.getElementById('lang-breakdown')!;
+  langBreakdown.innerHTML = '<div style="margin-top: 10px; font-size: 10px; color: #888;">Top Languages:</div>';
+
+  for (const lang of topLanguages) {
+    const percentage = (lang.loc / totalLoc) * 100;
+    const bar = document.createElement('div');
+    bar.className = 'stat-bar';
+    bar.innerHTML = `
+      <div class="stat-bar-label">${lang.name}</div>
+      <div class="stat-bar-fill">
+        <div class="stat-bar-fill-inner" style="width: ${percentage}%; background: ${lang.color};">
+          <span class="stat-bar-text">${percentage.toFixed(1)}%</span>
+        </div>
+      </div>
+    `;
+    langBreakdown.appendChild(bar);
+  }
 }
 
 /**
@@ -213,6 +339,7 @@ async function main() {
 
     console.log('Data loaded:', snapshot);
     updateHeader(snapshot);
+    populateStats(snapshot);
     populateLegend(snapshot);
 
     // Initialize visualizer
