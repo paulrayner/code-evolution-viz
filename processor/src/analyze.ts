@@ -36,22 +36,23 @@ class RepositoryAnalyzer {
   }
 
   /**
-   * Get git metadata for a file (date and author from most recent commit)
+   * Get git metadata for a file (date, author, and commit hash from most recent commit)
    */
-  private async getGitMetadata(filePath: string): Promise<{ lastModified: string | null; lastAuthor: string | null }> {
+  private async getGitMetadata(filePath: string): Promise<{ lastModified: string | null; lastAuthor: string | null; lastCommitHash: string | null }> {
     try {
       // Get the most recent commit that modified this file
       const log = await this.git.log({ file: filePath, maxCount: 1 });
       if (log.latest) {
         return {
           lastModified: log.latest.date,
-          lastAuthor: log.latest.author_name
+          lastAuthor: log.latest.author_name,
+          lastCommitHash: log.latest.hash
         };
       }
     } catch (error) {
       console.log(`Could not get git history for ${filePath}`);
     }
-    return { lastModified: null, lastAuthor: null };
+    return { lastModified: null, lastAuthor: null, lastCommitHash: null };
   }
 
   /**
@@ -87,7 +88,7 @@ class RepositoryAnalyzer {
   /**
    * Build hierarchical tree structure from flat file list
    */
-  private buildTree(files: Array<{ path: string; loc: number; lastModified: string | null; lastAuthor: string | null }>): DirectoryNode {
+  private buildTree(files: Array<{ path: string; loc: number; lastModified: string | null; lastAuthor: string | null; lastCommitHash: string | null }>): DirectoryNode {
     const root: DirectoryNode = {
       path: '',
       name: 'root',
@@ -130,7 +131,8 @@ class RepositoryAnalyzer {
         loc: file.loc,
         extension: this.getExtension(fileName),
         lastModified: file.lastModified,
-        lastAuthor: file.lastAuthor
+        lastAuthor: file.lastAuthor,
+        lastCommitHash: file.lastCommitHash
       };
       currentNode.children.push(fileNode);
     }
@@ -169,7 +171,8 @@ class RepositoryAnalyzer {
         path: f.path,
         loc: this.countLinesOfCode(f.content),
         lastModified: metadata.lastModified,
-        lastAuthor: metadata.lastAuthor
+        lastAuthor: metadata.lastAuthor,
+        lastCommitHash: metadata.lastCommitHash
       });
 
       // Progress indicator for large repos

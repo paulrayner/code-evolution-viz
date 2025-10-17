@@ -345,6 +345,8 @@
           </select>
           <label style="font-size: 11px; color: #aaa; margin-right: 5px;">Labels:</label>
           <button id="label-toggle" style="padding: 4px 10px; background: rgba(255,255,255,0.1); color: white; border: 1px solid #4a9eff; border-radius: 4px; cursor: pointer; font-size: 11px;">Always On</button>
+          <label style="font-size: 11px; color: #aaa; margin-left: 15px; margin-right: 5px;">Highlight Commit:</label>
+          <button id="highlight-commit-toggle" style="padding: 4px 10px; background: rgba(255,255,255,0.1); color: white; border: 1px solid #4a9eff; border-radius: 4px; cursor: pointer; font-size: 11px;">Off</button>
         </div>
         <p id="repo-name">Loading...</p>
         <p id="commit-info"></p>
@@ -388,7 +390,7 @@
       </div>
 
       <div id="legend">
-        <h3>Legend</h3>
+        <h3 id="legend-title">Legend</h3>
         <div id="legend-content">
           <!-- Populated dynamically by main.ts -->
         </div>
