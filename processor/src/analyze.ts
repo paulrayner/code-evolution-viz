@@ -36,6 +36,22 @@ class RepositoryAnalyzer {
   }
 
   /**
+   * Get last modified date for a file
+   */
+  private async getLastModifiedDate(filePath: string): Promise<string | null> {
+    try {
+      // Get the most recent commit that modified this file
+      const log = await this.git.log({ file: filePath, maxCount: 1 });
+      if (log.latest) {
+        return log.latest.date;
+      }
+    } catch (error) {
+      console.log(`Could not get git history for ${filePath}`);
+    }
+    return null;
+  }
+
+  /**
    * Read all files at HEAD
    */
   private async getFilesAtHead(): Promise<FileInfo[]> {
@@ -68,7 +84,7 @@ class RepositoryAnalyzer {
   /**
    * Build hierarchical tree structure from flat file list
    */
-  private buildTree(files: Array<{ path: string; loc: number }>): DirectoryNode {
+  private buildTree(files: Array<{ path: string; loc: number; lastModified: string | null }>): DirectoryNode {
     const root: DirectoryNode = {
       path: '',
       name: 'root',
@@ -109,7 +125,8 @@ class RepositoryAnalyzer {
         name: fileName,
         type: 'file',
         loc: file.loc,
-        extension: this.getExtension(fileName)
+        extension: this.getExtension(fileName),
+        lastModified: file.lastModified
       };
       currentNode.children.push(fileNode);
     }
@@ -138,20 +155,33 @@ class RepositoryAnalyzer {
     const fileInfos = await this.getFilesAtHead();
     console.log(`Found ${fileInfos.length} files`);
 
-    const filesWithLoc = fileInfos.map(f => ({
-      path: f.path,
-      loc: this.countLinesOfCode(f.content)
-    }));
+    // Calculate LOC and get git metadata for each file
+    console.log('Collecting git metadata...');
+    const filesWithMetadata = [];
+    for (let i = 0; i < fileInfos.length; i++) {
+      const f = fileInfos[i];
+      const lastModified = await this.getLastModifiedDate(f.path);
+      filesWithMetadata.push({
+        path: f.path,
+        loc: this.countLinesOfCode(f.content),
+        lastModified
+      });
+
+      // Progress indicator for large repos
+      if ((i + 1) % 100 === 0) {
+        console.log(`  Processed ${i + 1}/${fileInfos.length} files...`);
+      }
+    }
 
     // Build tree structure
     console.log('Building tree structure...');
-    const tree = this.buildTree(filesWithLoc);
+    const tree = this.buildTree(filesWithMetadata);
 
     // Calculate stats
-    const totalLoc = filesWithLoc.reduce((sum, f) => sum + f.loc, 0);
+    const totalLoc = filesWithMetadata.reduce((sum, f) => sum + f.loc, 0);
     const filesByExtension: Record<string, number> = {};
 
-    for (const file of filesWithLoc) {
+    for (const file of filesWithMetadata) {
       const ext = this.getExtension(file.path);
       filesByExtension[ext] = (filesByExtension[ext] || 0) + 1;
     }
@@ -164,13 +194,13 @@ class RepositoryAnalyzer {
       message: headCommit.message,
       tree,
       stats: {
-        totalFiles: filesWithLoc.length,
+        totalFiles: filesWithMetadata.length,
         totalLoc,
         filesByExtension
       }
     };
 
-    console.log(`Analysis complete: ${totalLoc} total LOC across ${filesWithLoc.length} files`);
+    console.log(`Analysis complete: ${totalLoc} total LOC across ${filesWithMetadata.length} files`);
     return snapshot;
   }
 }

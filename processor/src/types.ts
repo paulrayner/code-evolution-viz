@@ -8,6 +8,7 @@ export interface FileNode {
   type: 'file';
   loc: number;
   extension: string;
+  lastModified: string | null;
 }
 
 export interface DirectoryNode {
