@@ -29,6 +29,7 @@ export interface RepositorySnapshot {
   author: string;
   message: string;
   tree: DirectoryNode;
+  commitMessages: Record<string, string>; // Map of commit hash -> commit message
   stats: {
     totalFiles: number;
     totalLoc: number;
