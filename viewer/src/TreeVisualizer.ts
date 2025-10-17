@@ -460,8 +460,10 @@ export class TreeVisualizer {
           this.dirStats.set(dirNode, stats);
         }
 
-        // Size based on total LOC (normalized against max directory, with min/max bounds)
-        const normalizedSize = Math.max(0.8, Math.min(3, (stats.totalLoc / maxDirLoc) * 3));
+        // Size based on total LOC (sqrt scaling for better visual differentiation)
+        // Using sqrt to give small directories more visible size while keeping large ones manageable
+        const ratio = Math.sqrt(stats.totalLoc / maxDirLoc);
+        const normalizedSize = 0.5 + (ratio * 2.5); // Range: 0.5 to 3.0
 
         // Color based on dominant file type
         const color = stats.dominantColor;
