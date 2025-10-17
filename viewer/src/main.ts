@@ -1,7 +1,7 @@
 import { TreeVisualizer } from './TreeVisualizer';
 import { RepositorySnapshot, FileNode, DirectoryNode, TreeNode } from './types';
 import { FILE_COLORS, DIRECTORY_COLOR } from './colorScheme';
-import { ColorMode, getLegendItems, getColorModeName } from './colorModeManager';
+import { ColorMode, getLegendItems, getColorModeName, getColorForFile } from './colorModeManager';
 
 /**
  * Get list of available repositories
@@ -70,6 +70,8 @@ function showFileDetails(file: FileNode) {
       })
     : 'Unknown';
 
+  const authorStr = file.lastAuthor || 'Unknown';
+
   contentEl.innerHTML = `
     <div class="info-row">
       <span class="label">Type</span>
@@ -90,6 +92,10 @@ function showFileDetails(file: FileNode) {
     <div class="info-row">
       <span class="label">Last Modified</span>
       <span class="value">${lastModifiedStr}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Last Author</span>
+      <span class="value">${authorStr}</span>
     </div>
   `;
 
@@ -151,10 +157,12 @@ function showDirectoryDetails(dir: DirectoryNode) {
 
   // Find most recently modified file in directory
   let mostRecentDate: string | null = null;
+  let mostRecentAuthor: string | null = null;
   const findMostRecent = (node: TreeNode) => {
     if (node.type === 'file' && node.lastModified) {
       if (!mostRecentDate || new Date(node.lastModified) > new Date(mostRecentDate)) {
         mostRecentDate = node.lastModified;
+        mostRecentAuthor = node.lastAuthor;
       }
     } else if (node.type === 'directory') {
       for (const child of node.children) {
@@ -173,6 +181,8 @@ function showDirectoryDetails(dir: DirectoryNode) {
         day: 'numeric'
       })
     : 'Unknown';
+
+  const authorStr = mostRecentAuthor || 'Unknown';
 
   contentEl.innerHTML = `
     <div class="info-row">
@@ -203,6 +213,10 @@ function showDirectoryDetails(dir: DirectoryNode) {
       <span class="label">Last Modified</span>
       <span class="value">${lastModifiedStr}</span>
     </div>
+    <div class="info-row">
+      <span class="label">Last Author</span>
+      <span class="value">${authorStr}</span>
+    </div>
   `;
 
   panel.classList.add('visible');
@@ -224,14 +238,17 @@ function showTooltip(node: TreeNode | null, event?: MouseEvent) {
     const lastModified = node.lastModified
       ? new Date(node.lastModified).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
       : 'Unknown';
-    tooltip.textContent = `📄 ${node.name} | ${node.loc} LOC | ${lastModified}`;
+    const author = node.lastAuthor || 'Unknown';
+    tooltip.textContent = `📄 ${node.name} | ${node.loc} LOC | ${author} | ${lastModified}`;
   } else {
     // Find most recent file in directory
     let mostRecentDate: string | null = null;
+    let mostRecentAuthor: string | null = null;
     const findMostRecent = (n: TreeNode) => {
       if (n.type === 'file' && n.lastModified) {
         if (!mostRecentDate || new Date(n.lastModified) > new Date(mostRecentDate)) {
           mostRecentDate = n.lastModified;
+          mostRecentAuthor = n.lastAuthor;
         }
       } else if (n.type === 'directory') {
         for (const child of n.children) {
@@ -246,7 +263,8 @@ function showTooltip(node: TreeNode | null, event?: MouseEvent) {
     const lastModified = mostRecentDate
       ? new Date(mostRecentDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
       : 'Unknown';
-    tooltip.textContent = `📁 ${node.name} | ${node.children.length} items | ${lastModified}`;
+    const author = mostRecentAuthor || 'Unknown';
+    tooltip.textContent = `📁 ${node.name} | ${node.children.length} items | ${author} | ${lastModified}`;
   }
 
   tooltip.style.display = 'block';
@@ -422,6 +440,7 @@ function hideLoading() {
 }
 
 let currentVisualizer: TreeVisualizer | null = null;
+let currentSnapshot: RepositorySnapshot | null = null;
 
 /**
  * Load and display a repository
@@ -436,6 +455,7 @@ async function loadRepository(repoName: string) {
   try {
     console.log(`Loading repository: ${repoName}`);
     const snapshot = await loadData(repoName);
+    currentSnapshot = snapshot;
 
     console.log('Data loaded:', snapshot);
 
@@ -559,7 +579,11 @@ async function main() {
       }
 
       // Update legend for new color mode
-      updateLegendForColorMode(newMode);
+      if (newMode === 'fileType' && currentSnapshot) {
+        populateLegend(currentSnapshot);
+      } else {
+        updateLegendForColorMode(newMode);
+      }
     });
   }
 
@@ -600,13 +624,50 @@ function updateLegendForColorMode(mode: ColorMode) {
   const items = getLegendItems(mode);
 
   if (items.length > 0) {
-    // Show color mode specific legend
+    // Show color mode specific legend (e.g., lastModified time ranges)
     for (const item of items) {
       const legendItem = document.createElement('div');
       legendItem.className = 'legend-item';
       legendItem.innerHTML = `
         <div class="legend-color" style="background: ${item.hex};"></div>
         <span class="legend-label">${item.name}</span>
+      `;
+      legendContent.appendChild(legendItem);
+    }
+  } else if (mode === 'author' && currentSnapshot) {
+    // For author mode, collect unique authors from repository
+    const authors = new Set<string>();
+    const collectAuthors = (node: TreeNode) => {
+      if (node.type === 'file' && node.lastAuthor) {
+        authors.add(node.lastAuthor);
+      } else if (node.type === 'directory') {
+        for (const child of node.children) {
+          collectAuthors(child);
+        }
+      }
+    };
+    collectAuthors(currentSnapshot.tree);
+
+    // Sort authors and show up to 15
+    const sortedAuthors = Array.from(authors).sort();
+    const displayAuthors = sortedAuthors.slice(0, 15);
+
+    for (const author of displayAuthors) {
+      const colorInfo = getColorForFile({ lastAuthor: author } as FileNode, 'author');
+      const legendItem = document.createElement('div');
+      legendItem.className = 'legend-item';
+      legendItem.innerHTML = `
+        <div class="legend-color" style="background: ${colorInfo.hex};"></div>
+        <span class="legend-label">${author}</span>
+      `;
+      legendContent.appendChild(legendItem);
+    }
+
+    if (sortedAuthors.length > 15) {
+      const legendItem = document.createElement('div');
+      legendItem.className = 'legend-item';
+      legendItem.innerHTML = `
+        <span class="legend-label" style="color: #888; font-style: italic;">...and ${sortedAuthors.length - 15} more</span>
       `;
       legendContent.appendChild(legendItem);
     }
