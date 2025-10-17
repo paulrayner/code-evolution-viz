@@ -635,11 +635,11 @@ function updateLegendForColorMode(mode: ColorMode) {
       legendContent.appendChild(legendItem);
     }
   } else if (mode === 'author' && currentSnapshot) {
-    // For author mode, collect unique authors from repository
-    const authors = new Set<string>();
+    // For author mode, collect authors with file counts
+    const authorCounts = new Map<string, number>();
     const collectAuthors = (node: TreeNode) => {
       if (node.type === 'file' && node.lastAuthor) {
-        authors.add(node.lastAuthor);
+        authorCounts.set(node.lastAuthor, (authorCounts.get(node.lastAuthor) || 0) + 1);
       } else if (node.type === 'directory') {
         for (const child of node.children) {
           collectAuthors(child);
@@ -648,8 +648,10 @@ function updateLegendForColorMode(mode: ColorMode) {
     };
     collectAuthors(currentSnapshot.tree);
 
-    // Sort authors and show up to 15
-    const sortedAuthors = Array.from(authors).sort();
+    // Sort by file count (descending), then show top 15
+    const sortedAuthors = Array.from(authorCounts.entries())
+      .sort((a, b) => b[1] - a[1]) // Sort by count descending
+      .map(([author]) => author);
     const displayAuthors = sortedAuthors.slice(0, 15);
 
     for (const author of displayAuthors) {
