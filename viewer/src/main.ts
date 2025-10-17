@@ -555,6 +555,32 @@ function buildCommitIndex(tree: DirectoryNode): Map<string, FileNode[]> {
 }
 
 /**
+ * Build an index mapping file paths to FileNode objects
+ * This allows quick lookup of files by path for timeline highlighting
+ */
+function buildPathIndex(tree: DirectoryNode): Map<string, FileNode> {
+  const index = new Map<string, FileNode>();
+
+  const processNode = (node: TreeNode) => {
+    if (node.type === 'file') {
+      index.set(node.path, node);
+    } else {
+      for (const child of node.children) {
+        processNode(child);
+      }
+    }
+  };
+
+  for (const child of tree.children) {
+    processNode(child);
+  }
+
+  return index;
+}
+
+let pathToFileIndex: Map<string, FileNode> = new Map();
+
+/**
  * Collect all lastModified dates from the tree
  * Used to calculate percentile-based color intervals
  */
@@ -615,6 +641,10 @@ async function loadRepository(repoName: string) {
     // Build commit hash index
     commitToFilesIndex = buildCommitIndex(snapshot.tree);
     console.log(`Built commit index: ${commitToFilesIndex.size} unique commits`);
+
+    // Build path-to-file index for timeline highlighting
+    pathToFileIndex = buildPathIndex(snapshot.tree);
+    console.log(`Built path index: ${pathToFileIndex.size} files`);
 
     // Calculate percentile-based intervals for last modified dates
     const modificationDates = collectModificationDates(snapshot.tree);
@@ -1001,6 +1031,35 @@ function updateTimelineUI() {
   }
 
   console.log(`Timeline: commit ${timelineIndex + 1}/${commits.length} - ${commit.hash.substring(0, 7)}`);
+
+  // Highlight changed files in this commit
+  highlightTimelineCommitFiles(commit);
+}
+
+function highlightTimelineCommitFiles(commit: any) {
+  if (!currentVisualizer) return;
+
+  // Collect all files that were changed in this commit
+  const changedFiles: FileNode[] = [];
+
+  // Files that exist in HEAD and were modified/added in this commit
+  for (const path of [...commit.changes.filesAdded, ...commit.changes.filesModified]) {
+    const fileNode = pathToFileIndex.get(path);
+    if (fileNode) {
+      changedFiles.push(fileNode);
+    }
+  }
+
+  // Note: Deleted files won't be in the current tree, so we can't highlight them
+  // A more complete implementation would need to track deleted files separately
+
+  // Highlight these files
+  if (changedFiles.length > 0) {
+    currentVisualizer.highlightFiles(changedFiles);
+    console.log(`Highlighted ${changedFiles.length} changed files (${commit.changes.filesAdded.length} added, ${commit.changes.filesModified.length} modified, ${commit.changes.filesDeleted.length} deleted)`);
+  } else {
+    currentVisualizer.clearHighlight();
+  }
 }
 
 function stepForward() {
