@@ -1,7 +1,7 @@
 import { FileNode } from './types';
 import { getColorForExtension } from './colorScheme';
 
-export type ColorMode = 'fileType' | 'lastModified' | 'author';
+export type ColorMode = 'fileType' | 'lastModified' | 'author' | 'churn' | 'contributors' | 'fileAge';
 
 export interface ColorInfo {
   hex: string;
@@ -209,6 +209,80 @@ function getColorForAuthor(author: string | null): ColorInfo {
 }
 
 /**
+ * Get color for a file based on commit count (churn heatmap)
+ * Uses quantile-based buckets for good distribution
+ */
+function getColorByChurn(commitCount: number | null): ColorInfo {
+  if (commitCount === null || commitCount === 0) {
+    return { hex: '#666666', name: 'No commits' };
+  }
+
+  // Cool to hot gradient: blue → yellow → orange → red
+  if (commitCount <= 2) {
+    return { hex: '#3498db', name: 'Low churn (1-2 commits)' };
+  } else if (commitCount <= 5) {
+    return { hex: '#2ecc71', name: 'Low-medium (3-5 commits)' };
+  } else if (commitCount <= 10) {
+    return { hex: '#f1c40f', name: 'Medium (6-10 commits)' };
+  } else if (commitCount <= 20) {
+    return { hex: '#e67e22', name: 'High (11-20 commits)' };
+  } else if (commitCount <= 50) {
+    return { hex: '#e74c3c', name: 'Very high (21-50 commits)' };
+  } else {
+    return { hex: '#c0392b', name: 'Extremely high (50+ commits)' };
+  }
+}
+
+/**
+ * Get color for a file based on number of unique contributors
+ */
+function getColorByContributors(contributorCount: number | null): ColorInfo {
+  if (contributorCount === null || contributorCount === 0) {
+    return { hex: '#666666', name: 'No contributors' };
+  }
+
+  if (contributorCount === 1) {
+    return { hex: '#3498db', name: 'Solo (1 contributor)' };
+  } else if (contributorCount === 2) {
+    return { hex: '#2ecc71', name: 'Pair (2 contributors)' };
+  } else if (contributorCount <= 4) {
+    return { hex: '#f1c40f', name: 'Team (3-4 contributors)' };
+  } else if (contributorCount <= 9) {
+    return { hex: '#e67e22', name: 'Squad (5-9 contributors)' };
+  } else {
+    return { hex: '#e74c3c', name: 'Many (10+ contributors)' };
+  }
+}
+
+/**
+ * Get color for a file based on its age (first commit date)
+ */
+function getColorByFileAge(firstCommitDate: string | null): ColorInfo {
+  if (!firstCommitDate) {
+    return { hex: '#666666', name: 'Unknown age' };
+  }
+
+  const now = Date.now();
+  const fileDate = new Date(firstCommitDate).getTime();
+  const ageInDays = (now - fileDate) / (1000 * 60 * 60 * 24);
+  const ageInMonths = ageInDays / 30;
+  const ageInYears = ageInDays / 365;
+
+  // New → legacy gradient: cyan → blue → purple → brown → gray
+  if (ageInMonths < 3) {
+    return { hex: '#00d9ff', name: 'New (<3 months)' };
+  } else if (ageInYears < 1) {
+    return { hex: '#3498db', name: 'Recent (3-12 months)' };
+  } else if (ageInYears < 3) {
+    return { hex: '#9b59b6', name: 'Mature (1-3 years)' };
+  } else if (ageInYears < 5) {
+    return { hex: '#795548', name: 'Old (3-5 years)' };
+  } else {
+    return { hex: '#34495e', name: 'Legacy (5+ years)' };
+  }
+}
+
+/**
  * Get color for a file based on the selected color mode
  */
 export function getColorForFile(file: FileNode, mode: ColorMode): ColorInfo {
@@ -221,6 +295,15 @@ export function getColorForFile(file: FileNode, mode: ColorMode): ColorInfo {
 
     case 'author':
       return getColorForAuthor(file.lastAuthor);
+
+    case 'churn':
+      return getColorByChurn(file.commitCount);
+
+    case 'contributors':
+      return getColorByContributors(file.contributorCount);
+
+    case 'fileAge':
+      return getColorByFileAge(file.firstCommitDate);
 
     default:
       return getColorForExtension(file.extension);
@@ -306,6 +389,34 @@ export function getLegendItems(mode: ColorMode): ColorInfo[] {
       // For author mode, legend is populated dynamically based on authors present
       return [];
 
+    case 'churn':
+      return [
+        { hex: '#3498db', name: 'Low churn (1-2 commits)' },
+        { hex: '#2ecc71', name: 'Low-medium (3-5 commits)' },
+        { hex: '#f1c40f', name: 'Medium (6-10 commits)' },
+        { hex: '#e67e22', name: 'High (11-20 commits)' },
+        { hex: '#e74c3c', name: 'Very high (21-50 commits)' },
+        { hex: '#c0392b', name: 'Extremely high (50+ commits)' }
+      ];
+
+    case 'contributors':
+      return [
+        { hex: '#3498db', name: 'Solo (1 contributor)' },
+        { hex: '#2ecc71', name: 'Pair (2 contributors)' },
+        { hex: '#f1c40f', name: 'Team (3-4 contributors)' },
+        { hex: '#e67e22', name: 'Squad (5-9 contributors)' },
+        { hex: '#e74c3c', name: 'Many (10+ contributors)' }
+      ];
+
+    case 'fileAge':
+      return [
+        { hex: '#00d9ff', name: 'New (<3 months)' },
+        { hex: '#3498db', name: 'Recent (3-12 months)' },
+        { hex: '#9b59b6', name: 'Mature (1-3 years)' },
+        { hex: '#795548', name: 'Old (3-5 years)' },
+        { hex: '#34495e', name: 'Legacy (5+ years)' }
+      ];
+
     case 'fileType':
       // For file type mode, legend is populated dynamically based on files present
       return [];
@@ -326,6 +437,12 @@ export function getColorModeName(mode: ColorMode): string {
       return 'Last Modified';
     case 'author':
       return 'Author';
+    case 'churn':
+      return 'Churn (Commit Frequency)';
+    case 'contributors':
+      return 'Contributors';
+    case 'fileAge':
+      return 'File Age';
     default:
       return 'Unknown';
   }
