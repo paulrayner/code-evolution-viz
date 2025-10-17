@@ -333,6 +333,13 @@
     <div id="ui">
       <div id="header">
         <h1>Code Evolution Visualizer</h1>
+        <select id="repo-selector" style="margin-bottom: 10px; padding: 5px; background: rgba(255,255,255,0.1); color: white; border: 1px solid #4a9eff; border-radius: 4px; cursor: pointer;">
+          <option value="">Loading repositories...</option>
+        </select>
+        <div style="margin-bottom: 10px;">
+          <label style="font-size: 11px; color: #aaa; margin-right: 5px;">Labels:</label>
+          <button id="label-toggle" style="padding: 4px 10px; background: rgba(255,255,255,0.1); color: white; border: 1px solid #4a9eff; border-radius: 4px; cursor: pointer; font-size: 11px;">Always On</button>
+        </div>
         <p id="repo-name">Loading...</p>
         <p id="commit-info"></p>
       </div>

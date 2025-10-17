@@ -3,12 +3,26 @@ import { RepositorySnapshot, FileNode, DirectoryNode, TreeNode } from './types';
 import { FILE_COLORS, DIRECTORY_COLOR } from './colorScheme';
 
 /**
+ * Get list of available repositories
+ */
+async function getAvailableRepos(): Promise<string[]> {
+  try {
+    const response = await fetch('/data/repos.json');
+    if (response.ok) {
+      const data = await response.json();
+      return data.repos || [];
+    }
+  } catch (error) {
+    console.warn('Could not load repos list, using default');
+  }
+  return ['gource']; // Default fallback
+}
+
+/**
  * Load repository data
  */
-async function loadData(): Promise<RepositorySnapshot> {
-  // In development, we'll load from a static file
-  // Later, this could be dynamic or from a URL parameter
-  const response = await fetch('/data/repo-data.json');
+async function loadData(repoName: string = 'gource'): Promise<RepositorySnapshot> {
+  const response = await fetch(`/data/${repoName}.json`);
 
   if (!response.ok) {
     throw new Error(`Failed to load data: ${response.statusText}`);
@@ -275,6 +289,9 @@ function populateLegend(snapshot: RepositorySnapshot) {
   const legendContent = document.getElementById('legend-content');
   if (!legendContent) return;
 
+  // Clear previous legend content
+  legendContent.innerHTML = '';
+
   // Get unique extensions present in this repo
   const extensions = Object.keys(snapshot.stats.filesByExtension);
   const presentExtensions = extensions
@@ -338,37 +355,60 @@ function hideLoading() {
   }
 }
 
+let currentVisualizer: TreeVisualizer | null = null;
+
 /**
- * Main application
+ * Load and display a repository
  */
-async function main() {
+async function loadRepository(repoName: string) {
+  const loading = document.getElementById('loading');
+  if (loading) {
+    loading.classList.remove('hidden');
+    loading.innerHTML = '<div class="spinner"></div><p>Loading visualization...</p>';
+  }
+
   try {
-    console.log('Loading repository data...');
-    const snapshot = await loadData();
+    console.log(`Loading repository: ${repoName}`);
+    const snapshot = await loadData(repoName);
 
     console.log('Data loaded:', snapshot);
+
+    // Clear UI state from previous repo
+    const infoPanel = document.getElementById('info-panel');
+    if (infoPanel) {
+      infoPanel.classList.remove('visible');
+    }
+
     updateHeader(snapshot);
     populateStats(snapshot);
     populateLegend(snapshot);
 
-    // Initialize visualizer
+    // Initialize or reuse visualizer
     const canvas = document.getElementById('canvas') as HTMLCanvasElement;
     if (!canvas) {
       throw new Error('Canvas element not found');
     }
 
-    const visualizer = new TreeVisualizer(canvas);
+    if (!currentVisualizer) {
+      currentVisualizer = new TreeVisualizer(canvas);
 
-    // Set up interaction handlers
-    visualizer.setOnFileClick(showFileDetails);
-    visualizer.setOnDirClick(showDirectoryDetails);
-    visualizer.setOnHover(showTooltip);
+      // Set up interaction handlers
+      currentVisualizer.setOnFileClick(showFileDetails);
+      currentVisualizer.setOnDirClick(showDirectoryDetails);
+      currentVisualizer.setOnHover(showTooltip);
+
+      // Load saved label mode
+      const savedMode = localStorage.getItem('labelMode') as 'always' | 'hover' | null;
+      if (savedMode) {
+        currentVisualizer.setLabelMode(savedMode);
+      }
+
+      // Start animation
+      currentVisualizer.start();
+    }
 
     // Visualize the tree
-    visualizer.visualize(snapshot.tree);
-
-    // Start animation
-    visualizer.start();
+    currentVisualizer.visualize(snapshot.tree);
 
     hideLoading();
 
@@ -383,10 +423,65 @@ async function main() {
           ${error instanceof Error ? error.message : 'Unknown error'}
         </p>
         <p style="font-size: 12px; margin-top: 10px; color: #888;">
-          Make sure you've run the processor and placed repo-data.json in public/data/
+          Make sure you've run the processor and placed the data file in public/data/
         </p>
       `;
     }
+  }
+}
+
+/**
+ * Main application initialization
+ */
+async function main() {
+  // Get available repositories
+  const repos = await getAvailableRepos();
+
+  // Populate selector
+  const selector = document.getElementById('repo-selector') as HTMLSelectElement;
+  if (selector) {
+    selector.innerHTML = '';
+    repos.forEach(repo => {
+      const option = document.createElement('option');
+      option.value = repo;
+      option.textContent = repo;
+      selector.appendChild(option);
+    });
+
+    // Load first repo by default
+    if (repos.length > 0) {
+      await loadRepository(repos[0]);
+    }
+
+    // Handle repo switching
+    selector.addEventListener('change', async (e) => {
+      const target = e.target as HTMLSelectElement;
+      await loadRepository(target.value);
+    });
+  }
+
+  // Set up label toggle (after first repo loads so currentVisualizer exists)
+  const labelToggle = document.getElementById('label-toggle') as HTMLButtonElement;
+  if (labelToggle) {
+    // Load saved preference from localStorage
+    const savedMode = localStorage.getItem('labelMode') as 'always' | 'hover' | null;
+    const initialMode = savedMode || 'always';
+
+    // Set button text to match saved mode
+    labelToggle.textContent = initialMode === 'always' ? 'Always On' : 'Hover Only';
+
+    // Handle toggle clicks
+    labelToggle.addEventListener('click', () => {
+      const currentMode = labelToggle.textContent === 'Always On' ? 'always' : 'hover';
+      const newMode = currentMode === 'always' ? 'hover' : 'always';
+
+      labelToggle.textContent = newMode === 'always' ? 'Always On' : 'Hover Only';
+      localStorage.setItem('labelMode', newMode);
+
+      if (currentVisualizer) {
+        currentVisualizer.setLabelMode(newMode);
+      }
+    });
   }
 }
 
