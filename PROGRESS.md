@@ -463,19 +463,68 @@ code-evolution-viz/
 
 ## Next Steps
 
-### Immediate (Slice 1 Remaining Work)
-- [ ] Fix directory sizing bug
-- [ ] Implement git metadata collection in processor (8 new metrics)
-- [ ] Re-analyze Gource and React repositories with new metadata
-- [ ] Implement color mode switching UI (9 modes total)
-- [ ] Implement label display toggle (always on / hover only)
-- [ ] Test all color modes on both repositories
-- [ ] Performance profiling with git metadata
+### Completed
+- [x] Fix directory sizing bug (sqrt scaling)
+- [x] Implement label display toggle (always on / hover only)
 
-### Future Polish (Post-Slice 1)
+### MVP Approach: Vertical Slices
+
+Building git metadata visualizations incrementally, delivering one complete feature at a time:
+
+#### MVP Slice 1: Last Modified Date Coloring (IN PROGRESS)
+- [ ] Add `lastModified` date to processor (git log per file)
+- [ ] Update FileNode type definition with lastModified field
+- [ ] Create colorModeManager.ts with date coloring logic
+- [ ] Add UI dropdown with 2 modes: "File Type" and "Last Modified"
+- [ ] Re-analyze Gource and React repositories
+- [ ] Test date coloring works correctly
+
+**Value:** See which files were recently touched (day/week/month/3mo/older)
+
+#### MVP Slice 2: Commit Author Coloring (NOT STARTED)
+- [ ] Add `lastAuthor` to processor
+- [ ] Add author coloring to color mode manager
+- [ ] Add "By Author" mode to UI dropdown
+- [ ] Re-analyze repos
+- [ ] Test author coloring
+
+**Value:** See who last touched each file
+
+#### MVP Slice 3: Commit Frequency (Churn) Coloring (NOT STARTED)
+- [ ] Add `commitCount` to processor
+- [ ] Add churn heatmap coloring to manager
+- [ ] Add "Churn Heatmap" mode to UI
+- [ ] Re-analyze repos
+- [ ] Test churn visualization
+
+**Value:** Identify frequently modified files (refactoring targets)
+
+#### MVP Slice 4: Unique Contributors Coloring (NOT STARTED)
+- [ ] Add `contributorCount` to processor
+- [ ] Add contributor coloring to manager
+- [ ] Add "Contributors" mode to UI
+- [ ] Re-analyze repos
+
+**Value:** See coordination complexity
+
+#### MVP Slice 5: File Age Coloring (NOT STARTED)
+- [ ] Add `firstCommitDate` to processor
+- [ ] Add age coloring to manager
+- [ ] Add "File Age" mode to UI
+- [ ] Re-analyze repos
+
+**Value:** Distinguish new code from legacy
+
+#### MVP Slice 6-8: Additional Metrics (BACKLOG)
+- Recent change magnitude
+- Commit message keywords
+- Branch activity
+
+### Future Polish (Post-Git Metadata)
 - [ ] Test on different repositories (small, medium, large)
 - [ ] Keyboard shortcuts (ESC to unfocus, arrow keys for navigation)
 - [ ] Breadcrumb navigation display
+- [ ] Performance profiling with full git metadata
 
 ### Slice 2 Preparation
 - [ ] Design snapshot data structure for history
