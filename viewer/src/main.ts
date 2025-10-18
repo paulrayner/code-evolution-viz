@@ -121,16 +121,28 @@ function showFileDetails(file: FileNode) {
       <span class="value">${commitHashStr}</span>
     </div>
     <div class="info-row">
-      <span class="label">Churn</span>
+      <span class="label">Churn (Lifetime)</span>
       <span class="value">${file.commitCount !== null ? `${file.commitCount} commit${file.commitCount !== 1 ? 's' : ''}` : 'Unknown'}</span>
     </div>
     <div class="info-row">
-      <span class="label">Contributors</span>
+      <span class="label">Contributors (Lifetime)</span>
       <span class="value">${file.contributorCount !== null ? file.contributorCount : 'Unknown'}</span>
     </div>
     <div class="info-row">
       <span class="label">File Age</span>
       <span class="value">${fileAgeStr}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Recent Activity (90 days)</span>
+      <span class="value">${file.recentLinesChanged !== null ? `${file.recentLinesChanged} lines changed` : 'Unknown'}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Avg Change Size (Lifetime)</span>
+      <span class="value">${file.avgLinesPerCommit !== null ? `${file.avgLinesPerCommit} lines/commit` : 'Unknown'}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Last Touched</span>
+      <span class="value">${file.daysSinceLastModified !== null ? `${file.daysSinceLastModified} days ago` : 'Unknown'}</span>
     </div>
   `;
 

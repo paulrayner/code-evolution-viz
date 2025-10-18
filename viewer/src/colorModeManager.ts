@@ -1,7 +1,7 @@
 import { FileNode } from './types';
 import { getColorForExtension } from './colorScheme';
 
-export type ColorMode = 'fileType' | 'lastModified' | 'author' | 'churn' | 'contributors' | 'fileAge';
+export type ColorMode = 'fileType' | 'lastModified' | 'author' | 'churn' | 'contributors' | 'fileAge' | 'recentActivity' | 'stability' | 'recency';
 
 export interface ColorInfo {
   hex: string;
@@ -283,6 +283,72 @@ function getColorByFileAge(firstCommitDate: string | null): ColorInfo {
 }
 
 /**
+ * Get color for a file based on recent activity (lines changed in last 90 days)
+ */
+function getColorByRecentActivity(recentLinesChanged: number | null): ColorInfo {
+  if (recentLinesChanged === null || recentLinesChanged === 0) {
+    return { hex: '#666666', name: 'No recent activity' };
+  }
+
+  // Blue (low activity) → Red (high activity)
+  if (recentLinesChanged <= 50) {
+    return { hex: '#3498db', name: 'Low (1-50 lines)' };
+  } else if (recentLinesChanged <= 200) {
+    return { hex: '#2ecc71', name: 'Moderate (51-200 lines)' };
+  } else if (recentLinesChanged <= 500) {
+    return { hex: '#f1c40f', name: 'High (201-500 lines)' };
+  } else if (recentLinesChanged <= 1000) {
+    return { hex: '#e67e22', name: 'Very high (501-1000 lines)' };
+  } else {
+    return { hex: '#e74c3c', name: 'Extremely high (1000+ lines)' };
+  }
+}
+
+/**
+ * Get color for a file based on code stability (avg lines changed per commit)
+ */
+function getColorByStability(avgLinesPerCommit: number | null): ColorInfo {
+  if (avgLinesPerCommit === null) {
+    return { hex: '#666666', name: 'Unknown' };
+  }
+
+  // Blue (stable, small changes) → Red (volatile, large changes)
+  if (avgLinesPerCommit < 10) {
+    return { hex: '#3498db', name: 'Very stable (<10 lines/commit)' };
+  } else if (avgLinesPerCommit < 25) {
+    return { hex: '#2ecc71', name: 'Stable (10-24 lines/commit)' };
+  } else if (avgLinesPerCommit < 50) {
+    return { hex: '#f1c40f', name: 'Moderate (25-49 lines/commit)' };
+  } else if (avgLinesPerCommit < 100) {
+    return { hex: '#e67e22', name: 'Volatile (50-99 lines/commit)' };
+  } else {
+    return { hex: '#e74c3c', name: 'Very volatile (100+ lines/commit)' };
+  }
+}
+
+/**
+ * Get color for a file based on recency (days since last modified)
+ */
+function getColorByRecency(daysSinceLastModified: number | null): ColorInfo {
+  if (daysSinceLastModified === null) {
+    return { hex: '#666666', name: 'Unknown' };
+  }
+
+  // Red (hot, recent) → Gray (cold, stale)
+  if (daysSinceLastModified < 7) {
+    return { hex: '#e74c3c', name: 'Hot (<7 days)' };
+  } else if (daysSinceLastModified < 30) {
+    return { hex: '#e67e22', name: 'Warm (1-4 weeks)' };
+  } else if (daysSinceLastModified < 90) {
+    return { hex: '#f1c40f', name: 'Recent (1-3 months)' };
+  } else if (daysSinceLastModified < 180) {
+    return { hex: '#3498db', name: 'Cool (3-6 months)' };
+  } else {
+    return { hex: '#95a5a6', name: 'Cold (6+ months)' };
+  }
+}
+
+/**
  * Get color for a file based on the selected color mode
  */
 export function getColorForFile(file: FileNode, mode: ColorMode): ColorInfo {
@@ -304,6 +370,15 @@ export function getColorForFile(file: FileNode, mode: ColorMode): ColorInfo {
 
     case 'fileAge':
       return getColorByFileAge(file.firstCommitDate);
+
+    case 'recentActivity':
+      return getColorByRecentActivity(file.recentLinesChanged);
+
+    case 'stability':
+      return getColorByStability(file.avgLinesPerCommit);
+
+    case 'recency':
+      return getColorByRecency(file.daysSinceLastModified);
 
     default:
       return getColorForExtension(file.extension);
@@ -417,6 +492,33 @@ export function getLegendItems(mode: ColorMode): ColorInfo[] {
         { hex: '#34495e', name: 'Legacy (5+ years)' }
       ];
 
+    case 'recentActivity':
+      return [
+        { hex: '#e74c3c', name: 'Extremely high (1000+ lines)' },
+        { hex: '#e67e22', name: 'Very high (501-1000 lines)' },
+        { hex: '#f1c40f', name: 'High (201-500 lines)' },
+        { hex: '#2ecc71', name: 'Moderate (51-200 lines)' },
+        { hex: '#3498db', name: 'Low (1-50 lines)' }
+      ];
+
+    case 'stability':
+      return [
+        { hex: '#e74c3c', name: 'Very volatile (100+ lines/commit)' },
+        { hex: '#e67e22', name: 'Volatile (50-99 lines/commit)' },
+        { hex: '#f1c40f', name: 'Moderate (25-49 lines/commit)' },
+        { hex: '#2ecc71', name: 'Stable (10-24 lines/commit)' },
+        { hex: '#3498db', name: 'Very stable (<10 lines/commit)' }
+      ];
+
+    case 'recency':
+      return [
+        { hex: '#e74c3c', name: 'Hot (<7 days)' },
+        { hex: '#e67e22', name: 'Warm (1-4 weeks)' },
+        { hex: '#f1c40f', name: 'Recent (1-3 months)' },
+        { hex: '#3498db', name: 'Cool (3-6 months)' },
+        { hex: '#95a5a6', name: 'Cold (6+ months)' }
+      ];
+
     case 'fileType':
       // For file type mode, legend is populated dynamically based on files present
       return [];
@@ -438,11 +540,17 @@ export function getColorModeName(mode: ColorMode): string {
     case 'author':
       return 'Author';
     case 'churn':
-      return 'Churn (Commit Frequency)';
+      return 'Churn (Lifetime Commits)';
     case 'contributors':
-      return 'Contributors';
+      return 'Contributors (Lifetime)';
     case 'fileAge':
       return 'File Age';
+    case 'recentActivity':
+      return 'Recent Activity (90 days)';
+    case 'stability':
+      return 'Code Stability';
+    case 'recency':
+      return 'Recency';
     default:
       return 'Unknown';
   }
