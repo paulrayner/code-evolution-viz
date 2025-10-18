@@ -1058,7 +1058,8 @@ function highlightTimelineCommitFiles(commit: any) {
 
   // Highlight these files
   if (changedFiles.length > 0) {
-    currentVisualizer.highlightFiles(changedFiles);
+    const filePaths = changedFiles.map(f => f.path);
+    currentVisualizer.highlightFiles(filePaths);
     console.log(`Highlighted ${changedFiles.length} changed files (${commit.changes.filesAdded.length} added, ${commit.changes.filesModified.length} modified, ${commit.changes.filesDeleted.length} deleted)`);
   } else {
     currentVisualizer.clearHighlight();
