@@ -126,6 +126,8 @@ A web-based 3D visualization tool for exploring code repository structure, inspi
 - `ee66046`: Update README with comprehensive project documentation
 - `efe81b4`: Change UI defaults: enable Highlight Commit and set labels to Hover Only
 - `0eb8751`: Add commit message display in highlight commit mode
+- `d2f871b`: MVP Slices 3-5: Add churn, contributors, and file age color modes
+- `7d2974f`: Improve legend ordering and add metadata to file details panel
 
 ---
 
@@ -512,30 +514,42 @@ Building git metadata visualizations incrementally, delivering one complete feat
 - UI defaults optimized (commit efe81b4) - Highlight Commit on by default, Labels set to Hover Only
 - Label visibility bug fix (commit 027821a) - labels hidden for invisible nodes in Always On mode
 
-#### MVP Slice 3: Commit Frequency (Churn) Coloring (NOT STARTED)
-- [ ] Add `commitCount` to processor
-- [ ] Add churn heatmap coloring to manager
-- [ ] Add "Churn Heatmap" mode to UI
-- [ ] Re-analyze repos
-- [ ] Test churn visualization
+#### MVP Slice 3: Commit Frequency (Churn) Coloring ✅ COMPLETE
+- [x] Add `commitCount` to processor - commit d2f871b
+- [x] Add churn heatmap coloring to manager - commit d2f871b
+- [x] Add "Churn (Commit Frequency)" mode to UI - commit d2f871b
+- [x] Reverse legend order to show hotspots first (high-to-low) - commit 7d2974f
+- [x] Add churn to file details panel - commit 7d2974f
+- [x] Re-analyze Gource repository - Oct 18 ✅
+- [x] Re-analyze React repository - Oct 18 ✅
+- [x] Test churn visualization ✅
 
 **Value:** Identify frequently modified files (refactoring targets)
+**Color Scale:** Blue (low 1-2) → Green → Yellow → Orange → Red → Dark red (extremely high 50+)
+**Legend Order:** High-to-low (hotspots at top)
 
-#### MVP Slice 4: Unique Contributors Coloring (NOT STARTED)
-- [ ] Add `contributorCount` to processor
-- [ ] Add contributor coloring to manager
-- [ ] Add "Contributors" mode to UI
-- [ ] Re-analyze repos
+#### MVP Slice 4: Unique Contributors Coloring ✅ COMPLETE
+- [x] Add `contributorCount` to processor - commit d2f871b
+- [x] Add contributor coloring to manager - commit d2f871b
+- [x] Add "Contributors" mode to UI - commit d2f871b
+- [x] Reverse legend order to show most collaborative first - commit 7d2974f
+- [x] Add contributor count to file details panel - commit 7d2974f
+- [x] Re-analyze repos ✅
 
 **Value:** See coordination complexity
+**Color Scale:** Blue (solo 1) → Green (pair 2) → Yellow (team 3-4) → Orange (squad 5-9) → Red (many 10+)
+**Legend Order:** High-to-low (most collaborative at top)
 
-#### MVP Slice 5: File Age Coloring (NOT STARTED)
-- [ ] Add `firstCommitDate` to processor
-- [ ] Add age coloring to manager
-- [ ] Add "File Age" mode to UI
-- [ ] Re-analyze repos
+#### MVP Slice 5: File Age Coloring ✅ COMPLETE
+- [x] Add `firstCommitDate` to processor - commit d2f871b
+- [x] Add age coloring to manager - commit d2f871b
+- [x] Add "File Age" mode to UI - commit d2f871b
+- [x] Add human-readable file age to details panel - commit 7d2974f
+- [x] Re-analyze repos ✅
 
 **Value:** Distinguish new code from legacy
+**Color Scale:** Cyan (new <3mo) → Blue (recent 3-12mo) → Purple (mature 1-3yr) → Brown (old 3-5yr) → Dark gray (legacy 5+yr)
+**Legend Order:** New-to-old (chronological)
 
 #### MVP Slice 6-8: Additional Metrics (BACKLOG)
 - Recent change magnitude
@@ -596,6 +610,7 @@ Building git metadata visualizations incrementally, delivering one complete feat
 ---
 
 *Last Updated: 2025-10-18*
-*Current Slice: 1 & 2 COMPLETE ✅ (all features tested and working)*
-*Bonus Features: Commit siblings highlighting, commit message display, UI defaults optimization*
-*Next Slice: 3 (Commit Frequency/Churn) or original Slice 2 (Animate History)*
+*Current Slice: 1-5 COMPLETE ✅ (all MVP git metadata features implemented and working)*
+*All Color Modes: File Type, Last Modified, Author, Churn, Contributors, File Age*
+*Bonus Features: Commit siblings highlighting, commit message display, UI defaults optimization, legend ordering*
+*Next Options: MVP Slice 6-8 (additional metrics) or original Slice 2 (Animate History)*
