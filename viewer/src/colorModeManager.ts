@@ -391,21 +391,21 @@ export function getLegendItems(mode: ColorMode): ColorInfo[] {
 
     case 'churn':
       return [
-        { hex: '#3498db', name: 'Low churn (1-2 commits)' },
-        { hex: '#2ecc71', name: 'Low-medium (3-5 commits)' },
-        { hex: '#f1c40f', name: 'Medium (6-10 commits)' },
-        { hex: '#e67e22', name: 'High (11-20 commits)' },
+        { hex: '#c0392b', name: 'Extremely high (50+ commits)' },
         { hex: '#e74c3c', name: 'Very high (21-50 commits)' },
-        { hex: '#c0392b', name: 'Extremely high (50+ commits)' }
+        { hex: '#e67e22', name: 'High (11-20 commits)' },
+        { hex: '#f1c40f', name: 'Medium (6-10 commits)' },
+        { hex: '#2ecc71', name: 'Low-medium (3-5 commits)' },
+        { hex: '#3498db', name: 'Low churn (1-2 commits)' }
       ];
 
     case 'contributors':
       return [
-        { hex: '#3498db', name: 'Solo (1 contributor)' },
-        { hex: '#2ecc71', name: 'Pair (2 contributors)' },
-        { hex: '#f1c40f', name: 'Team (3-4 contributors)' },
+        { hex: '#e74c3c', name: 'Many (10+ contributors)' },
         { hex: '#e67e22', name: 'Squad (5-9 contributors)' },
-        { hex: '#e74c3c', name: 'Many (10+ contributors)' }
+        { hex: '#f1c40f', name: 'Team (3-4 contributors)' },
+        { hex: '#2ecc71', name: 'Pair (2 contributors)' },
+        { hex: '#3498db', name: 'Solo (1 contributor)' }
       ];
 
     case 'fileAge':
