@@ -275,25 +275,52 @@ Enhance processor to collect per-file metrics using `git log --follow --format="
 
 ---
 
-### 🚧 Slice 2: Animate History Forward (NOT STARTED)
+### ✅ Slice 2: Animate History Forward (COMPLETE)
 
 **Goal:** Watch repository structure evolve over time with timeline controls.
 
-**Planned Features:**
-- Process full commit history (not just HEAD)
-- Timeline scrubber to navigate through history
-- Play/pause animation controls
-- Speed controls
-- Files appear/disappear as they're added/deleted
-- Watch complexity grow over time
+**Implemented Features:**
+- **Adaptive Timeline Analyzer:** V2 algorithm with percentile-based commit scoring
+  - Captures 100% of version tags in all scenarios (tested on React: 18/18 tags)
+  - Repository-specific thresholds adapt to commit patterns
+  - 3-phase selection: milestones first, then temporal spread
+  - Score range 10-190 vs V1's 10-60 (much better differentiation)
 
-**Technical Requirements:**
-- Processor: Parse full git log with file diffs
-- Data format: Array of snapshots with timestamps
-- Viewer: Transition animations between states
-- UI: Timeline controls, date display
+- **Timeline Data Generation:**
+  - `--timeline` CLI flag for processor
+  - Generates `timeline-data.json` with sampled commits
+  - Default 50 commits, configurable with `--timeline-commits N`
+  - Works on both small (Gource: 988 commits) and large (React: 21,078 commits) repos
 
-**Status:** Not started - Slice 1 must be complete first
+- **Timeline Playback Controls:**
+  - Play/pause button with automatic stepping
+  - Step forward/backward buttons for manual navigation
+  - Speed selector: 0.5x, 1x, 2x, 5x
+  - Timeline scrubber for direct seeking
+  - Commit info display: index, date, message
+
+- **File Highlighting:**
+  - Changed files highlighted in yellow when navigating timeline
+  - Timeline mode disables depth-based hiding (shows all files)
+  - Smooth transitions between commit states
+  - Files appear/disappear as they're added/deleted
+
+- **UI Integration:**
+  - Timeline controls appear when loading timeline data
+  - Backward compatible: existing HEAD mode unchanged
+  - Repository selector includes timeline variants (e.g., "gource-timeline")
+
+**Commits:**
+- `b627315`: Fix timeline visibility - add timeline mode to show all files
+- `51a8849`: Fix TypeScript compilation errors in timeline code
+- Earlier: Timeline analyzer implementation and UI foundation
+
+**Testing:**
+- Gource repo: 988 commits → 50 commit sample, all 22 version tags captured
+- React repo: 21,078 commits → tested V1 vs V2 algorithm comparison
+- Performance: Smooth playback at all speeds, responsive scrubbing
+
+**Status:** Complete ✅
 
 ---
 
@@ -610,7 +637,8 @@ Building git metadata visualizations incrementally, delivering one complete feat
 ---
 
 *Last Updated: 2025-10-18*
-*Current Slice: 1-5 COMPLETE ✅ (all MVP git metadata features implemented and working)*
-*All Color Modes: File Type, Last Modified, Author, Churn, Contributors, File Age*
+*Current Slices: 1-2 COMPLETE ✅ + MVP Slices 1-5 COMPLETE ✅*
+*Timeline Features: Adaptive sampling, playback controls, file highlighting, version tag capture*
+*Color Modes: File Type, Last Modified, Author, Churn, Contributors, File Age*
 *Bonus Features: Commit siblings highlighting, commit message display, UI defaults optimization, legend ordering*
-*Next Options: MVP Slice 6-8 (additional metrics) or original Slice 2 (Animate History)*
+*Next Options: MVP Slice 6-8 (additional metrics), original Slices 3+ (churn heatmap view, coupling, ownership analysis)*
