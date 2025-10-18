@@ -887,6 +887,11 @@ export class TreeVisualizer {
     // Add some padding (20%)
     cameraDistance *= 1.2;
 
+    // Set dynamic maxDistance to allow zooming out far enough
+    // Use 1.5x the required distance to give user freedom to zoom out further
+    const dynamicMaxDistance = Math.max(150, cameraDistance * 1.5);
+    this.controls.maxDistance = dynamicMaxDistance;
+
     // Position camera at an angle for good perspective
     const angle = Math.PI / 4; // 45 degrees
     this.camera.position.set(
