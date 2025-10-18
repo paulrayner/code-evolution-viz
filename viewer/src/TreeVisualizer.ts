@@ -38,6 +38,7 @@ export class TreeVisualizer {
   private labelMode: 'always' | 'hover' = 'hover';
   private colorMode: ColorMode = 'fileType';
   private highlightedFiles: Set<string> = new Set();
+  private timelineMode: boolean = false; // Timeline mode disables depth-based hiding
   private edges: THREE.Line[] = [];
   private edgeNodeMap: Map<THREE.Line, { parent: TreeNode; child: TreeNode }> = new Map();
   private onFileClick?: (file: FileNode) => void;
@@ -154,6 +155,18 @@ export class TreeVisualizer {
   setColorMode(mode: ColorMode) {
     console.log(`Setting color mode to: ${mode}`);
     this.colorMode = mode;
+    if (this.layoutNodes.length > 0) {
+      this.rebuildVisualization();
+    }
+  }
+
+  /**
+   * Enable/disable timeline mode
+   * Timeline mode shows all files regardless of depth for better highlighting
+   */
+  setTimelineMode(enabled: boolean) {
+    console.log(`Setting timeline mode to: ${enabled}`);
+    this.timelineMode = enabled;
     if (this.layoutNodes.length > 0) {
       this.rebuildVisualization();
     }
@@ -401,9 +414,14 @@ export class TreeVisualizer {
 
     // Check focus scope
     if (this.focusedDirectory === null) {
-      // No focus: show root + level 1 only
-      const depth = this.getNodeDepth(layoutNode);
-      return depth > 1;
+      // In timeline mode, disable depth-based hiding so all files can be highlighted
+      if (!this.timelineMode) {
+        // No focus: show root + level 1 only
+        const depth = this.getNodeDepth(layoutNode);
+        return depth > 1;
+      }
+      // Timeline mode: no depth-based hiding
+      return false;
     } else {
       // Focused: show only focused directory + its direct children
       return !this.isInFocusScope(layoutNode);
