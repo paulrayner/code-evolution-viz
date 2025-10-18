@@ -706,6 +706,9 @@ async function loadRepository(repoName: string) {
       currentVisualizer.start();
     }
 
+    // Enable timeline mode if loading timeline data (shows all files for highlighting)
+    currentVisualizer.setTimelineMode(currentTimelineData !== null);
+
     // Visualize the tree
     currentVisualizer.visualize(snapshot.tree);
 
