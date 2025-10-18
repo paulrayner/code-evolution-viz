@@ -193,7 +193,9 @@ export class TreeVisualizer {
    */
   private updateHighlighting() {
     // Iterate through all file meshes and update their appearance
-    for (const [mesh, fileNode] of this.fileObjects.entries()) {
+    for (const [obj, fileNode] of this.fileObjects.entries()) {
+      const mesh = obj as THREE.Mesh;
+      if (!mesh.material || Array.isArray(mesh.material)) continue;
       const material = mesh.material as THREE.MeshPhongMaterial;
 
       if (this.highlightedFiles.size === 0) {
