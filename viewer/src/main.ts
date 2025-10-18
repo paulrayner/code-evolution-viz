@@ -73,6 +73,24 @@ function showFileDetails(file: FileNode) {
   const authorStr = file.lastAuthor || 'Unknown';
   const commitHashStr = file.lastCommitHash ? file.lastCommitHash.substring(0, 7) : 'Unknown';
 
+  // Format file age
+  const fileAgeStr = file.firstCommitDate
+    ? (() => {
+        const now = Date.now();
+        const fileDate = new Date(file.firstCommitDate).getTime();
+        const ageInDays = (now - fileDate) / (1000 * 60 * 60 * 24);
+        const ageInYears = ageInDays / 365;
+
+        if (ageInYears >= 5) return `${Math.floor(ageInYears)} years (Legacy)`;
+        if (ageInYears >= 3) return `${Math.floor(ageInYears)} years (Old)`;
+        if (ageInYears >= 1) return `${Math.floor(ageInYears)} year${Math.floor(ageInYears) > 1 ? 's' : ''} (Mature)`;
+
+        const ageInMonths = ageInDays / 30;
+        if (ageInMonths >= 3) return `${Math.floor(ageInMonths)} months (Recent)`;
+        return `${Math.floor(ageInDays)} days (New)`;
+      })()
+    : 'Unknown';
+
   let detailsHtml = `
     <div class="info-row">
       <span class="label">Type</span>
@@ -101,6 +119,18 @@ function showFileDetails(file: FileNode) {
     <div class="info-row">
       <span class="label">Last Commit</span>
       <span class="value">${commitHashStr}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Churn</span>
+      <span class="value">${file.commitCount !== null ? `${file.commitCount} commit${file.commitCount !== 1 ? 's' : ''}` : 'Unknown'}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Contributors</span>
+      <span class="value">${file.contributorCount !== null ? file.contributorCount : 'Unknown'}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">File Age</span>
+      <span class="value">${fileAgeStr}</span>
     </div>
   `;
 
