@@ -338,158 +338,6 @@ export class TreeVisualizer {
   }
 
   /**
-   * Create a synthetic FileNode with aggregated metrics from a directory's files
-   * This allows us to use getColorForFile() with directory data
-   */
-  private aggregateDirectoryMetrics(dir: DirectoryNode, mode: ColorMode): FileNode | null {
-    const files: FileNode[] = [];
-
-    // Collect all files recursively
-    const collectFiles = (node: TreeNode) => {
-      if (node.type === 'file') {
-        files.push(node);
-      } else {
-        for (const child of node.children) {
-          collectFiles(child);
-        }
-      }
-    };
-
-    collectFiles(dir);
-
-    if (files.length === 0) {
-      return null;
-    }
-
-    // Create synthetic file node with aggregated data
-    const synthetic: FileNode = {
-      path: dir.path,
-      name: dir.name,
-      type: 'file',
-      loc: 0,
-      extension: '',
-      lastModified: null,
-      lastAuthor: null,
-      lastCommitHash: null,
-      commitCount: null,
-      contributorCount: null,
-      firstCommitDate: null,
-      recentLinesChanged: null,
-      avgLinesPerCommit: null,
-      daysSinceLastModified: null
-    };
-
-    switch (mode) {
-      case 'recentActivity': {
-        // Sum up recent lines changed from all files
-        let totalRecentLines = 0;
-        let hasData = false;
-        for (const file of files) {
-          if (file.recentLinesChanged !== null) {
-            totalRecentLines += file.recentLinesChanged;
-            hasData = true;
-          }
-        }
-        synthetic.recentLinesChanged = hasData ? totalRecentLines : null;
-        break;
-      }
-
-      case 'stability': {
-        // Average the avgLinesPerCommit from all files
-        let sum = 0;
-        let count = 0;
-        for (const file of files) {
-          if (file.avgLinesPerCommit !== null) {
-            sum += file.avgLinesPerCommit;
-            count++;
-          }
-        }
-        synthetic.avgLinesPerCommit = count > 0 ? Math.round(sum / count) : null;
-        break;
-      }
-
-      case 'recency': {
-        // Find the file with smallest daysSinceLastModified (most recent)
-        let minDays: number | null = null;
-        for (const file of files) {
-          if (file.daysSinceLastModified !== null) {
-            if (minDays === null || file.daysSinceLastModified < minDays) {
-              minDays = file.daysSinceLastModified;
-            }
-          }
-        }
-        synthetic.daysSinceLastModified = minDays;
-        break;
-      }
-
-      case 'churn': {
-        // Sum up total commits from all files
-        let totalCommits = 0;
-        let hasData = false;
-        for (const file of files) {
-          if (file.commitCount !== null) {
-            totalCommits += file.commitCount;
-            hasData = true;
-          }
-        }
-        synthetic.commitCount = hasData ? totalCommits : null;
-        break;
-      }
-
-      case 'contributors': {
-        // Count unique contributors across all files
-        const uniqueAuthors = new Set<string>();
-        for (const file of files) {
-          if (file.lastAuthor) {
-            uniqueAuthors.add(file.lastAuthor);
-          }
-        }
-        synthetic.contributorCount = uniqueAuthors.size > 0 ? uniqueAuthors.size : null;
-        break;
-      }
-
-      case 'fileAge': {
-        // Find the oldest file (earliest firstCommitDate)
-        let oldestDate: Date | null = null;
-        for (const file of files) {
-          if (file.firstCommitDate) {
-            const date = new Date(file.firstCommitDate);
-            if (!oldestDate || date < oldestDate) {
-              oldestDate = date;
-            }
-          }
-        }
-        synthetic.firstCommitDate = oldestDate ? oldestDate.toISOString() : null;
-        break;
-      }
-
-      case 'author': {
-        // Find most recent author
-        const mostRecentFile = this.findMostRecentFile(dir);
-        if (mostRecentFile) {
-          synthetic.lastAuthor = mostRecentFile.lastAuthor;
-        }
-        break;
-      }
-
-      case 'lastModified': {
-        // Find most recently modified file
-        const mostRecentFile = this.findMostRecentFile(dir);
-        if (mostRecentFile) {
-          synthetic.lastModified = mostRecentFile.lastModified;
-        }
-        break;
-      }
-
-      case 'fileType':
-        // File type mode uses dominant color from stats, not this method
-        return null;
-    }
-
-    return synthetic;
-  }
-
-  /**
    * Calculate adaptive radius based on number of children
    * Keep orbits tight - files need to stay close to parent for visual grouping
    */
@@ -793,18 +641,18 @@ export class TreeVisualizer {
 
         // Color based on current mode
         let color: number;
-        if (this.colorMode === 'fileType') {
-          // File type mode - use dominant file type color
-          color = stats.dominantColor;
-        } else {
-          // All other modes - aggregate metrics from child files
-          const aggregatedFile = this.aggregateDirectoryMetrics(dirNode, this.colorMode);
-          if (aggregatedFile) {
-            const colorInfo = getColorForFile(aggregatedFile, this.colorMode);
+        if (this.colorMode === 'lastModified') {
+          // Find most recently modified file in directory
+          const mostRecentFile = this.findMostRecentFile(dirNode);
+          if (mostRecentFile && mostRecentFile.lastModified) {
+            const colorInfo = getColorForFile(mostRecentFile, this.colorMode);
             color = parseInt(colorInfo.hex.replace('#', ''), 16);
           } else {
             color = 0x666666; // Gray for unknown
           }
+        } else {
+          // File type mode - use dominant file type color
+          color = stats.dominantColor;
         }
 
         const geometry = new THREE.BoxGeometry(normalizedSize, normalizedSize, normalizedSize);
@@ -886,11 +734,6 @@ export class TreeVisualizer {
 
     // Add some padding (20%)
     cameraDistance *= 1.2;
-
-    // Set dynamic maxDistance to allow zooming out far enough
-    // Use 1.5x the required distance to give user freedom to zoom out further
-    const dynamicMaxDistance = Math.max(150, cameraDistance * 1.5);
-    this.controls.maxDistance = dynamicMaxDistance;
 
     // Position camera at an angle for good perspective
     const angle = Math.PI / 4; // 45 degrees
