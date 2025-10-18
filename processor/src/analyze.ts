@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import simpleGit, { SimpleGit } from 'simple-git';
 import { DirectoryNode, FileNode, RepositorySnapshot, TreeNode, TimelineData } from './types';
-import { TimelineAnalyzer } from './timeline-analyzer.js';
+import { TimelineAnalyzer } from './timeline-analyzer';
 
 interface FileInfo {
   path: string;
@@ -47,6 +47,9 @@ class RepositoryAnalyzer {
     commitCount: number | null;
     contributorCount: number | null;
     firstCommitDate: string | null;
+    recentLinesChanged: number | null;
+    avgLinesPerCommit: number | null;
+    daysSinceLastModified: number | null;
   }> {
     try {
       // Get full git log for this file (--follow to track renames)
@@ -59,6 +62,55 @@ class RepositoryAnalyzer {
         // Get unique contributors
         const uniqueAuthors = new Set(log.all.map(commit => commit.author_name));
 
+        // Get numstat data for lines changed calculations
+        const numstatLog = await this.git.raw([
+          'log',
+          '--numstat',
+          '--follow',
+          '--',
+          filePath
+        ]);
+
+        // Parse numstat output to calculate line change metrics
+        let totalLinesChanged = 0;
+        let recentLinesChanged = 0;
+        const ninetyDaysAgo = new Date();
+        ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+        const lines = numstatLog.split('\n');
+        let currentCommitDate: Date | null = null;
+
+        for (const line of lines) {
+          // Date line format: "Date:   Thu Jan 18 12:00:00 2024 -0800"
+          if (line.startsWith('Date:')) {
+            const dateStr = line.substring(5).trim();
+            currentCommitDate = new Date(dateStr);
+          }
+
+          // Numstat line format: "10\t5\tfilepath.ts"
+          const numstatMatch = line.match(/^(\d+|-)\t(\d+|-)\t/);
+          if (numstatMatch && currentCommitDate) {
+            const added = numstatMatch[1] === '-' ? 0 : parseInt(numstatMatch[1]);
+            const deleted = numstatMatch[2] === '-' ? 0 : parseInt(numstatMatch[2]);
+            const linesChanged = added + deleted;
+
+            totalLinesChanged += linesChanged;
+
+            // Check if commit is within last 90 days
+            if (currentCommitDate >= ninetyDaysAgo) {
+              recentLinesChanged += linesChanged;
+            }
+          }
+        }
+
+        // Calculate average lines per commit
+        const avgLinesPerCommit = log.total > 0 ? Math.round(totalLinesChanged / log.total) : 0;
+
+        // Calculate days since last modified
+        const lastModifiedDate = new Date(latest.date);
+        const now = new Date();
+        const daysSinceLastModified = Math.floor((now.getTime() - lastModifiedDate.getTime()) / (1000 * 60 * 60 * 24));
+
         return {
           lastModified: latest.date,
           lastAuthor: latest.author_name,
@@ -66,7 +118,10 @@ class RepositoryAnalyzer {
           lastCommitMessage: latest.message,
           commitCount: log.total,
           contributorCount: uniqueAuthors.size,
-          firstCommitDate: oldest.date
+          firstCommitDate: oldest.date,
+          recentLinesChanged: recentLinesChanged,
+          avgLinesPerCommit: avgLinesPerCommit,
+          daysSinceLastModified: daysSinceLastModified
         };
       }
     } catch (error) {
@@ -79,7 +134,10 @@ class RepositoryAnalyzer {
       lastCommitMessage: null,
       commitCount: null,
       contributorCount: null,
-      firstCommitDate: null
+      firstCommitDate: null,
+      recentLinesChanged: null,
+      avgLinesPerCommit: null,
+      daysSinceLastModified: null
     };
   }
 
@@ -125,6 +183,9 @@ class RepositoryAnalyzer {
     commitCount: number | null;
     contributorCount: number | null;
     firstCommitDate: string | null;
+    recentLinesChanged: number | null;
+    avgLinesPerCommit: number | null;
+    daysSinceLastModified: number | null;
   }>): DirectoryNode {
     const root: DirectoryNode = {
       path: '',
@@ -172,7 +233,10 @@ class RepositoryAnalyzer {
         lastCommitHash: file.lastCommitHash,
         commitCount: file.commitCount,
         contributorCount: file.contributorCount,
-        firstCommitDate: file.firstCommitDate
+        firstCommitDate: file.firstCommitDate,
+        recentLinesChanged: file.recentLinesChanged,
+        avgLinesPerCommit: file.avgLinesPerCommit,
+        daysSinceLastModified: file.daysSinceLastModified
       };
       currentNode.children.push(fileNode);
     }
@@ -217,7 +281,10 @@ class RepositoryAnalyzer {
         lastCommitHash: metadata.lastCommitHash,
         commitCount: metadata.commitCount,
         contributorCount: metadata.contributorCount,
-        firstCommitDate: metadata.firstCommitDate
+        firstCommitDate: metadata.firstCommitDate,
+        recentLinesChanged: metadata.recentLinesChanged,
+        avgLinesPerCommit: metadata.avgLinesPerCommit,
+        daysSinceLastModified: metadata.daysSinceLastModified
       });
 
       // Collect unique commit messages

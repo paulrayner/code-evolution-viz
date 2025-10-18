@@ -14,6 +14,9 @@ export interface FileNode {
   commitCount: number | null;        // Total commits for this file (churn)
   contributorCount: number | null;   // Number of unique contributors
   firstCommitDate: string | null;    // Date of first commit (file age)
+  recentLinesChanged: number | null; // Lines added + deleted in last 90 days
+  avgLinesPerCommit: number | null;  // Average lines changed per commit (volatility)
+  daysSinceLastModified: number | null; // Days since last modification
 }
 
 export interface DirectoryNode {
