@@ -275,25 +275,51 @@ Enhance processor to collect per-file metrics using `git log --follow --format="
 
 ---
 
-### 🚧 Slice 2: Animate History Forward (NOT STARTED)
+### ✅ Slice 2: Animate History Forward (COMPLETE)
 
 **Goal:** Watch repository structure evolve over time with timeline controls.
 
-**Planned Features:**
-- Process full commit history (not just HEAD)
-- Timeline scrubber to navigate through history
-- Play/pause animation controls
-- Speed controls
-- Files appear/disappear as they're added/deleted
-- Watch complexity grow over time
+**Status:** Core features complete and working
 
-**Technical Requirements:**
-- Processor: Parse full git log with file diffs
-- Data format: Array of snapshots with timestamps
-- Viewer: Transition animations between states
-- UI: Timeline controls, date display
+**Implemented Features:**
 
-**Status:** Not started - Slice 1 must be complete first
+#### Timeline Data Generation (Processor)
+- **Adaptive sampling algorithm V2** with percentile-based commit scoring
+  - 100% version tag capture rate (tested: React 18/18 tags, Gource 22/22 tags)
+  - Repository-adaptive thresholds (works for small and large repos)
+  - 3-phase selection: milestone commits → temporal spread → high-score commits
+  - Configurable sample size via `--timeline-commits N` (default: 200)
+- **CLI flag:** `--timeline` generates timeline-data.json format
+- **Tested:** Gource (988 commits), React (21,078 commits)
+
+#### Timeline Playback UI (Viewer)
+- **Playback controls:**
+  - |◀ Start button - jump to first commit
+  - ▶ Play/⏸ Pause button with automatic stepping
+  - ◀ Step / Step ▶ buttons for manual navigation
+  - Speed selector: 0.5x, 1x, 2x, 5x, 10x
+- **Timeline scrubber:** Draggable progress bar for direct seeking
+- **Commit info display:** Index, date, commit message
+- **Auto-stop:** Playback stops at end of timeline
+
+#### File Change Visualization
+- **Highlight changed files** in yellow when navigating timeline commits
+- **Timeline mode:** Disables depth-based hiding to show all files for highlighting
+- **Change tracking:** Shows added, modified, and deleted file counts
+
+**Commits:**
+- `e2077a6`: Adaptive timeline analyzer implementation
+- `fb0e90a`: Timeline format detection and UI foundation
+- `75a0b67`: Working timeline playback controls
+- `5fc62f4`: File change visualization
+- `b627315`: Timeline visibility fixes
+- `51a8849`: TypeScript compilation fixes
+- Latest session: Added 10x speed and "Start" button
+
+**Known Limitations:**
+- Timeline highlighting uses HEAD file paths, not historical paths (see Known Issues below)
+- No drill-down layers yet (Phase 4 feature - not implemented)
+- Large repo timeline generation is slow (~40 minutes for React with 6,784 files)
 
 ---
 
@@ -439,6 +465,58 @@ code-evolution-viz/
    - Tight orbits: sqrt scaling keeps files close
    - Moderate vertical: Clear parent-child relationship
    - 12 units vertical spacing
+
+---
+
+## Known Issues & Limitations
+
+### Timeline Mode Bugs
+
+**1. Timeline highlighting uses HEAD file paths instead of historical paths**
+- **Location:** `viewer/src/main.ts` lines 1090-1099
+- **Issue:** `highlightTimelineCommitFiles()` looks up changed files in HEAD's `pathToFileIndex`, but timeline shows historical commits
+- **Impact:** Files that were deleted, moved, or renamed after a historical commit won't highlight
+- **Result:** Many commits show grey edges instead of yellow highlighting
+- **Root cause:** File path lookup fails for files that don't exist in HEAD
+- **Workaround:** None currently - this is a fundamental architecture issue
+- **Fix required:** Timeline data needs to include full file snapshots at each commit, not just change lists
+
+**2. Linewidth property may not work on all platforms**
+- **Location:** `viewer/src/TreeVisualizer.ts` line 256
+- **Issue:** THREE.js `LineBasicMaterial.linewidth` is not supported on all WebGL implementations
+- **Impact:** Yellow highlight edges may not appear thicker on some systems
+- **Workaround:** Color change (grey → yellow) still provides visual feedback
+
+**3. Deleted files can't be highlighted in timeline**
+- **Location:** `viewer/src/main.ts` line 1098-1099
+- **Issue:** Deleted files aren't in the current tree structure, so they can't be highlighted
+- **Impact:** Timeline shows file deletion counts but can't visually show which files were deleted
+- **Note:** Comment in code acknowledges this: "A more complete implementation would need to track deleted files separately"
+
+**4. Camera zoom limitation on large repositories**
+- **Status:** Attempted fix reverted (commit 956b16a)
+- **Issue:** Hard-coded `maxDistance = 150` prevents zooming out far enough to see all files in timeline mode for large repos
+- **Impact:** Users can't see entire tree structure when viewing React timeline (6,784 files)
+- **Attempted fix:** Dynamic maxDistance based on scene bounds - caused black screen issues
+- **Current status:** Deferred - needs more investigation
+
+### Performance Issues
+
+**5. Large repository timeline generation is very slow**
+- **Example:** React repo (6,784 files) takes ~40 minutes to generate timeline data
+- **Breakdown:**
+  - 35 minutes: Git metadata collection (processing 6,784 files)
+  - 5 minutes: Commit history parsing (21,078 commits) and adaptive sampling
+- **Impact:** Makes timeline generation impractical for very large repositories
+- **Potential optimization:** Parallel git operations, caching, or incremental updates
+
+### Unimplemented Features
+
+**6. Timeline drill-down layers not implemented**
+- **Location:** `processor/src/timeline-analyzer.ts` line 140
+- **Status:** Phase 4 feature - has TODO marker
+- **Method:** `createDrillDownLayer()` throws "Not yet implemented"
+- **Impact:** Can't zoom into specific date ranges for more detailed analysis
 
 ---
 
@@ -610,7 +688,8 @@ Building git metadata visualizations incrementally, delivering one complete feat
 ---
 
 *Last Updated: 2025-10-18*
-*Current Slice: 1-5 COMPLETE ✅ (all MVP git metadata features implemented and working)*
-*All Color Modes: File Type, Last Modified, Author, Churn, Contributors, File Age*
-*Bonus Features: Commit siblings highlighting, commit message display, UI defaults optimization, legend ordering*
-*Next Options: MVP Slice 6-8 (additional metrics) or original Slice 2 (Animate History)*
+*Completed: Original Slice 1 ✅ | Original Slice 2 (Timeline) ✅ | MVP Slices 1-5 ✅*
+*Timeline Features: Adaptive sampling (V2), playback controls (10x speed), file highlighting, version tag capture*
+*Color Modes: File Type, Last Modified, Author, Churn, Contributors, File Age, Recent Activity, Stability, Recency*
+*Known Issues: 6 documented bugs/limitations (see Known Issues section)*
+*Next Options: Fix timeline highlighting bug, MVP Slice 6-8 (additional metrics), original Slices 3+ (churn heatmap view, coupling)*

@@ -1127,6 +1127,13 @@ function stepBackward() {
   }
 }
 
+function goToStart() {
+  if (!currentTimelineData) return;
+
+  timelineIndex = 0;
+  updateTimelineUI();
+}
+
 function togglePlayPause() {
   if (!currentTimelineData) return;
 
@@ -1189,6 +1196,11 @@ function setupTimelineControls() {
   }
 
   // Step buttons
+  const goToStartBtn = document.getElementById('go-to-start-btn');
+  if (goToStartBtn) {
+    goToStartBtn.addEventListener('click', goToStart);
+  }
+
   const stepBackBtn = document.getElementById('step-back-btn');
   if (stepBackBtn) {
     stepBackBtn.addEventListener('click', stepBackward);
