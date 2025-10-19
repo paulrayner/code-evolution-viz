@@ -1084,6 +1084,10 @@ function updateTimelineUI() {
 function highlightTimelineCommitFiles(commit: any) {
   if (!currentVisualizer) return;
 
+  // Calculate total changes in this commit
+  const totalChanges = commit.changes.filesAdded.length +
+                      commit.changes.filesModified.length;
+
   // Collect all files that were changed in this commit
   const changedFiles: FileNode[] = [];
 
@@ -1095,16 +1099,43 @@ function highlightTimelineCommitFiles(commit: any) {
     }
   }
 
-  // Note: Deleted files won't be in the current tree, so we can't highlight them
-  // A more complete implementation would need to track deleted files separately
+  // Handle different highlighting scenarios with appropriate warnings
+  if (changedFiles.length === 0) {
+    // Failed to find ANY files - show very dim tree
+    currentVisualizer.clearHighlight();
+    showTimelineWarning(`⚠️ Cannot highlight changes - ${totalChanges} file${totalChanges !== 1 ? 's' : ''} not in current view`);
+    console.log(`Timeline highlighting failed: 0 of ${totalChanges} files found in HEAD`);
 
-  // Highlight these files
-  if (changedFiles.length > 0) {
+  } else if (changedFiles.length < totalChanges) {
+    // Found SOME files - highlight what we can + warn about missing
     const filePaths = changedFiles.map(f => f.path);
     currentVisualizer.highlightFiles(filePaths);
-    console.log(`Highlighted ${changedFiles.length} changed files (${commit.changes.filesAdded.length} added, ${commit.changes.filesModified.length} modified, ${commit.changes.filesDeleted.length} deleted)`);
+    const missing = totalChanges - changedFiles.length;
+    showTimelineWarning(`⚠️ Highlighting ${changedFiles.length} of ${totalChanges} files (${missing} not in current view)`);
+    console.log(`Timeline highlighting partial: ${changedFiles.length} of ${totalChanges} files found in HEAD`);
+
   } else {
-    currentVisualizer.clearHighlight();
+    // Found ALL files - success!
+    const filePaths = changedFiles.map(f => f.path);
+    currentVisualizer.highlightFiles(filePaths);
+    hideTimelineWarning();
+    console.log(`Timeline highlighting success: ${changedFiles.length} files highlighted`);
+  }
+}
+
+function showTimelineWarning(message: string) {
+  const warning = document.getElementById('timeline-warning');
+  const text = document.getElementById('timeline-warning-text');
+  if (warning && text) {
+    text.textContent = message;
+    warning.style.display = 'block';
+  }
+}
+
+function hideTimelineWarning() {
+  const warning = document.getElementById('timeline-warning');
+  if (warning) {
+    warning.style.display = 'none';
   }
 }
 

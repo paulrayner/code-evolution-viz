@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc",
     "start": "npm run build && node dist/analyze.js",
-    "dev": "ts-node src/analyze.ts"
+    "dev": "ts-node src/analyze.ts",
+    "prototype-timeline": "ts-node src/prototype-timeline-sampler.ts"
   },
   "keywords": ["git", "visualization", "code-analysis"],
   "author": "",
