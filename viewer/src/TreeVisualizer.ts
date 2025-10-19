@@ -244,9 +244,10 @@ export class TreeVisualizer {
                             this.isNodeHidden(childLayout);
 
       if (this.highlightedFiles.size === 0) {
-        // No highlighting - restore normal edge appearance based on node visibility
+        // No highlighting - make edges very dim to indicate no highlighting available
+        // This prevents confusion in timeline mode when file lookup fails
         material.color.setHex(0xaaaaaa);
-        material.opacity = shouldBeHidden ? 0.0 : 0.6;
+        material.opacity = shouldBeHidden ? 0.0 : 0.15;
         material.linewidth = 1;
         edge.visible = !shouldBeHidden;
       } else if (childIsFile && this.highlightedFiles.has(childPath)) {
