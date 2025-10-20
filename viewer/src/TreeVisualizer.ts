@@ -38,8 +38,14 @@ export class TreeVisualizer {
   private labelMode: 'always' | 'hover' = 'hover';
   private colorMode: ColorMode = 'fileType';
   private highlightedFiles: Set<string> = new Set();
-  private highlightedFileTypes: Map<string, 'added' | 'modified'> = new Map(); // Track type of highlighted files
+  private highlightedFileTypes: Map<string, 'added' | 'modified' | 'deleted'> = new Map(); // Track type of highlighted files
+  private deletedFileNodes: Map<string, FileNode> = new Map(); // Store metadata for deleted files (ghost nodes)
   private timelineMode: 'off' | 'v1' | 'v2' = 'off'; // Timeline mode: v1=spotlight, v2=additive
+
+  // Ghost rendering for Timeline V2 deletions (isolated for future replacement)
+  private ghostMeshes: Set<THREE.Mesh> = new Set();
+  private ghostEdges: Set<THREE.Line> = new Set();
+
   private edges: THREE.Line[] = [];
   private edgeNodeMap: Map<THREE.Line, { parent: TreeNode; child: TreeNode }> = new Map();
   private onFileClick?: (file: FileNode) => void;
@@ -125,7 +131,6 @@ export class TreeVisualizer {
    * Set label display mode
    */
   setLabelMode(mode: 'always' | 'hover') {
-    console.log(`Setting label mode to: ${mode}`);
     this.labelMode = mode;
 
     // Update all existing labels, respecting parent mesh visibility
@@ -154,7 +159,6 @@ export class TreeVisualizer {
    * Set color mode and rebuild visualization
    */
   setColorMode(mode: ColorMode) {
-    console.log(`Setting color mode to: ${mode}`);
     this.colorMode = mode;
     if (this.layoutNodes.length > 0) {
       this.rebuildVisualization();
@@ -166,7 +170,6 @@ export class TreeVisualizer {
    * @param mode - 'off' (static), 'v1' (spotlight highlighting), 'v2' (additive/Gource-style)
    */
   setTimelineMode(mode: 'off' | 'v1' | 'v2') {
-    console.log(`Setting timeline mode to: ${mode}`);
     this.timelineMode = mode;
     if (this.layoutNodes.length > 0) {
       this.rebuildVisualization();
@@ -183,18 +186,31 @@ export class TreeVisualizer {
 
   /**
    * Highlight files with color-coding based on change type
-   * @param addedFiles - Paths of newly added files (yellow highlight)
-   * @param modifiedFiles - Paths of modified files (orange highlight)
+   * @param addedFiles - Paths of newly added files (green connections)
+   * @param modifiedFiles - Paths of modified files (orange connections)
+   * @param deletedFiles - Paths of deleted files (red connections)
+   * @param deletedFileNodes - Full FileNode metadata for deleted files (from previous keyframe)
    */
-  highlightFilesByType(addedFiles: string[], modifiedFiles: string[]) {
-    this.highlightedFiles = new Set([...addedFiles, ...modifiedFiles]);
+  highlightFilesByType(addedFiles: string[], modifiedFiles: string[], deletedFiles: string[] = [], deletedFileNodes: FileNode[] = []) {
+    this.highlightedFiles = new Set([...addedFiles, ...modifiedFiles, ...deletedFiles]);
     this.highlightedFileTypes.clear();
+    this.deletedFileNodes.clear();
+
     for (const path of addedFiles) {
       this.highlightedFileTypes.set(path, 'added');
     }
     for (const path of modifiedFiles) {
       this.highlightedFileTypes.set(path, 'modified');
     }
+    for (const path of deletedFiles) {
+      this.highlightedFileTypes.set(path, 'deleted');
+    }
+
+    // Store deleted file metadata for ghost rendering
+    for (const fileNode of deletedFileNodes) {
+      this.deletedFileNodes.set(fileNode.path, fileNode);
+    }
+
     this.updateHighlighting();
   }
 
@@ -204,6 +220,7 @@ export class TreeVisualizer {
   clearHighlight() {
     this.highlightedFiles.clear();
     this.highlightedFileTypes.clear();
+    this.deletedFileNodes.clear();
     this.updateHighlighting();
   }
 
@@ -228,14 +245,20 @@ export class TreeVisualizer {
         mesh.visible = !isHidden;
       } else if (this.highlightedFiles.has(fileNode.path)) {
         // This file is highlighted - SUPER BRIGHT, scaled up, and FORCE VISIBLE
-        // Keep the file's color mode color, just make it brighter
         material.opacity = 1.0;
         material.transparent = false;
         material.emissiveIntensity = 1.5; // Very bright glow
 
-        // Use current color mode to determine file color (not change type)
-        const colorInfo = getColorForFile(fileNode, this.colorMode);
-        material.emissive.setHex(parseInt(colorInfo.hex.replace('#', ''), 16));
+        // Check if this is a deleted file (should stay red)
+        const fileType = this.highlightedFileTypes.get(fileNode.path);
+        if (fileType === 'deleted') {
+          // Keep red color for deletions
+          material.emissive.setHex(0xe74c3c);
+        } else {
+          // Use current color mode to determine file color (not change type)
+          const colorInfo = getColorForFile(fileNode, this.colorMode);
+          material.emissive.setHex(parseInt(colorInfo.hex.replace('#', ''), 16));
+        }
 
         mesh.scale.set(1.3, 1.3, 1.3); // Scale up 30%
         mesh.visible = true; // Force visible even if normally hidden
@@ -282,29 +305,38 @@ export class TreeVisualizer {
         // No highlighting - make edges very dim to indicate no highlighting available
         // This prevents confusion in timeline mode when file lookup fails
         material.color.setHex(0xaaaaaa);
-        material.opacity = shouldBeHidden ? 0.0 : 0.15;
+        material.opacity = shouldBeHidden ? 0.0 : 0.3;
         material.linewidth = 1;
         edge.visible = !shouldBeHidden;
       } else if (childIsFile && this.highlightedFiles.has(childPath)) {
         // Edge connects to highlighted file - make it BRIGHT, THICK, and VISIBLE
-        // Color-code based on change type to match file node color
+        // Color-code based on change type
         const fileType = this.highlightedFileTypes.get(childPath);
         if (fileType === 'added') {
           material.color.setHex(0x27ae60); // Green for additions (matches commit stats color)
         } else if (fileType === 'modified') {
-          material.color.setHex(0xff8800); // Bright orange for modifications
+          material.color.setHex(0xffff00); // Yellow for modifications
+        } else if (fileType === 'deleted') {
+          material.color.setHex(0xe74c3c); // Red for deletions
         } else {
           material.color.setHex(0xffff00); // Default to yellow (legacy support)
         }
         material.opacity = 1.0;
         material.linewidth = 3; // Note: linewidth may not work on all platforms
         edge.visible = true; // Force visible even if normally hidden
+      } else if (this.deletedFileNodes.has(childPath)) {
+        // SPECIAL CASE: Edge connects to a DELETED file (ghost node)
+        // The file is not in the current tree, but we want to show its connection
+        material.color.setHex(0xe74c3c); // Red for deletion
+        material.opacity = 1.0;
+        material.linewidth = 3;
+        edge.visible = true; // Show the connection even though child is gone
       } else {
         // Edge doesn't connect to highlighted file
         if (this.timelineMode === 'v2') {
           // V2: Keep normal edge visibility (additive mode)
           material.color.setHex(0xaaaaaa);
-          material.opacity = shouldBeHidden ? 0.0 : 0.15;
+          material.opacity = shouldBeHidden ? 0.0 : 0.3;
           material.linewidth = 1;
           edge.visible = !shouldBeHidden;
         } else {
@@ -632,7 +664,7 @@ export class TreeVisualizer {
             const material = new THREE.LineBasicMaterial({
               color: 0xaaaaaa,
               transparent: true,
-              opacity: isHidden ? 0.0 : 0.6,
+              opacity: isHidden ? 0.0 : 0.8,
               linewidth: 3 // Thicker connection lines
             });
             const line = new THREE.Line(geometry, material);
@@ -814,7 +846,8 @@ export class TreeVisualizer {
    * @param resetCamera - Whether to auto-frame the camera (default: true)
    */
   visualize(tree: DirectoryNode, resetCamera: boolean = true) {
-    console.log('Visualizing tree...');
+    // Clear any ghost files from previous commit (Timeline V2 deletions)
+    this.clearGhosts();
 
     // Reset state when loading new repository
     this.focusedDirectory = null;
@@ -825,12 +858,10 @@ export class TreeVisualizer {
     // Calculate max LOC for normalization
     const maxFileLoc = this.findMaxLoc(tree);
     const maxDirLoc = this.findMaxDirectoryLoc(tree);
-    console.log(`Max file LOC: ${maxFileLoc}, Max directory LOC: ${maxDirLoc}`);
 
     // Layout the tree
     const rootPosition = new THREE.Vector3(0, 10, 0);
     this.layoutNodes = this.layoutTree(tree, rootPosition, 0, 0, Math.PI * 2);
-    console.log(`Laid out ${this.layoutNodes.length} nodes`);
 
     // Create visuals
     this.createVisuals(this.layoutNodes, maxFileLoc, maxDirLoc);
@@ -1123,5 +1154,262 @@ export class TreeVisualizer {
    */
   start() {
     this.animate();
+  }
+
+  // ============================================================================
+  // GHOST RENDERING FOR TIMELINE V2 DELETIONS
+  // Isolated module for showing deleted files with red connections
+  // TODO: Replace with proper incremental scene updates in future
+  // ============================================================================
+
+  /**
+   * Find mesh by file/directory path
+   * @param path - File or directory path to find
+   * @returns Mesh if found, null otherwise
+   */
+  private findMeshByPath(path: string): THREE.Mesh | null {
+    // Search in file objects
+    for (const [mesh, fileNode] of this.fileObjects.entries()) {
+      if (fileNode.path === path) {
+        return mesh as THREE.Mesh;
+      }
+    }
+
+    // Search in directory objects
+    for (const [mesh, dirNode] of this.dirObjects.entries()) {
+      if (dirNode.path === path) {
+        return mesh as THREE.Mesh;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Clear all ghost meshes and edges from scene
+   */
+  private clearGhosts() {
+    // Remove ghost meshes from scene and fileObjects map
+    for (const mesh of this.ghostMeshes) {
+      this.scene.remove(mesh);
+      this.fileObjects.delete(mesh);
+    }
+
+    // Remove ghost edges from scene and edges array
+    for (const edge of this.ghostEdges) {
+      this.scene.remove(edge);
+      const index = this.edges.indexOf(edge);
+      if (index !== -1) {
+        this.edges.splice(index, 1);
+      }
+      this.edgeNodeMap.delete(edge);
+    }
+
+    // Clear tracking sets
+    this.ghostMeshes.clear();
+    this.ghostEdges.clear();
+  }
+
+  /**
+   * Calculate position for ghost file among siblings in radial layout
+   * Places ghost at midpoint between two sibling files
+   */
+  private calculateGhostPosition(parentMesh: THREE.Mesh, parentDirNode: DirectoryNode): THREE.Vector3 {
+    const parentPos = parentMesh.position;
+
+    // Find first two sibling file meshes
+    const siblingMeshes: THREE.Mesh[] = [];
+    for (const child of parentDirNode.children) {
+      if (child.type === 'file') {
+        for (const [mesh, fileNode] of this.fileObjects.entries()) {
+          if (fileNode.path === child.path) {
+            siblingMeshes.push(mesh as THREE.Mesh);
+            if (siblingMeshes.length === 2) break;
+          }
+        }
+        if (siblingMeshes.length === 2) break;
+      }
+    }
+
+    // No siblings: place at default position
+    if (siblingMeshes.length === 0) {
+      const defaultRadius = 10;
+      const randomAngle = Math.random() * Math.PI * 2;
+      return new THREE.Vector3(
+        parentPos.x + defaultRadius * Math.cos(randomAngle),
+        parentPos.y,
+        parentPos.z + defaultRadius * Math.sin(randomAngle)
+      );
+    }
+
+    // One sibling: place opposite side with same Y position
+    if (siblingMeshes.length === 1) {
+      const dx = siblingMeshes[0].position.x - parentPos.x;
+      const dz = siblingMeshes[0].position.z - parentPos.z;
+      const radius = Math.sqrt(dx * dx + dz * dz);
+      const angle = Math.atan2(dz, dx);
+      const oppositeAngle = angle + Math.PI;
+      return new THREE.Vector3(
+        parentPos.x + radius * Math.cos(oppositeAngle),
+        siblingMeshes[0].position.y,  // Use same Y as sibling
+        parentPos.z + radius * Math.sin(oppositeAngle)
+      );
+    }
+
+    // Two+ siblings: place at midpoint angle with average Y position
+    const dx1 = siblingMeshes[0].position.x - parentPos.x;
+    const dz1 = siblingMeshes[0].position.z - parentPos.z;
+    const angle1 = Math.atan2(dz1, dx1);
+    const radius1 = Math.sqrt(dx1 * dx1 + dz1 * dz1);
+
+    const dx2 = siblingMeshes[1].position.x - parentPos.x;
+    const dz2 = siblingMeshes[1].position.z - parentPos.z;
+    const angle2 = Math.atan2(dz2, dx2);
+    const radius2 = Math.sqrt(dx2 * dx2 + dz2 * dz2);
+
+    // Midpoint angle, average radius, and average Y position
+    const midAngle = (angle1 + angle2) / 2;
+    const avgRadius = (radius1 + radius2) / 2;
+    const avgY = (siblingMeshes[0].position.y + siblingMeshes[1].position.y) / 2;
+
+    return new THREE.Vector3(
+      parentPos.x + avgRadius * Math.cos(midAngle),
+      avgY,  // Use average Y of siblings
+      parentPos.z + avgRadius * Math.sin(midAngle)
+    );
+  }
+
+  /**
+   * Render ghost files for deletions (Timeline V2 only)
+   * @param deletedPaths - Paths of files being deleted
+   * @param prevTree - Previous tree state (where files still exist)
+   */
+  private renderDeletionGhosts(deletedPaths: string[], prevTree: DirectoryNode) {
+    for (const filePath of deletedPaths) {
+      // Find the file in the previous tree to get metadata
+      const fileNode = this.findFileInPrevTree(prevTree, filePath);
+      if (!fileNode) {
+        console.warn(`Ghost rendering: Could not find deleted file in prev tree: ${filePath}`);
+        continue;
+      }
+
+      // Find parent directory mesh in CURRENT tree
+      // If parent directory was also deleted, skip rendering ghost for this file
+      const parentPath = filePath.substring(0, filePath.lastIndexOf('/'));
+      let parentMesh: THREE.Mesh | null = null;
+
+      if (parentPath) {
+        // File in subdirectory - find parent by path in current tree
+        parentMesh = this.findMeshByPath(parentPath);
+        if (!parentMesh) {
+          // Parent directory doesn't exist in current tree (was also deleted)
+          // Skip ghost rendering - no place to attach it
+          continue;
+        }
+      } else {
+        // File at root level - find root directory mesh
+        // Root directory is always the first directory in dirObjects with empty/root path
+        for (const [mesh, dirNode] of this.dirObjects.entries()) {
+          if (dirNode.path === '' || dirNode.name === 'root') {
+            parentMesh = mesh as THREE.Mesh;
+            break;
+          }
+        }
+        if (!parentMesh) {
+          // Should never happen - root always exists
+          continue;
+        }
+      }
+
+      // Position ghost naturally among sibling files using midpoint angle
+      const parentDirNode = this.dirObjects.get(parentMesh) || prevTree;
+      const ghostPosition = this.calculateGhostPosition(parentMesh, parentDirNode);
+
+      // Create sphere with same size as regular files for visual consistency
+      // Match the size calculation used in createVisuals() for regular files
+      const sizeMultiplier = this.timelineMode !== 'off' ? 0.3 : 2;
+      const minSize = this.timelineMode !== 'off' ? 0.3 : 0.3;
+      const normalizedSize = Math.max(minSize, (fileNode.loc / 100) * sizeMultiplier);
+      const geometry = new THREE.SphereGeometry(normalizedSize, 16, 16);
+
+      // Use red color for deleted files (makes deletions visually obvious)
+      const redColor = 0xe74c3c; // Matches red connection line color
+
+      const material = new THREE.MeshPhongMaterial({
+        color: redColor,
+        emissive: redColor,
+        emissiveIntensity: 0.6,
+        transparent: true,
+        opacity: 1.0
+      });
+
+      const ghostMesh = new THREE.Mesh(geometry, material);
+      ghostMesh.position.copy(ghostPosition);
+
+      // Add to scene and tracking
+      this.scene.add(ghostMesh);
+      this.fileObjects.set(ghostMesh, fileNode);
+      this.ghostMeshes.add(ghostMesh);
+
+      // Create edge from parent to ghost (will be colored red by highlighting)
+      const edgeGeometry = new THREE.BufferGeometry().setFromPoints([
+        parentMesh.position,
+        ghostPosition
+      ]);
+      const edgeMaterial = new THREE.LineBasicMaterial({
+        color: 0xaaaaaa,
+        opacity: 0.15,
+        transparent: true
+      });
+      const edge = new THREE.Line(edgeGeometry, edgeMaterial);
+
+      this.scene.add(edge);
+      this.edges.push(edge);
+      this.edgeNodeMap.set(edge, {
+        parent: this.dirObjects.get(parentMesh) || prevTree,
+        child: fileNode
+      });
+      this.ghostEdges.add(edge);
+    }
+  }
+
+  /**
+   * Find file node in previous tree by path
+   */
+  private findFileInPrevTree(tree: DirectoryNode, targetPath: string): FileNode | null {
+    const traverse = (node: TreeNode): FileNode | null => {
+      if (node.type === 'file') {
+        if (node.path === targetPath) {
+          return node;
+        }
+        return null;
+      } else if (node.type === 'directory' && node.children) {
+        for (const child of node.children) {
+          const result = traverse(child);
+          if (result) return result;
+        }
+      }
+      return null;
+    };
+
+    return traverse(tree);
+  }
+
+  /**
+   * Public API: Render deleted files as ghosts (Timeline V2 only)
+   * @param deletedPaths - Paths of files being deleted
+   * @param prevTree - Previous tree state (where files still exist)
+   */
+  renderDeletedFiles(deletedPaths: string[], prevTree: DirectoryNode | null) {
+    // Only render ghosts in Timeline V2 mode
+    if (this.timelineMode !== 'v2') {
+      return;
+    }
+
+    if (!prevTree || deletedPaths.length === 0) {
+      return;
+    }
+
+    this.renderDeletionGhosts(deletedPaths, prevTree);
   }
 }

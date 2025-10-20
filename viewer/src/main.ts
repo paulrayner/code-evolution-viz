@@ -486,6 +486,31 @@ function populateStats(snapshot: RepositorySnapshot) {
 }
 
 /**
+ * Find a file node by path in a tree
+ * @param tree - The root directory node to search
+ * @param targetPath - The file path to find
+ * @returns The FileNode if found, null otherwise
+ */
+function findFileInTree(tree: any, targetPath: string): any | null {
+  const traverse = (node: any): any | null => {
+    if (node.type === 'file') {
+      if (node.path === targetPath) {
+        return node;
+      }
+      return null;
+    } else if (node.type === 'directory' && node.children) {
+      for (const child of node.children) {
+        const result = traverse(child);
+        if (result) return result;
+      }
+    }
+    return null;
+  };
+
+  return traverse(tree);
+}
+
+/**
  * Update statistics panel from tree (for Timeline V2 where we don't have a full snapshot)
  */
 function updateStatsForTree(tree: DirectoryNode, commitIndex?: number, totalCommits?: number) {
@@ -853,7 +878,7 @@ async function loadTimelineV2(data: TimelineDataV2, repoName: string) {
 
           const fileChanges = [];
           if (added > 0) fileChanges.push(`<span style="color: #27ae60">+${added}</span>`);
-          if (modified > 0) fileChanges.push(`<span style="color: #f39c12">~${modified}</span>`);
+          if (modified > 0) fileChanges.push(`<span style="color: #ffff00">~${modified}</span>`);
           if (deleted > 0) fileChanges.push(`<span style="color: #e74c3c">-${deleted}</span>`);
           const filesSummary = fileChanges.length > 0 ? ` • Files: ${fileChanges.join(' ')}` : '';
 
@@ -886,7 +911,7 @@ async function loadTimelineV2(data: TimelineDataV2, repoName: string) {
         }
 
         // Highlight files for initial commit
-        highlightTimelineCommitFiles(initialCommit);
+        highlightTimelineCommitFiles(initialCommit, 0);
 
         // Update repository stats panel with initial tree state
         const totalCommits = currentDeltaController.getTotalCommits();
@@ -928,16 +953,37 @@ function setupTimelineV2Controls() {
 
   // Listen for commit changes
   currentDeltaController.on('commit', ({ index, commit, tree }: any) => {
-    // Update visualizer with new tree
+    const perfStart = performance.now();
+    const timings: Record<string, number> = {};
+
+    // Get previous tree for ghost rendering
+    const prevTree = index > 0 ? currentDeltaController?.getTreeAtCommit(index - 1) : null;
+
+    // Update visualizer with current tree (normal flow)
     if (currentVisualizer && tree) {
       // Reset camera only on first commit, then allow manual rotation
+      const t0 = performance.now();
       currentVisualizer.visualize(tree, isFirstCommit);
-      isFirstCommit = false;
-      pathToFileIndex = buildPathIndex(tree);
+      timings.visualize = performance.now() - t0;
 
+      isFirstCommit = false;
+
+      const t1 = performance.now();
+      pathToFileIndex = buildPathIndex(tree);
+      timings.pathIndex = performance.now() - t1;
+
+      // Render ghosts for deleted files AFTER visualize (Timeline V2 only)
+      if (commit.changes.filesDeleted.length > 0 && prevTree) {
+        const t2 = performance.now();
+        currentVisualizer.renderDeletedFiles(commit.changes.filesDeleted, prevTree);
+        timings.ghosts = performance.now() - t2;
+      }
+
+      const t3 = performance.now();
       // Update repository stats panel with current tree state
       const totalCommits = currentDeltaController?.getTotalCommits() || 0;
       updateStatsForTree(tree, index, totalCommits);
+      timings.stats = performance.now() - t3;
     }
 
     // Update commit info
@@ -952,7 +998,7 @@ function setupTimelineV2Controls() {
 
       const fileChanges = [];
       if (added > 0) fileChanges.push(`<span style="color: #27ae60">+${added}</span>`);
-      if (modified > 0) fileChanges.push(`<span style="color: #f39c12">~${modified}</span>`);
+      if (modified > 0) fileChanges.push(`<span style="color: #ffff00">~${modified}</span>`);
       if (deleted > 0) fileChanges.push(`<span style="color: #e74c3c">-${deleted}</span>`);
       const filesSummary = fileChanges.length > 0 ? ` • Files: ${fileChanges.join(' ')}` : '';
 
@@ -985,10 +1031,26 @@ function setupTimelineV2Controls() {
     }
 
     // Highlight files changed in this commit
-    highlightTimelineCommitFiles(commit);
+    const t4 = performance.now();
+    highlightTimelineCommitFiles(commit, index);
+    timings.highlight = performance.now() - t4;
 
     // Update timeline UI
+    const t5 = performance.now();
     updateTimelineV2UI(index);
+    timings.ui = performance.now() - t5;
+
+    // Log performance metrics (only for slow commits)
+    const totalTime = performance.now() - perfStart;
+
+    // Warn if commit processing is slow (potential performance issue)
+    if (totalTime > 100) {
+      timings.total = totalTime;
+      const timingStr = Object.entries(timings)
+        .map(([key, val]) => `${key}=${val.toFixed(1)}ms`)
+        .join(', ');
+      console.warn(`⚠️ Slow commit ${index + 1}: ${timingStr}`);
+    }
   });
 
   // Play/pause button
@@ -1039,6 +1101,36 @@ function setupTimelineV2Controls() {
       const index = parseInt(sliderEl.value);
       currentDeltaController?.seekToCommit(index);
     };
+  }
+
+  // Timeline scrubber - click and drag to seek
+  const scrubber = document.getElementById('timeline-scrubber');
+  if (scrubber) {
+    let isDragging = false;
+
+    const seekToPosition = (clientX: number) => {
+      const rect = scrubber.getBoundingClientRect();
+      const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
+      const percentage = x / rect.width;
+      const totalCommits = currentDeltaController.getTotalCommits();
+      const targetIndex = Math.floor(percentage * (totalCommits - 1));
+      currentDeltaController.seekToCommit(targetIndex);
+    };
+
+    scrubber.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      seekToPosition(e.clientX);
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (isDragging) {
+        seekToPosition(e.clientX);
+      }
+    });
+
+    document.addEventListener('mouseup', () => {
+      isDragging = false;
+    });
   }
 
   // Initialize UI
@@ -1512,7 +1604,7 @@ function updateTimelineUI() {
   highlightTimelineCommitFiles(commit);
 }
 
-function highlightTimelineCommitFiles(commit: any) {
+function highlightTimelineCommitFiles(commit: any, commitIndex: number) {
   if (!currentVisualizer) return;
 
   // Timeline V2 (full delta) vs V1 (sampled) have different highlighting semantics
@@ -1524,12 +1616,12 @@ function highlightTimelineCommitFiles(commit: any) {
   const filesDeleted = commit.changes.filesDeleted?.length || 0;
 
   if (isTimelineV2) {
-    // TIMELINE V2: Show historical tree, highlight additions/modifications
-    // Deletions can't be highlighted (files don't exist in tree yet or will disappear)
-    const highlightableChanges = filesAdded + filesModified;
-    const totalChanges = highlightableChanges + filesDeleted;
+    // TIMELINE V2: Show historical tree, highlight additions/modifications/deletions
+    // Note: Deletions are rendered as ghosts separately, not included in changedFiles count
+    const nonGhostChanges = filesAdded + filesModified;
+    const totalChanges = filesAdded + filesModified + filesDeleted;
 
-    // Collect files to highlight separately by type (additions vs modifications)
+    // Collect files to highlight separately by type (additions vs modifications vs deletions)
     const addedFiles: FileNode[] = [];
     const modifiedFiles: FileNode[] = [];
 
@@ -1547,68 +1639,36 @@ function highlightTimelineCommitFiles(commit: any) {
       }
     }
 
+    // For deleted files, they've been rendered as ghosts by renderDeletedFiles()
+    // The ghost rendering adds them to fileObjects map with full metadata
+    // So we just need to pass the paths for highlighting - the visualization will find them
+
     const changedFiles = [...addedFiles, ...modifiedFiles];
+    const deletedPaths = commit.changes.filesDeleted || [];
 
-    if (highlightableChanges === 0) {
-      // No additions/modifications - could be deletions or empty commit
+    if (totalChanges === 0) {
+      // No changes at all - empty commit
       currentVisualizer.clearHighlight();
       hideTimelineWarning();
-      if (filesDeleted > 0) {
-        // Show deleted file paths (limit to first 3-5)
-        const deletedPaths = commit.changes.filesDeleted || [];
-        const displayPaths = deletedPaths.slice(0, 5);
-        const remaining = Math.max(0, deletedPaths.length - 5);
-        const pathsStr = remaining > 0
-          ? `${JSON.stringify(displayPaths)} (+${remaining} more)`
-          : JSON.stringify(displayPaths);
-        console.log(`Timeline V2: Commit has ${filesDeleted} deletion(s) only - no highlighting. Deleted: ${pathsStr}`);
-      } else {
-        console.log(`Timeline V2: Empty commit (no file changes)`);
-      }
-    } else if (changedFiles.length === 0) {
-      // Should have found additions/modifications but didn't - unexpected!
+    } else if (changedFiles.length === 0 && deletedPaths.length === 0) {
+      // Should have found additions/modifications/deletions but didn't - unexpected!
       currentVisualizer.clearHighlight();
-      showTimelineWarning(`⚠️ Cannot highlight ${highlightableChanges} change(s)`);
-      console.warn(`Timeline V2: Failed to find ${highlightableChanges} additions/modifications`);
-    } else if (changedFiles.length < highlightableChanges) {
-      // Found some but not all - partial highlighting
+      showTimelineWarning(`⚠️ Cannot highlight ${totalChanges} change(s)`);
+      console.warn(`Timeline V2: Failed to find ${totalChanges} file changes`);
+    } else if (changedFiles.length < nonGhostChanges) {
+      // Found some but not all additions/modifications - partial highlighting
       const addedPaths = addedFiles.map(f => f.path);
       const modifiedPaths = modifiedFiles.map(f => f.path);
-      currentVisualizer.highlightFilesByType(addedPaths, modifiedPaths);
-      const missing = highlightableChanges - changedFiles.length;
-      showTimelineWarning(`⚠️ Highlighting ${changedFiles.length}/${highlightableChanges} changes`);
+      currentVisualizer.highlightFilesByType(addedPaths, modifiedPaths, deletedPaths, []);
 
-      // Only mention deletions if there are any
-      if (filesDeleted > 0) {
-        const deletedPaths = commit.changes.filesDeleted || [];
-        const displayPaths = deletedPaths.slice(0, 3);
-        const remaining = Math.max(0, deletedPaths.length - 3);
-        const pathsStr = remaining > 0
-          ? `${JSON.stringify(displayPaths)} (+${remaining} more)`
-          : JSON.stringify(displayPaths);
-        console.log(`Timeline V2: Partial highlight ${changedFiles.length}/${highlightableChanges}, ${filesDeleted} deleted: ${pathsStr}`);
-      } else {
-        console.log(`Timeline V2: Partial highlight ${changedFiles.length}/${highlightableChanges}`);
-      }
+      // Some additions/modifications are missing (actual problem)
+      showTimelineWarning(`⚠️ Highlighting ${changedFiles.length + deletedPaths.length}/${totalChanges} changes`);
     } else {
-      // Found all highlightable files - success!
+      // Found all additions/modifications - success! (deletions are ghosts)
       const addedPaths = addedFiles.map(f => f.path);
       const modifiedPaths = modifiedFiles.map(f => f.path);
-      currentVisualizer.highlightFilesByType(addedPaths, modifiedPaths);
+      currentVisualizer.highlightFilesByType(addedPaths, modifiedPaths, deletedPaths, []);
       hideTimelineWarning();
-
-      // Only mention deletions if there are any
-      if (filesDeleted > 0) {
-        const deletedPaths = commit.changes.filesDeleted || [];
-        const displayPaths = deletedPaths.slice(0, 3);
-        const remaining = Math.max(0, deletedPaths.length - 3);
-        const pathsStr = remaining > 0
-          ? `${JSON.stringify(displayPaths)} (+${remaining} more)`
-          : JSON.stringify(displayPaths);
-        console.log(`Timeline V2: Highlighted ${changedFiles.length} changes, ${filesDeleted} deleted: ${pathsStr}`);
-      } else {
-        console.log(`Timeline V2: Highlighted ${changedFiles.length} changes`);
-      }
     }
 
   } else {
@@ -1777,7 +1837,7 @@ function setupTimelineControls() {
     });
   }
 
-  // Timeline scrubber
+  // Timeline scrubber - click to seek (Timeline V1 only)
   const scrubber = document.getElementById('timeline-scrubber');
   if (scrubber) {
     scrubber.addEventListener('click', (e) => {
