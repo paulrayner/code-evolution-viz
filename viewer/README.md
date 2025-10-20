@@ -1,6 +1,6 @@
-# Code Evolution Viewer
+# CodeCohesion Viewer
 
-3D visualization of code repository structure and evolution.
+Interactive 3D visualization for code cohesion analysis with timeline evolution playback.
 
 ## Setup
 

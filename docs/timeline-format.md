@@ -1,8 +1,8 @@
-# Timeline Format Documentation
+# CodeCohesion Timeline Format Documentation
 
 ## Overview
 
-The timeline format is an extension of the static repository snapshot format that adds temporal evolution data. It maintains backward compatibility by including a complete `headSnapshot` object while adding adaptive sampling of historical commits.
+The CodeCohesion timeline format is an extension of the static repository snapshot format that adds temporal evolution data. It maintains backward compatibility by including a complete `headSnapshot` object while adding adaptive sampling of historical commits.
 
 **Format Version:** `timeline-v1`
 

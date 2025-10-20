@@ -1,6 +1,6 @@
-# Code Evolution Processor
+# CodeCohesion Processor
 
-Analyzes Git repositories to extract structural and metric data for visualization.
+Analyzes Git repositories to extract cohesion metrics and evolution data for visualization.
 
 ## Installation
 

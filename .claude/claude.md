@@ -1,4 +1,4 @@
-# Claude Code Context for code-evolution-viz
+# Claude Code Context for CodeCohesion
 
 ## Critical Development Notes
 

@@ -1,15 +1,23 @@
-# Code Evolution Visualizer
+# CodeCohesion
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
 ![Node](https://img.shields.io/badge/node-%3E%3D18-green)
 
 ![Timeline V2 Visualization](docs/images/timeline-v2-gource.png)
-*Timeline V2 playback showing Gource repository evolution (988 commits) with color-coded connection lines highlighting file changes*
+*Interactive 3D timeline showing repository evolution with cohesion analysis*
 
-Interactive 3D visualization of code repository structure with git metadata insights. Explore your codebase as a solar system where directories are planets and files are orbiting moons.
+**Open-source 3D visualization tool for analyzing code cohesion and architectural evolution.** Explore your codebase as an interactive solar system and watch it evolve over time to understand structure, detect bounded contexts, and identify coupling patterns.
 
-**Inspired by:** [Gource](https://gource.io) for visualization approach, [CodeScene](https://codescene.io) for metrics focus.
+**What makes CodeCohesion unique:**
+- 🌍 **3D Spatial Visualization** - Solar system metaphor for intuitive architecture understanding
+- ⏱️ **Live Timeline Playback** - Watch your codebase evolve commit-by-commit
+- 🔗 **Cohesion Analysis** - Detect bounded contexts through temporal coupling
+- 🎯 **DDD-Focused** - Built for Domain-Driven Design and monolith decomposition
+- 🚀 **Open Source** - Free, transparent, extensible
+- 🌐 **Browser-Based** - No installation, runs anywhere
+
+**Inspired by:** [Gource](https://gource.io) for evolution visualization, [CodeScene](https://codescene.io) for behavioral code analysis.
 
 ## 📋 Table of Contents
 
@@ -25,22 +33,23 @@ Interactive 3D visualization of code repository structure with git metadata insi
 - [Contributing](#-contributing)
 - [License](#-license)
 
-## 🤔 Why Use This?
+## 🤔 Why CodeCohesion?
 
-**Problem:** Understanding large codebases is hard. Where should you focus? Which files are hotspots? How has the code evolved?
+**Problem:** Understanding code architecture and cohesion is hard. Where are your bounded contexts? Which files are tightly coupled? How did your architecture evolve to its current state?
 
-**Solution:** Visualize your repository as an interactive 3D solar system that reveals:
-- 🔥 **Hotspots** - Files changed frequently (refactoring candidates)
-- 🏗️ **Architecture** - Directory structure and relationships at a glance
-- 👥 **Ownership** - Who owns what code
-- ⏱️ **Evolution** - Watch your codebase grow over time (Timeline V2)
-- 🎯 **Impact** - Which files are central vs peripheral
+**Solution:** CodeCohesion turns git history into an interactive 3D visualization that reveals:
+- 🔗 **Cohesion Patterns** - Which files belong together (bounded contexts)
+- 🔥 **Coupling Hotspots** - Files that change together frequently
+- 🏗️ **Architecture** - Hierarchical structure at a glance
+- ⏳ **Evolution** - How your codebase grew and changed over time
+- 👥 **Ownership** - Who works on what parts of the code
 
 **Use Cases:**
-- 📚 **Onboarding** - Give new team members a visual codebase tour
-- 🔍 **Architecture reviews** - Spot coupling and complexity issues
-- 💰 **Technical debt** - Find legacy code and hotspots
-- 📽️ **Retrospectives** - Watch timeline playback of project evolution
+- 📚 **DDD & Bounded Contexts** - Discover natural domain boundaries through cohesion
+- 🔍 **Monolith Decomposition** - Identify where to split based on temporal coupling
+- 🎓 **Onboarding** - Give new team members a visual architectural tour
+- 📽️ **Retrospectives** - Watch timeline playback of how features evolved
+- 💰 **Technical Debt** - Find legacy hotspots and coupling issues
 
 ## 🎯 Project Goals
 

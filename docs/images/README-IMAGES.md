@@ -64,7 +64,7 @@ The README.md file now includes references to 4 screenshots. Please save the pro
 ## How to Save
 
 1. Take the 4 screenshots you provided in the conversation
-2. Save them to `/Users/paul/Documents/code-evolution-viz/docs/images/` with the exact filenames above
+2. Save them to `/Users/paul/Documents/codecohesion/docs/images/` with the exact filenames above
 3. The images are already referenced in README.md and will display automatically
 
 ## Verification

@@ -1,7 +1,7 @@
 {
-  "name": "code-evolution-processor",
+  "name": "codecohesion-processor",
   "version": "0.1.0",
-  "description": "Repository analyzer for code evolution visualization",
+  "description": "Repository analyzer for code cohesion and evolution visualization",
   "main": "dist/analyze.js",
   "scripts": {
     "build": "tsc",
@@ -10,7 +10,7 @@
     "prototype-timeline": "ts-node src/prototype-timeline-sampler.ts",
     "analyze:full-delta": "ts-node src/analyze.ts"
   },
-  "keywords": ["git", "visualization", "code-analysis"],
+  "keywords": ["git", "cohesion", "temporal-coupling", "code-analysis", "ddd", "visualization"],
   "author": "",
   "license": "MIT",
   "dependencies": {
