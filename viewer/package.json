@@ -1,13 +1,13 @@
 {
-  "name": "code-evolution-viewer",
+  "name": "codecohesion-viewer",
   "version": "0.1.0",
-  "description": "3D visualization for code evolution analysis",
+  "description": "3D visualization for code cohesion and evolution analysis",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview"
   },
-  "keywords": ["visualization", "three.js", "code-analysis"],
+  "keywords": ["visualization", "three.js", "cohesion", "3d", "timeline", "code-analysis"],
   "author": "",
   "license": "MIT",
   "dependencies": {

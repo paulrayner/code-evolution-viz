@@ -1,10 +1,10 @@
-# Code Evolution Visualizer - Progress Summary
+# CodeCohesion - Development Progress
 
 ## Project Overview
 
-A web-based 3D visualization tool for exploring code repository structure, inspired by Gource but optimized for interactive exploration with metrics. Built with TypeScript, Three.js, and Node.js.
+Open-source 3D visualization tool for analyzing code cohesion and architectural evolution. Interactive spatial exploration with timeline playback to understand structure, detect bounded contexts, and identify coupling patterns. Built with TypeScript, Three.js, and Node.js.
 
-**Repository:** `/Users/paul/Documents/code-evolution-viz/`
+**Repository:** `/Users/paul/Documents/codecohesion/`
 
 ---
 
