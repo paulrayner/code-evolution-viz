@@ -198,7 +198,7 @@ Open http://localhost:3000 (or http://localhost:3001 if port 3000 is in use)
 ## 📁 Project Structure
 
 ```
-code-evolution-viz/
+codecohesion/
 ├── processor/              # Repository analyzer
 │   ├── src/
 │   │   ├── analyze.ts      # Git repository scanner with metadata collection
@@ -438,7 +438,7 @@ MIT
 
 ---
 
-**Repository:** https://github.com/paulrayner/code-evolution-viz
+**Repository:** https://github.com/paulrayner/codecohesion
 
 *Last Updated: 2025-10-20*
 *Status: Timeline V2 Complete | Slices 1-8 ✅*

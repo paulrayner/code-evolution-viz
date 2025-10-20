@@ -415,7 +415,7 @@ Remaining slices (search, dependencies, comparisons, etc.) to be planned after c
 
 ### Project Structure
 ```
-code-evolution-viz/
+codecohesion/
 ├── processor/           # Repository analyzer
 │   ├── src/
 │   │   ├── analyze.ts   # Git repository scanner

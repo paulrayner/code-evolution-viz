@@ -370,7 +370,7 @@ The following timeline analyses are available in the project:
 | **cBioPortal** | 22,854 | 325 | 2011-2025 (14 years) | Multiple |
 | **cBioPortal Frontend** | ~10,000 | 200 | 2015-2025 (10 years) | Multiple |
 | **Gource** | 988 | 50 | 2009-2025 (16 years) | 22 |
-| **code-evolution-viz** | ~100 | 50 | 2024-2025 (1 year) | 0 |
+| **codecohesion** | ~100 | 50 | 2024-2025 (1 year) | 0 |
 
 All timeline files maintain 100% version tag capture in testing.
 

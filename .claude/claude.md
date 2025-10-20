@@ -62,7 +62,7 @@ case 'churn':
 ## Project Structure
 
 ```
-code-evolution-viz/
+codecohesion/
 ├── processor/          # Node.js analyzer (TypeScript)
 │   ├── src/*.ts       # TypeScript source files
 │   └── output/        # Generated .json analysis files
