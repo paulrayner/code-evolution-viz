@@ -38,6 +38,7 @@ export class TreeVisualizer {
   private labelMode: 'always' | 'hover' = 'hover';
   private colorMode: ColorMode = 'fileType';
   private highlightedFiles: Set<string> = new Set();
+  private highlightedFileTypes: Map<string, 'added' | 'modified'> = new Map(); // Track type of highlighted files
   private timelineMode: 'off' | 'v1' | 'v2' = 'off'; // Timeline mode: v1=spotlight, v2=additive
   private edges: THREE.Line[] = [];
   private edgeNodeMap: Map<THREE.Line, { parent: TreeNode; child: TreeNode }> = new Map();
@@ -181,10 +182,28 @@ export class TreeVisualizer {
   }
 
   /**
+   * Highlight files with color-coding based on change type
+   * @param addedFiles - Paths of newly added files (yellow highlight)
+   * @param modifiedFiles - Paths of modified files (orange highlight)
+   */
+  highlightFilesByType(addedFiles: string[], modifiedFiles: string[]) {
+    this.highlightedFiles = new Set([...addedFiles, ...modifiedFiles]);
+    this.highlightedFileTypes.clear();
+    for (const path of addedFiles) {
+      this.highlightedFileTypes.set(path, 'added');
+    }
+    for (const path of modifiedFiles) {
+      this.highlightedFileTypes.set(path, 'modified');
+    }
+    this.updateHighlighting();
+  }
+
+  /**
    * Clear all file highlighting
    */
   clearHighlight() {
     this.highlightedFiles.clear();
+    this.highlightedFileTypes.clear();
     this.updateHighlighting();
   }
 
@@ -209,10 +228,15 @@ export class TreeVisualizer {
         mesh.visible = !isHidden;
       } else if (this.highlightedFiles.has(fileNode.path)) {
         // This file is highlighted - SUPER BRIGHT, scaled up, and FORCE VISIBLE
+        // Keep the file's color mode color, just make it brighter
         material.opacity = 1.0;
         material.transparent = false;
         material.emissiveIntensity = 1.5; // Very bright glow
-        material.emissive.setHex(0xffff00); // Bright yellow/white glow
+
+        // Use current color mode to determine file color (not change type)
+        const colorInfo = getColorForFile(fileNode, this.colorMode);
+        material.emissive.setHex(parseInt(colorInfo.hex.replace('#', ''), 16));
+
         mesh.scale.set(1.3, 1.3, 1.3); // Scale up 30%
         mesh.visible = true; // Force visible even if normally hidden
       } else {
@@ -263,7 +287,15 @@ export class TreeVisualizer {
         edge.visible = !shouldBeHidden;
       } else if (childIsFile && this.highlightedFiles.has(childPath)) {
         // Edge connects to highlighted file - make it BRIGHT, THICK, and VISIBLE
-        material.color.setHex(0xffff00); // Bright yellow
+        // Color-code based on change type to match file node color
+        const fileType = this.highlightedFileTypes.get(childPath);
+        if (fileType === 'added') {
+          material.color.setHex(0x27ae60); // Green for additions (matches commit stats color)
+        } else if (fileType === 'modified') {
+          material.color.setHex(0xff8800); // Bright orange for modifications
+        } else {
+          material.color.setHex(0xffff00); // Default to yellow (legacy support)
+        }
         material.opacity = 1.0;
         material.linewidth = 3; // Note: linewidth may not work on all platforms
         edge.visible = true; // Force visible even if normally hidden
@@ -600,7 +632,8 @@ export class TreeVisualizer {
             const material = new THREE.LineBasicMaterial({
               color: 0xaaaaaa,
               transparent: true,
-              opacity: isHidden ? 0.0 : 0.6
+              opacity: isHidden ? 0.0 : 0.6,
+              linewidth: 3 // Thicker connection lines
             });
             const line = new THREE.Line(geometry, material);
             line.visible = !isHidden;

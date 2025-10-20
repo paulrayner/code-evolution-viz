@@ -1,8 +1,46 @@
 # Code Evolution Visualizer
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
+![Node](https://img.shields.io/badge/node-%3E%3D18-green)
+
+![Timeline V2 Visualization](docs/images/timeline-v2-gource.png)
+*Timeline V2 playback showing Gource repository evolution (988 commits) with color-coded connection lines highlighting file changes*
+
 Interactive 3D visualization of code repository structure with git metadata insights. Explore your codebase as a solar system where directories are planets and files are orbiting moons.
 
 **Inspired by:** [Gource](https://gource.io) for visualization approach, [CodeScene](https://codescene.io) for metrics focus.
+
+## 📋 Table of Contents
+
+- [Why Use This?](#-why-use-this)
+- [Features](#-current-features)
+- [Quick Start](#-quick-start)
+- [Requirements](#-requirements)
+- [Project Structure](#-project-structure)
+- [Design Decisions](#-design-decisions)
+- [Roadmap](#️-roadmap)
+- [Development](#-development)
+- [Troubleshooting](#-troubleshooting)
+- [Contributing](#-contributing)
+- [License](#-license)
+
+## 🤔 Why Use This?
+
+**Problem:** Understanding large codebases is hard. Where should you focus? Which files are hotspots? How has the code evolved?
+
+**Solution:** Visualize your repository as an interactive 3D solar system that reveals:
+- 🔥 **Hotspots** - Files changed frequently (refactoring candidates)
+- 🏗️ **Architecture** - Directory structure and relationships at a glance
+- 👥 **Ownership** - Who owns what code
+- ⏱️ **Evolution** - Watch your codebase grow over time (Timeline V2)
+- 🎯 **Impact** - Which files are central vs peripheral
+
+**Use Cases:**
+- 📚 **Onboarding** - Give new team members a visual codebase tour
+- 🔍 **Architecture reviews** - Spot coupling and complexity issues
+- 💰 **Technical debt** - Find legacy code and hotspots
+- 📽️ **Retrospectives** - Watch timeline playback of project evolution
 
 ## 🎯 Project Goals
 
@@ -30,12 +68,31 @@ Visualize code repositories to understand:
 
 ### Git Metadata Visualization
 
-#### 3 Color Modes
+#### Multiple Color Modes
+
+Visualize the same codebase through different analytical lenses:
+
 1. **File Type** (default) - 50+ file extensions with semantic color grouping
 2. **Last Modified** - Adaptive time buckets showing recent changes
    - Active repos: 7 time intervals (last week → 1-2 years)
    - Stale repos: Percentile-based intervals with year ranges
 3. **Author** - Consistent hash-based colors per contributor
+4. **Churn (Lifetime Commits)** - Heatmap showing frequently modified files
+5. **Recent Activity (90 days)** - Lines changed in recent window
+
+![Churn Mode on React Repository](docs/images/churn-mode-react.png)
+*React repository (6,784 files) colored by commit frequency - red spheres indicate high-churn hotspots that may need refactoring*
+
+<details>
+<summary>📸 More Color Mode Examples</summary>
+
+![Recent Activity Mode](docs/images/activity-mode-cbioportal.png)
+*cBioPortal repository with Recent Activity (90 days) coloring - shows which files have been actively developed*
+
+![Last Modified Mode](docs/images/lastmod-mode-cbioportal.png)
+*Same cBioPortal repository with Last Modified (Relative) coloring - reveals code age distribution from newest (green) to legacy (red)*
+
+</details>
 
 #### Commit Siblings Highlighting
 - Click any file with "Highlight Commit" enabled
@@ -44,13 +101,38 @@ Visualize code repositories to understand:
 - Connection lines from highlighted files to parent directories
 - Toggle to clear highlighting
 
+### Timeline V2 - Repository Evolution Playback
+
+Watch your repository evolve commit-by-commit:
+
+- **Full commit history** - Process all commits, not just HEAD
+- **VCR controls** - Play, pause, step forward/backward through history
+- **Live metrics** - Repository stats update as you navigate commits
+- **Commit details** - See file changes (`Files: +N ~N -N`), LOC changes, merge commits
+- **Color-coded highlights** - Green connection lines for additions, orange for modifications
+- **Adaptive speed** - Playback from 1x to 1000x speed
+- **Delta reconstruction** - Gource-style visualization rebuilding the tree at each commit
+
 ### UI Features
-- **Collapsible Stats Panel** - File count, LOC, directory count, max depth, top 5 languages
+- **Live Repository Stats Panel** - File count, LOC, directory count, max depth, top 5 languages (updates in Timeline V2)
 - **Dynamic Legend** - Updates based on color mode (file types, time ranges, or authors)
 - **Info Panel** - Click files/directories to see detailed metadata
 - **Repository Switcher** - Load different analyzed repos without page reload
 - **Label Toggle** - "Always On" or "Hover Only" for directory labels
 - **Tooltips** - Quick stats on hover
+- **Collapsible Panels** - Click headers to expand/collapse
+
+## 📋 Requirements
+
+- **Node.js** ≥ 18.0
+- **npm** ≥ 9.0
+- **Git** (for repository analysis)
+- **Modern browser** with WebGL support (Chrome, Firefox, Safari, Edge)
+
+**Tested On:**
+- macOS 13+ (Apple Silicon & Intel)
+- Linux (Ubuntu 22.04+)
+- Windows 10/11 (WSL2 recommended)
 
 ## 🚀 Quick Start
 
@@ -98,7 +180,7 @@ Open http://localhost:3000 (or http://localhost:3001 if port 3000 is in use)
 - **Click file/directory** - View details and drill down into directories
 
 **UI Controls:**
-- **Color Mode dropdown** - Switch between File Type, Last Modified, and Author
+- **Color Mode dropdown** - Switch between File Type, Last Modified, Author, Churn, Recent Activity
 - **Labels toggle** - Toggle directory labels between Always On and Hover Only
 - **Repository selector** - Switch between different analyzed repositories
 - **Highlight Commit** - Toggle commit siblings highlighting mode
@@ -125,6 +207,7 @@ code-evolution-viz/
 │   └── index.html                 # Main UI layout
 │
 ├── docs/
+│   ├── images/                    # README screenshots
 │   └── gource-reference/          # Learnings from studying Gource
 │
 ├── PROGRESS.md                    # Detailed development history
@@ -159,55 +242,39 @@ Rather than hard-coded time intervals, the Last Modified mode adapts:
 
 ## 🛣️ Roadmap
 
-### ✅ Completed: MVP Slices 1 & 2
+### ✅ Completed Features
 
-**Slice 1: Repository Structure Visualization**
-- Repository analysis at HEAD commit
-- Lines of code calculation
-- Hierarchical tree visualization with solar system layout
-- File type color coding (50+ extensions)
+**Slices 1-2: Core Visualization**
+- Repository structure visualization with solar system layout
+- File type, author, last modified color modes
 - Interactive navigation and focus mode
-
-**Slice 2: Git Metadata Visualization**
-- Last modified date collection and coloring
-- Commit author tracking and coloring
 - Commit siblings highlighting
-- Adaptive time intervals for active vs stale repos
+
+**Slices 3-5: Advanced Metrics**
+- Churn (Lifetime Commits) heatmap coloring
+- Contributors count visualization
+- Recent Activity (90 days) coloring
+
+**Slices 6-8: Timeline & Evolution**
+- **Timeline V2** - Full commit history playback with delta reconstruction
+- Live repository stats updating per commit
+- Color-coded file change highlights (green for adds, orange for modifications)
+- VCR-style playback controls with variable speed
 
 ### 🚧 In Progress
 
-**Testing & Polish**
-- Re-analyze React repository with commit hash metadata
-- Comprehensive testing of all color modes
-- Performance validation on large repositories
+**Polish & Documentation**
+- Performance optimization for 10K+ file repositories
+- Video demonstrations
+- Accessibility improvements
 
 ### 📋 Planned Features
 
-**Slice 3: Commit Frequency (Churn) Coloring**
-- Count commits per file
-- Heatmap coloring (cool blue → hot red)
-- Identify frequently modified files (refactoring candidates)
-
-**Slice 4: Unique Contributors Count**
-- Track number of distinct authors per file
-- Visualize coordination complexity
-- Identify single-owner vs team-owned files
-
-**Slice 5: File Age Visualization**
-- First commit date per file
-- Color by age (new → legacy)
-- Distinguish recent code from old systems
-
-**Slice 6: Animate History Forward**
-- Process full commit history (not just HEAD)
-- Timeline playback controls
-- Watch repository structure evolve over time
-
-**Slice 7-10: Advanced Features**
+**Slice 9-10: Advanced Analysis**
 - Temporal coupling detection (files that change together)
-- Complexity heatmap integration
+- Complexity heatmap integration (cyclomatic complexity)
 - Hotspot analysis (complexity × churn)
-- Team ownership and knowledge distribution
+- Team ownership and knowledge distribution visualization
 - Architecture drift detection
 - Shareable reports and exports
 
@@ -234,6 +301,7 @@ Rather than hard-coded time intervals, the Last Modified mode adapts:
 **Tested Repositories:**
 - **Gource** (120 files, 28K LOC): Loads in <500ms, 60fps interaction
 - **React** (6,784 files, 918K LOC): Loads in ~2s, smooth 60fps rendering
+- **Timeline V2** (988 commits): Keyframe generation in ~100ms, smooth playback
 - **Hot-reload:** Works reliably during development
 - **Repository switching:** No page reload required
 
@@ -272,13 +340,55 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines on:
 - **CONTRIBUTING.md** - Guidelines for extending the application
 - **docs/gource-reference/** - Architectural insights from Gource study
 
+## 🔧 Troubleshooting
+
+### Common Issues
+
+**"Port 3000 already in use"**
+```bash
+# Vite will automatically try 3001, 3002, etc.
+# Or manually kill the process:
+lsof -ti:3000 | xargs kill
+```
+
+**"Module not found" errors**
+```bash
+# Clean install dependencies
+rm -rf node_modules package-lock.json
+npm install
+```
+
+**Viewer shows empty/broken visualization**
+- Check browser console for errors
+- Verify JSON file is in `viewer/public/data/`
+- Clear browser cache (Cmd+Shift+R or Ctrl+Shift+R)
+- Delete any `.js` files in `viewer/src/` (should only be `.ts`)
+
+**Repository analysis crashes on large repos**
+```bash
+# Large repos may need more memory
+NODE_OPTIONS=--max-old-space-size=4096 npm run dev -- /path/to/repo
+```
+
+**Stale compiled `.js` files causing issues**
+```bash
+# Remove compiled artifacts
+cd viewer && rm src/*.js
+```
+
+**Timeline V2 changes not appearing**
+- Hard refresh browser: Cmd+Shift+R (Mac) or Ctrl+Shift+R (Windows/Linux)
+- Delete `viewer/dist/` directory
+- Restart Vite dev server
+
 ## 📈 Testing Notes
 
 **Current Test Coverage:**
 - Solar system layout with various tree depths
 - Hierarchical focus mode navigation
-- All 3 color modes (file type, last modified, author)
+- All 5 color modes (file type, last modified, author, churn, recent activity)
 - Commit siblings highlighting
+- Timeline V2 playback (forward, backward, speed control)
 - Label visibility in Always On and Hover modes
 - Repository switching
 - Collapsible UI panels
@@ -288,6 +398,23 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines on:
 - Very large repositories (10K+ files) not yet tested
 - Performance with deep hierarchies (10+ levels) unknown
 - No automated tests yet (manual testing only)
+
+## 🤝 Contributing
+
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for:
+- Development workflow
+- Code style guidelines
+- Testing requirements
+- How to add new color modes
+- Submitting pull requests
+
+**Quick Wins for Contributors:**
+- Add support for more programming languages in color scheme
+- Improve color scheme accessibility (WCAG compliance)
+- Optimize performance for large repos (10K+ files)
+- Add export/screenshot capabilities
+- Create video walkthroughs
+- Add automated tests
 
 ## 📄 License
 
@@ -304,6 +431,6 @@ MIT
 
 **Repository:** https://github.com/paulrayner/code-evolution-viz
 
-*Last Updated: 2025-10-18*
-*Status: MVP Slices 1 & 2 Complete*
-*Next: Testing & Slice 3 (Commit Frequency)*
+*Last Updated: 2025-10-20*
+*Status: Timeline V2 Complete | Slices 1-8 ✅*
+*Next: Performance Optimization & Video Demo*

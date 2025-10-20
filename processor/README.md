@@ -35,9 +35,14 @@ Generates JSON with:
 - Repository metadata (commit, author, timestamp)
 - Hierarchical tree structure of directories and files
 - Lines of code per file
+- Git metadata (last modified, authors, commit counts, churn metrics)
 - Summary statistics
 
 See `src/types.ts` for detailed type definitions.
+
+## Future Enhancements
+
+See [../docs/ddd-bounded-context-vision.md](../docs/ddd-bounded-context-vision.md) for planned DDD bounded context detection features using temporal coupling analysis, vocabulary extraction, and connascence of name detection.
 
 ## Building
 
