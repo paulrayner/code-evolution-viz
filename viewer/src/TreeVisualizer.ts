@@ -38,7 +38,7 @@ export class TreeVisualizer {
   private labelMode: 'always' | 'hover' = 'hover';
   private colorMode: ColorMode = 'fileType';
   private highlightedFiles: Set<string> = new Set();
-  private timelineMode: boolean = false; // Timeline mode disables depth-based hiding
+  private timelineMode: 'off' | 'v1' | 'v2' = 'off'; // Timeline mode: v1=spotlight, v2=additive
   private edges: THREE.Line[] = [];
   private edgeNodeMap: Map<THREE.Line, { parent: TreeNode; child: TreeNode }> = new Map();
   private onFileClick?: (file: FileNode) => void;
@@ -161,12 +161,12 @@ export class TreeVisualizer {
   }
 
   /**
-   * Enable/disable timeline mode
-   * Timeline mode shows all files regardless of depth for better highlighting
+   * Set timeline mode
+   * @param mode - 'off' (static), 'v1' (spotlight highlighting), 'v2' (additive/Gource-style)
    */
-  setTimelineMode(enabled: boolean) {
-    console.log(`Setting timeline mode to: ${enabled}`);
-    this.timelineMode = enabled;
+  setTimelineMode(mode: 'off' | 'v1' | 'v2') {
+    console.log(`Setting timeline mode to: ${mode}`);
+    this.timelineMode = mode;
     if (this.layoutNodes.length > 0) {
       this.rebuildVisualization();
     }
@@ -216,12 +216,23 @@ export class TreeVisualizer {
         mesh.scale.set(1.3, 1.3, 1.3); // Scale up 30%
         mesh.visible = true; // Force visible even if normally hidden
       } else {
-        // This file is NOT highlighted - make it nearly invisible
-        material.opacity = 0.08;
-        material.transparent = true;
-        material.emissiveIntensity = 0.0;
+        // This file is NOT highlighted
+        if (this.timelineMode === 'v2') {
+          // V2 (Gource-style): Keep normal appearance for non-highlighted files
+          const layoutNode = this.layoutNodes.find(ln => ln.mesh === mesh);
+          const isHidden = layoutNode ? this.isNodeHidden(layoutNode) : false;
+          material.opacity = isHidden ? 0.0 : 1.0;
+          material.transparent = isHidden;
+          material.emissiveIntensity = 0.6; // Keep same brightness as initial render
+          mesh.visible = !isHidden;
+        } else {
+          // V1 (or static with highlight commit on): Dim non-highlighted files (spotlight effect)
+          material.opacity = 0.08;
+          material.transparent = true;
+          material.emissiveIntensity = 0.0;
+          mesh.visible = true; // Keep visible but very dim
+        }
         mesh.scale.set(1, 1, 1);
-        mesh.visible = true; // Keep visible but very dim
       }
 
       material.needsUpdate = true;
@@ -257,9 +268,18 @@ export class TreeVisualizer {
         material.linewidth = 3; // Note: linewidth may not work on all platforms
         edge.visible = true; // Force visible even if normally hidden
       } else {
-        // Edge doesn't connect to highlighted file - make it nearly invisible
-        material.opacity = 0.05;
-        edge.visible = true; // Keep visible but very dim
+        // Edge doesn't connect to highlighted file
+        if (this.timelineMode === 'v2') {
+          // V2: Keep normal edge visibility (additive mode)
+          material.color.setHex(0xaaaaaa);
+          material.opacity = shouldBeHidden ? 0.0 : 0.15;
+          material.linewidth = 1;
+          edge.visible = !shouldBeHidden;
+        } else {
+          // V1: Make edge nearly invisible (spotlight mode)
+          material.opacity = 0.05;
+          edge.visible = true; // Keep visible but very dim
+        }
       }
 
       material.needsUpdate = true;
@@ -418,12 +438,12 @@ export class TreeVisualizer {
     // Check focus scope
     if (this.focusedDirectory === null) {
       // In timeline mode, disable depth-based hiding so all files can be highlighted
-      if (!this.timelineMode) {
+      if (this.timelineMode === 'off') {
         // No focus: show root + level 1 only
         const depth = this.getNodeDepth(layoutNode);
         return depth > 1;
       }
-      // Timeline mode: no depth-based hiding
+      // Timeline mode (v1 or v2): no depth-based hiding
       return false;
     } else {
       // Focused: show only focused directory + its direct children
@@ -603,17 +623,23 @@ export class TreeVisualizer {
         const fileNode = layoutNode.node;
 
         // Scale based on LOC (normalized)
-        const normalizedSize = Math.max(0.3, (fileNode.loc / maxFileLoc) * 2);
+        // Use smaller base size for timeline mode where all LOC values are placeholders
+        const sizeMultiplier = this.timelineMode !== 'off' ? 0.3 : 2;
+        const minSize = this.timelineMode !== 'off' ? 0.3 : 0.3;
+        const normalizedSize = Math.max(minSize, (fileNode.loc / maxFileLoc) * sizeMultiplier);
 
         // Color based on current mode
         const colorInfo = getColorForFile(fileNode, this.colorMode);
         const color = parseInt(colorInfo.hex.replace('#', ''), 16);
 
+        // Use higher emissive intensity in timeline mode for better visibility
+        const emissiveIntensity = this.timelineMode !== 'off' ? 0.6 : 0.2;
+
         const geometry = new THREE.SphereGeometry(normalizedSize, 16, 16);
         const material = new THREE.MeshPhongMaterial({
           color,
           emissive: color,
-          emissiveIntensity: 0.2,
+          emissiveIntensity,
           transparent: isHidden,
           opacity: isHidden ? 0.0 : 1.0
         });
@@ -752,8 +778,9 @@ export class TreeVisualizer {
 
   /**
    * Visualize repository tree
+   * @param resetCamera - Whether to auto-frame the camera (default: true)
    */
-  visualize(tree: DirectoryNode) {
+  visualize(tree: DirectoryNode, resetCamera: boolean = true) {
     console.log('Visualizing tree...');
 
     // Reset state when loading new repository
@@ -776,12 +803,17 @@ export class TreeVisualizer {
     this.createVisuals(this.layoutNodes, maxFileLoc, maxDirLoc);
 
     // Auto-frame camera to show entire tree (only visible nodes)
-    const visibleNodes = this.layoutNodes.filter(ln => !this.isNodeHidden(ln));
-    const boundingBox = this.calculateBoundingBox(visibleNodes);
-    this.autoFrameCamera(boundingBox);
+    if (resetCamera) {
+      const visibleNodes = this.layoutNodes.filter(ln => !this.isNodeHidden(ln));
+      const boundingBox = this.calculateBoundingBox(visibleNodes);
+      this.autoFrameCamera(boundingBox);
+    }
 
     // Set controls target to root position (center of rotation)
-    this.controls.target.copy(rootPosition);
+    // Only reset target on initial load to preserve user's pan during timeline playback
+    if (resetCamera) {
+      this.controls.target.copy(rootPosition);
+    }
     this.controls.update();
   }
 

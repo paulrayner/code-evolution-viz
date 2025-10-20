@@ -11,27 +11,28 @@ export interface ColorInfo {
 /**
  * Palette of maximally distinct colors for author visualization
  * Ordered to maximize contrast between adjacent colors
+ * Note: Starts with green to avoid red for primary author
  */
 const AUTHOR_COLORS = [
-  '#e6194B', // Red
-  '#3cb44b', // Green
+  '#3cb44b', // Green (first to avoid red)
   '#4363d8', // Blue
   '#f58231', // Orange
   '#911eb4', // Purple
   '#42d4f4', // Cyan
+  '#ffe119', // Yellow
   '#f032e6', // Magenta
   '#bfef45', // Lime
-  '#800000', // Maroon
+  '#469990', // Teal
+  '#e6194B', // Red (moved down from first)
   '#aaffc3', // Mint
   '#000075', // Navy
-  '#ffe119', // Yellow
-  '#469990', // Teal
   '#fabed4', // Pink
   '#9A6324', // Brown
   '#dcbeff', // Lavender
   '#808000', // Olive
   '#00ffff', // Aqua
   '#a9a9a9', // Gray
+  '#800000', // Maroon
   '#ffd8b1', // Apricot
   '#e6beff', // Mauve
   '#aa6e28', // Tan
