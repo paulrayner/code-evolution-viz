@@ -486,6 +486,75 @@ function populateStats(snapshot: RepositorySnapshot) {
 }
 
 /**
+ * Update statistics panel from tree (for Timeline V2 where we don't have a full snapshot)
+ */
+function updateStatsForTree(tree: DirectoryNode, commitIndex?: number, totalCommits?: number) {
+  // Count files and calculate total LOC
+  let totalFiles = 0;
+  let totalLoc = 0;
+  const locByExt: Record<string, { loc: number; name: string; color: string }> = {};
+
+  const processNode = (node: TreeNode) => {
+    if (node.type === 'file') {
+      totalFiles++;
+      totalLoc += node.loc;
+
+      const ext = node.extension;
+      const colorInfo = FILE_COLORS[ext];
+      if (!locByExt[ext]) {
+        locByExt[ext] = {
+          loc: 0,
+          name: colorInfo?.name || ext,
+          color: colorInfo?.hex || '#888'
+        };
+      }
+      locByExt[ext].loc += node.loc;
+    } else {
+      for (const child of node.children) {
+        processNode(child);
+      }
+    }
+  };
+
+  processNode(tree);
+
+  // Update stats panel
+  document.getElementById('stat-files')!.textContent = totalFiles.toLocaleString();
+  document.getElementById('stat-loc')!.textContent = totalLoc.toLocaleString();
+  document.getElementById('stat-dirs')!.textContent = (countDirectories(tree) - 1).toString(); // -1 for root
+  document.getElementById('stat-depth')!.textContent = calculateMaxDepth(tree).toString();
+
+  // Update stats panel title to show we're in timeline mode
+  const statsHeader = document.querySelector('#stats-panel h3');
+  if (statsHeader && commitIndex !== undefined && totalCommits !== undefined) {
+    statsHeader.textContent = `Repository Stats (Commit ${commitIndex + 1} of ${totalCommits})`;
+  }
+
+  // Sort by LOC and take top 5
+  const topLanguages = Object.values(locByExt)
+    .sort((a, b) => b.loc - a.loc)
+    .slice(0, 5);
+
+  const langBreakdown = document.getElementById('lang-breakdown')!;
+  langBreakdown.innerHTML = '<div style="margin-top: 10px; font-size: 10px; color: #888;">Top Languages:</div>';
+
+  for (const lang of topLanguages) {
+    const percentage = (lang.loc / totalLoc) * 100;
+    const bar = document.createElement('div');
+    bar.className = 'stat-bar';
+    bar.innerHTML = `
+      <div class="stat-bar-label">${lang.name}</div>
+      <div class="stat-bar-fill">
+        <div class="stat-bar-fill-inner" style="width: ${percentage}%; background: ${lang.color};">
+          <span class="stat-bar-text">${percentage.toFixed(1)}%</span>
+        </div>
+      </div>
+    `;
+    langBreakdown.appendChild(bar);
+  }
+}
+
+/**
  * Populate legend with file extension colors
  * See viewer/docs/color-scheme.md for design rationale
  */
@@ -764,12 +833,65 @@ async function loadTimelineV2(data: TimelineDataV2, repoName: string) {
 
     // Update header
     const repoNameEl = document.getElementById('repo-name');
-    const commitInfo = document.getElementById('commit-info');
     if (repoNameEl) {
       repoNameEl.textContent = data.repositoryPath.split('/').pop() || 'Repository';
     }
-    if (commitInfo) {
-      commitInfo.textContent = `Timeline V2: ${data.metadata.totalCommits} commits • ${data.metadata.tags.length} tags`;
+
+    // Display initial commit info (index 0)
+    // The onCommit callback only fires on user interaction, not on initial load
+    if (currentDeltaController) {
+      const initialCommit = currentDeltaController.getCommitAtIndex(0);
+      if (initialCommit) {
+        const commitInfo = document.getElementById('commit-info');
+        if (commitInfo) {
+          const dateStr = new Date(initialCommit.date).toLocaleDateString();
+
+          // Build file changes summary with label (only show non-zero counts)
+          const added = initialCommit.changes.filesAdded.length;
+          const modified = initialCommit.changes.filesModified.length;
+          const deleted = initialCommit.changes.filesDeleted?.length || 0;
+
+          const fileChanges = [];
+          if (added > 0) fileChanges.push(`<span style="color: #27ae60">+${added}</span>`);
+          if (modified > 0) fileChanges.push(`<span style="color: #f39c12">~${modified}</span>`);
+          if (deleted > 0) fileChanges.push(`<span style="color: #e74c3c">-${deleted}</span>`);
+          const filesSummary = fileChanges.length > 0 ? ` • Files: ${fileChanges.join(' ')}` : '';
+
+          // LOC changes with label (lines of code added/deleted)
+          const linesAdded = initialCommit.changes.linesAdded || 0;
+          const linesDeleted = initialCommit.changes.linesDeleted || 0;
+          const locChanges = [];
+          if (linesAdded > 0) locChanges.push(`<span style="color: #27ae60">+${linesAdded}</span>`);
+          if (linesDeleted > 0) locChanges.push(`<span style="color: #e74c3c">-${linesDeleted}</span>`);
+          const locSummary = locChanges.length > 0 ? ` • LOC: ${locChanges.join(' ')}` : '';
+
+          // Net file count delta (repository growth/shrinkage)
+          // Only show when different from additions (i.e., when there are deletions)
+          const fileDelta = added - deleted;
+          let fileDeltaSummary = '';
+          if (fileDelta > 0 && fileDelta !== added) {
+            // Has deletions, show net (e.g., +7 -3 = +4 files)
+            fileDeltaSummary = ` • <span style="color: #27ae60">+${fileDelta} ${fileDelta === 1 ? 'file' : 'files'}</span>`;
+          } else if (fileDelta < 0) {
+            // Net negative (more deletions than additions)
+            fileDeltaSummary = ` • <span style="color: #e74c3c">${fileDelta} ${Math.abs(fileDelta) === 1 ? 'file' : 'files'}</span>`;
+          }
+          // Otherwise hide (redundant with Files: +N)
+
+          // Merge commit indicator
+          const mergeIndicator = initialCommit.isMergeCommit ? ' <span style="color: #888; font-size: 0.9em;">[MERGE]</span>' : '';
+
+          const tags = initialCommit.tags.length > 0 ? ` 🏷️ ${initialCommit.tags.join(', ')}` : '';
+          commitInfo.innerHTML = `${initialCommit.hash.substring(0, 7)} • ${dateStr} • ${initialCommit.author}${mergeIndicator}${filesSummary}${locSummary}${fileDeltaSummary}${tags}`;
+        }
+
+        // Highlight files for initial commit
+        highlightTimelineCommitFiles(initialCommit);
+
+        // Update repository stats panel with initial tree state
+        const totalCommits = currentDeltaController.getTotalCommits();
+        updateStatsForTree(firstTree, 0, totalCommits);
+      }
     }
 
     // Show timeline controls
@@ -812,14 +934,54 @@ function setupTimelineV2Controls() {
       currentVisualizer.visualize(tree, isFirstCommit);
       isFirstCommit = false;
       pathToFileIndex = buildPathIndex(tree);
+
+      // Update repository stats panel with current tree state
+      const totalCommits = currentDeltaController?.getTotalCommits() || 0;
+      updateStatsForTree(tree, index, totalCommits);
     }
 
     // Update commit info
     const commitInfo = document.getElementById('commit-info');
     if (commitInfo) {
       const dateStr = new Date(commit.date).toLocaleDateString();
+
+      // Build file changes summary with label (only show non-zero counts)
+      const added = commit.changes.filesAdded.length;
+      const modified = commit.changes.filesModified.length;
+      const deleted = commit.changes.filesDeleted?.length || 0;
+
+      const fileChanges = [];
+      if (added > 0) fileChanges.push(`<span style="color: #27ae60">+${added}</span>`);
+      if (modified > 0) fileChanges.push(`<span style="color: #f39c12">~${modified}</span>`);
+      if (deleted > 0) fileChanges.push(`<span style="color: #e74c3c">-${deleted}</span>`);
+      const filesSummary = fileChanges.length > 0 ? ` • Files: ${fileChanges.join(' ')}` : '';
+
+      // LOC changes with label (lines of code added/deleted)
+      const linesAdded = commit.changes.linesAdded || 0;
+      const linesDeleted = commit.changes.linesDeleted || 0;
+      const locChanges = [];
+      if (linesAdded > 0) locChanges.push(`<span style="color: #27ae60">+${linesAdded}</span>`);
+      if (linesDeleted > 0) locChanges.push(`<span style="color: #e74c3c">-${linesDeleted}</span>`);
+      const locSummary = locChanges.length > 0 ? ` • LOC: ${locChanges.join(' ')}` : '';
+
+      // Net file count delta (repository growth/shrinkage)
+      // Only show when different from additions (i.e., when there are deletions)
+      const fileDelta = added - deleted;
+      let fileDeltaSummary = '';
+      if (fileDelta > 0 && fileDelta !== added) {
+        // Has deletions, show net (e.g., +7 -3 = +4 files)
+        fileDeltaSummary = ` • <span style="color: #27ae60">+${fileDelta} ${fileDelta === 1 ? 'file' : 'files'}</span>`;
+      } else if (fileDelta < 0) {
+        // Net negative (more deletions than additions)
+        fileDeltaSummary = ` • <span style="color: #e74c3c">${fileDelta} ${Math.abs(fileDelta) === 1 ? 'file' : 'files'}</span>`;
+      }
+      // Otherwise hide (redundant with Files: +N)
+
+      // Merge commit indicator
+      const mergeIndicator = commit.isMergeCommit ? ' <span style="color: #888; font-size: 0.9em;">[MERGE]</span>' : '';
+
       const tags = commit.tags.length > 0 ? ` 🏷️ ${commit.tags.join(', ')}` : '';
-      commitInfo.textContent = `${commit.hash.substring(0, 7)} • ${dateStr} • ${commit.author}${tags}`;
+      commitInfo.innerHTML = `${commit.hash.substring(0, 7)} • ${dateStr} • ${commit.author}${mergeIndicator}${filesSummary}${locSummary}${fileDeltaSummary}${tags}`;
     }
 
     // Highlight files changed in this commit
@@ -1367,21 +1529,39 @@ function highlightTimelineCommitFiles(commit: any) {
     const highlightableChanges = filesAdded + filesModified;
     const totalChanges = highlightableChanges + filesDeleted;
 
-    // Collect files to highlight (only additions and modifications exist in tree)
-    const changedFiles: FileNode[] = [];
-    for (const path of [...commit.changes.filesAdded, ...commit.changes.filesModified]) {
+    // Collect files to highlight separately by type (additions vs modifications)
+    const addedFiles: FileNode[] = [];
+    const modifiedFiles: FileNode[] = [];
+
+    for (const path of commit.changes.filesAdded) {
       const fileNode = pathToFileIndex.get(path);
       if (fileNode) {
-        changedFiles.push(fileNode);
+        addedFiles.push(fileNode);
       }
     }
+
+    for (const path of commit.changes.filesModified) {
+      const fileNode = pathToFileIndex.get(path);
+      if (fileNode) {
+        modifiedFiles.push(fileNode);
+      }
+    }
+
+    const changedFiles = [...addedFiles, ...modifiedFiles];
 
     if (highlightableChanges === 0) {
       // No additions/modifications - could be deletions or empty commit
       currentVisualizer.clearHighlight();
       hideTimelineWarning();
       if (filesDeleted > 0) {
-        console.log(`Timeline V2: Commit has ${filesDeleted} deletion(s) only - no highlighting`);
+        // Show deleted file paths (limit to first 3-5)
+        const deletedPaths = commit.changes.filesDeleted || [];
+        const displayPaths = deletedPaths.slice(0, 5);
+        const remaining = Math.max(0, deletedPaths.length - 5);
+        const pathsStr = remaining > 0
+          ? `${JSON.stringify(displayPaths)} (+${remaining} more)`
+          : JSON.stringify(displayPaths);
+        console.log(`Timeline V2: Commit has ${filesDeleted} deletion(s) only - no highlighting. Deleted: ${pathsStr}`);
       } else {
         console.log(`Timeline V2: Empty commit (no file changes)`);
       }
@@ -1392,17 +1572,43 @@ function highlightTimelineCommitFiles(commit: any) {
       console.warn(`Timeline V2: Failed to find ${highlightableChanges} additions/modifications`);
     } else if (changedFiles.length < highlightableChanges) {
       // Found some but not all - partial highlighting
-      const filePaths = changedFiles.map(f => f.path);
-      currentVisualizer.highlightFiles(filePaths);
+      const addedPaths = addedFiles.map(f => f.path);
+      const modifiedPaths = modifiedFiles.map(f => f.path);
+      currentVisualizer.highlightFilesByType(addedPaths, modifiedPaths);
       const missing = highlightableChanges - changedFiles.length;
       showTimelineWarning(`⚠️ Highlighting ${changedFiles.length}/${highlightableChanges} changes`);
-      console.log(`Timeline V2: Partial highlight ${changedFiles.length}/${highlightableChanges} (${filesDeleted} deletions not shown)`);
+
+      // Only mention deletions if there are any
+      if (filesDeleted > 0) {
+        const deletedPaths = commit.changes.filesDeleted || [];
+        const displayPaths = deletedPaths.slice(0, 3);
+        const remaining = Math.max(0, deletedPaths.length - 3);
+        const pathsStr = remaining > 0
+          ? `${JSON.stringify(displayPaths)} (+${remaining} more)`
+          : JSON.stringify(displayPaths);
+        console.log(`Timeline V2: Partial highlight ${changedFiles.length}/${highlightableChanges}, ${filesDeleted} deleted: ${pathsStr}`);
+      } else {
+        console.log(`Timeline V2: Partial highlight ${changedFiles.length}/${highlightableChanges}`);
+      }
     } else {
       // Found all highlightable files - success!
-      const filePaths = changedFiles.map(f => f.path);
-      currentVisualizer.highlightFiles(filePaths);
+      const addedPaths = addedFiles.map(f => f.path);
+      const modifiedPaths = modifiedFiles.map(f => f.path);
+      currentVisualizer.highlightFilesByType(addedPaths, modifiedPaths);
       hideTimelineWarning();
-      console.log(`Timeline V2: Highlighted ${changedFiles.length} changes (${filesDeleted} deletions not shown)`);
+
+      // Only mention deletions if there are any
+      if (filesDeleted > 0) {
+        const deletedPaths = commit.changes.filesDeleted || [];
+        const displayPaths = deletedPaths.slice(0, 3);
+        const remaining = Math.max(0, deletedPaths.length - 3);
+        const pathsStr = remaining > 0
+          ? `${JSON.stringify(displayPaths)} (+${remaining} more)`
+          : JSON.stringify(displayPaths);
+        console.log(`Timeline V2: Highlighted ${changedFiles.length} changes, ${filesDeleted} deleted: ${pathsStr}`);
+      } else {
+        console.log(`Timeline V2: Highlighted ${changedFiles.length} changes`);
+      }
     }
 
   } else {

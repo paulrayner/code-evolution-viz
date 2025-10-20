@@ -41,7 +41,16 @@
       "Read(//Users/paul/Documents/cbioportal/cbioportal-frontend/**)",
       "Bash(xargs kill:*)",
       "Bash(open http://localhost:3000/)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(readlink:*)",
+      "Bash(mkdir:*)",
+      "Bash(git show:*)",
+      "Bash(GIT_SEQUENCE_EDITOR=\"cat > /tmp/rebase-todo\" git rebase -i d851d18fc5deba903e9bf41cee6d4617486f884d~1)",
+      "Bash(git filter-branch:*)",
+      "Bash(git stash:*)",
+      "Bash(git for-each-ref:*)",
+      "Bash(git update-ref:*)",
+      "Bash(git reset:*)"
     ]
   }
 }
