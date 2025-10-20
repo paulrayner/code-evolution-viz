@@ -5,6 +5,7 @@ import * as path from 'path';
 import simpleGit, { SimpleGit } from 'simple-git';
 import { DirectoryNode, FileNode, RepositorySnapshot, TreeNode, TimelineData } from './types';
 import { TimelineAnalyzer } from './timeline-analyzer';
+import { FullDeltaAnalyzer } from './full-delta-analyzer';
 
 interface FileInfo {
   path: string;
@@ -343,6 +344,7 @@ async function main() {
 
   // Parse flags
   let timelineMode = false;
+  let fullDeltaMode = false;
   let targetCommitCount = 200;
   const positionalArgs: string[] = [];
 
@@ -350,6 +352,8 @@ async function main() {
     const arg = args[i];
     if (arg === '--timeline') {
       timelineMode = true;
+    } else if (arg === '--full-delta') {
+      fullDeltaMode = true;
     } else if (arg === '--target-commits') {
       targetCommitCount = parseInt(args[++i], 10);
     } else if (!arg.startsWith('--')) {
@@ -361,9 +365,43 @@ async function main() {
   const outputPath = positionalArgs[1] || path.join(__dirname, '../output/repo-data.json');
 
   try {
-    if (timelineMode) {
-      // Timeline mode: Generate adaptive timeline with HEAD snapshot
-      console.log('=== TIMELINE MODE ===');
+    if (fullDeltaMode) {
+      // Full Delta mode: Generate timeline-v2 with ALL commits as deltas
+      console.log('=== FULL DELTA MODE (Timeline V2) ===\n');
+
+      const analyzer = new FullDeltaAnalyzer(repoPath);
+      const v2Data = await analyzer.analyzeFullDelta();
+
+      // Determine output path
+      const repoName = path.basename(repoPath);
+      const v2OutputPath = path.join(__dirname, `../output/${repoName}-timeline-full.json`);
+
+      // Ensure output directory exists
+      const outputDir = path.dirname(v2OutputPath);
+      if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true });
+      }
+
+      // Write output
+      fs.writeFileSync(v2OutputPath, JSON.stringify(v2Data, null, 2));
+
+      const fileSizeMB = (fs.statSync(v2OutputPath).size / (1024 * 1024)).toFixed(2);
+      console.log(`\n✅ Output written to: ${v2OutputPath}`);
+      console.log(`📦 File size: ${fileSizeMB} MB`);
+      console.log(`\n📊 Timeline V2 Stats:`);
+      console.log(`  Format: ${v2Data.format}`);
+      console.log(`  Total commits: ${v2Data.metadata.totalCommits}`);
+      console.log(`  Date range: ${v2Data.metadata.dateRange.first.substring(0, 10)} to ${v2Data.metadata.dateRange.last.substring(0, 10)}`);
+      console.log(`  Version tags: ${v2Data.metadata.tags.length}`);
+      console.log(`  Commits with deltas: ${v2Data.commits.length}`);
+
+      if (v2Data.metadata.tags.length > 0) {
+        console.log(`\n🏷️  Tags: ${v2Data.metadata.tags.slice(0, 5).join(', ')}${v2Data.metadata.tags.length > 5 ? '...' : ''}`);
+      }
+
+    } else if (timelineMode) {
+      // Timeline mode: Generate adaptive timeline with HEAD snapshot (V1)
+      console.log('=== TIMELINE MODE (V1) ===');
       console.log(`Target commits: ${targetCommitCount}\n`);
 
       // First generate HEAD snapshot

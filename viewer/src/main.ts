@@ -1,7 +1,8 @@
 import { TreeVisualizer } from './TreeVisualizer';
-import { RepositorySnapshot, FileNode, DirectoryNode, TreeNode, TimelineData } from './types';
+import { RepositorySnapshot, FileNode, DirectoryNode, TreeNode, TimelineData, TimelineDataV2 } from './types';
 import { FILE_COLORS, DIRECTORY_COLOR } from './colorScheme';
 import { ColorMode, getLegendItems, getColorModeName, getColorForFile, assignAuthorColors, calculateLastModifiedIntervals, isUsingPercentileIntervals } from './colorModeManager';
+import { DeltaReplayController } from './DeltaReplayController';
 
 /**
  * Get list of available repositories
@@ -557,7 +558,8 @@ function hideLoading() {
 
 let currentVisualizer: TreeVisualizer | null = null;
 let currentSnapshot: RepositorySnapshot | null = null;
-let currentTimelineData: TimelineData | null = null; // Timeline format if loaded
+let currentTimelineData: TimelineData | null = null; // Timeline V1 format if loaded
+let currentDeltaController: DeltaReplayController | null = null; // Timeline V2 controller
 let commitToFilesIndex: Map<string, FileNode[]> = new Map();
 let highlightCommitEnabled: boolean = true;
 let currentHighlightedCommit: string | null = null;
@@ -649,6 +651,265 @@ function collectModificationDates(tree: DirectoryNode): string[] {
 }
 
 /**
+ * Load Timeline V2 (Full Delta) format
+ */
+async function loadTimelineV2(data: TimelineDataV2, repoName: string) {
+  const loading = document.getElementById('loading');
+
+  try {
+    console.log(`\n=== LOADING TIMELINE V2 ===`);
+    console.log(`Repository: ${data.repositoryPath}`);
+    console.log(`Total commits: ${data.metadata.totalCommits}`);
+    console.log(`Date range: ${data.metadata.dateRange.first.substring(0, 10)} to ${data.metadata.dateRange.last.substring(0, 10)}`);
+    console.log(`Tags: ${data.metadata.tags.length}`);
+
+    // Update loading indicator
+    if (loading) {
+      loading.innerHTML = `
+        <div class="spinner"></div>
+        <p>Generating keyframes...</p>
+        <p id="progress-text">0 / ${data.metadata.totalCommits}</p>
+      `;
+    }
+
+    // Create delta controller
+    currentDeltaController = new DeltaReplayController(data);
+    currentTimelineData = null; // Clear V1 data
+
+    // Generate all keyframes
+    await currentDeltaController.generateKeyframes((current, total) => {
+      const progressText = document.getElementById('progress-text');
+      if (progressText) {
+        progressText.textContent = `${current} / ${total}`;
+      }
+    });
+
+    // VALIDATION: Try to load static HEAD snapshot for comparison
+    const staticName = repoName.replace('-timeline-full', '');
+    try {
+      console.log(`\n📋 Loading HEAD snapshot for validation: ${staticName}`);
+      const headData = await loadData(staticName);
+
+      if ('tree' in headData) {
+        const validation = currentDeltaController.validateFinalTree(headData as RepositorySnapshot);
+
+        if (!validation.isValid) {
+          console.error(`\n❌ VALIDATION FAILED!`);
+          console.error(`Missing files:`, validation.missing.slice(0, 10));
+          console.error(`Extra files:`, validation.extra.slice(0, 10));
+        }
+      }
+    } catch (error) {
+      console.warn('Could not load HEAD snapshot for validation:', error);
+    }
+
+    // Get first commit's tree
+    const firstTree = currentDeltaController.getTreeAtCommit(0);
+    if (!firstTree) {
+      throw new Error('Failed to generate first keyframe');
+    }
+
+    // Create a temporary snapshot for initialization
+    const tempSnapshot: RepositorySnapshot = {
+      repositoryPath: data.repositoryPath,
+      commit: data.commits[0].hash,
+      timestamp: data.commits[0].date,
+      author: data.commits[0].author,
+      message: data.commits[0].message,
+      tree: firstTree,
+      commitMessages: {},
+      stats: {
+        totalFiles: 0,
+        totalLoc: 0,
+        filesByExtension: {}
+      }
+    };
+
+    currentSnapshot = tempSnapshot;
+
+    // Build path index from first tree
+    pathToFileIndex = buildPathIndex(firstTree);
+
+    // Initialize visualizer
+    const canvas = document.getElementById('canvas') as HTMLCanvasElement;
+    if (!canvas) {
+      throw new Error('Canvas element not found');
+    }
+
+    if (!currentVisualizer) {
+      currentVisualizer = new TreeVisualizer(canvas);
+      currentVisualizer.setOnFileClick(showFileDetails);
+      currentVisualizer.setOnDirClick(showDirectoryDetails);
+      currentVisualizer.setOnHover(showTooltip);
+
+      const savedMode = localStorage.getItem('labelMode') as 'always' | 'hover' | null;
+      if (savedMode) {
+        currentVisualizer.setLabelMode(savedMode);
+      }
+
+      const savedColorMode = localStorage.getItem('colorMode') as ColorMode | null;
+      if (savedColorMode) {
+        currentVisualizer.setColorMode(savedColorMode);
+      }
+
+      currentVisualizer.start();
+    }
+
+    // Load first tree
+    currentVisualizer.visualize(firstTree);
+    currentVisualizer.setTimelineMode('v2');
+
+    // Set up V2 playback controls
+    setupTimelineV2Controls();
+
+    // Update header
+    const repoNameEl = document.getElementById('repo-name');
+    const commitInfo = document.getElementById('commit-info');
+    if (repoNameEl) {
+      repoNameEl.textContent = data.repositoryPath.split('/').pop() || 'Repository';
+    }
+    if (commitInfo) {
+      commitInfo.textContent = `Timeline V2: ${data.metadata.totalCommits} commits • ${data.metadata.tags.length} tags`;
+    }
+
+    // Show timeline controls
+    const timelineControls = document.getElementById('timeline-controls');
+    if (timelineControls) {
+      timelineControls.style.display = 'flex';
+    }
+
+    console.log('\n✅ Timeline V2 loaded successfully!\n');
+
+  } catch (error) {
+    console.error('Error loading Timeline V2:', error);
+    if (loading) {
+      loading.innerHTML = `<p style="color: red;">Error loading timeline: ${error}</p>`;
+    }
+  } finally {
+    if (loading) {
+      setTimeout(() => loading.classList.add('hidden'), 500);
+    }
+  }
+}
+
+/**
+ * Set up Timeline V2 playback controls
+ */
+function setupTimelineV2Controls() {
+  if (!currentDeltaController) return;
+
+  console.log('Setting up Timeline V2 controls...');
+
+  // Track if this is the first commit (to reset camera only once)
+  // Note: Set to false because initial camera reset is handled by visualize(firstTree) call above
+  let isFirstCommit = false;
+
+  // Listen for commit changes
+  currentDeltaController.on('commit', ({ index, commit, tree }: any) => {
+    // Update visualizer with new tree
+    if (currentVisualizer && tree) {
+      // Reset camera only on first commit, then allow manual rotation
+      currentVisualizer.visualize(tree, isFirstCommit);
+      isFirstCommit = false;
+      pathToFileIndex = buildPathIndex(tree);
+    }
+
+    // Update commit info
+    const commitInfo = document.getElementById('commit-info');
+    if (commitInfo) {
+      const dateStr = new Date(commit.date).toLocaleDateString();
+      const tags = commit.tags.length > 0 ? ` 🏷️ ${commit.tags.join(', ')}` : '';
+      commitInfo.textContent = `${commit.hash.substring(0, 7)} • ${dateStr} • ${commit.author}${tags}`;
+    }
+
+    // Highlight files changed in this commit
+    highlightTimelineCommitFiles(commit);
+
+    // Update timeline UI
+    updateTimelineV2UI(index);
+  });
+
+  // Play/pause button
+  const playPauseBtn = document.getElementById('play-pause-btn');
+  if (playPauseBtn) {
+    playPauseBtn.onclick = () => {
+      currentDeltaController?.togglePlay();
+    };
+  }
+
+  currentDeltaController.on('playStateChanged', ({ isPlaying }: any) => {
+    if (playPauseBtn) {
+      playPauseBtn.textContent = isPlaying ? '⏸ Pause' : '▶ Play';
+    }
+  });
+
+  // Step buttons
+  const stepBackBtn = document.getElementById('step-back-btn');
+  const stepForwardBtn = document.getElementById('step-forward-btn');
+
+  if (stepBackBtn) {
+    stepBackBtn.onclick = () => currentDeltaController?.stepBackward();
+  }
+
+  if (stepForwardBtn) {
+    stepForwardBtn.onclick = () => currentDeltaController?.stepForward();
+  }
+
+  // Go to start/end
+  const goToStartBtn = document.getElementById('go-to-start-btn');
+  if (goToStartBtn) {
+    goToStartBtn.onclick = () => currentDeltaController?.goToStart();
+  }
+
+  // Speed control
+  const speedSelect = document.getElementById('speed-selector') as HTMLSelectElement;
+  if (speedSelect) {
+    speedSelect.onchange = () => {
+      const speed = parseInt(speedSelect.value);
+      currentDeltaController?.setSpeed(speed);
+    };
+  }
+
+  // Slider control - seek when dragged
+  const sliderEl = document.getElementById('commit-slider') as HTMLInputElement;
+  if (sliderEl) {
+    sliderEl.oninput = () => {
+      const index = parseInt(sliderEl.value);
+      currentDeltaController?.seekToCommit(index);
+    };
+  }
+
+  // Initialize UI
+  updateTimelineV2UI(0);
+}
+
+/**
+ * Update Timeline V2 UI elements
+ */
+function updateTimelineV2UI(index: number) {
+  if (!currentDeltaController) return;
+
+  const currentEl = document.getElementById('timeline-commit-index');
+  const totalEl = document.getElementById('timeline-commit-total');
+  const progressEl = document.getElementById('timeline-progress');
+
+  if (currentEl) {
+    currentEl.textContent = (index + 1).toString();
+  }
+
+  if (totalEl) {
+    totalEl.textContent = currentDeltaController.getTotalCommits().toString();
+  }
+
+  // Update progress bar
+  if (progressEl) {
+    const total = currentDeltaController.getTotalCommits();
+    const percentage = ((index + 1) / total) * 100;
+    progressEl.style.width = `${percentage}%`;
+  }
+}
+
+/**
  * Load and display a repository
  */
 async function loadRepository(repoName: string) {
@@ -664,16 +925,24 @@ async function loadRepository(repoName: string) {
 
     // Detect format and extract snapshot
     let snapshot: RepositorySnapshot;
-    if ('format' in data && data.format === 'timeline-v1') {
-      // Timeline format
-      console.log('Timeline format detected');
+
+    if ('format' in data && data.format === 'timeline-v2') {
+      // Timeline V2: Full delta format - need to handle specially
+      console.log('🎬 Timeline V2 (Full Delta) format detected');
+      await loadTimelineV2(data as TimelineDataV2, repoName);
+      return; // Early return - V2 uses different loading path
+    } else if ('format' in data && data.format === 'timeline-v1') {
+      // Timeline V1: Sampled format
+      console.log('Timeline V1 format detected');
       currentTimelineData = data;
+      currentDeltaController = null;
       snapshot = data.headSnapshot;
       console.log(`Timeline data: ${data.timeline.totalCommits} total commits, ${data.timeline.baseSampling.actualCount} sampled`);
     } else {
       // Static snapshot format
       console.log('Static snapshot format detected');
       currentTimelineData = null;
+      currentDeltaController = null;
       snapshot = data as RepositorySnapshot;
     }
 
@@ -749,7 +1018,7 @@ async function loadRepository(repoName: string) {
     }
 
     // Enable timeline mode if loading timeline data (shows all files for highlighting)
-    currentVisualizer.setTimelineMode(currentTimelineData !== null);
+    currentVisualizer.setTimelineMode(currentTimelineData !== null ? 'v1' : 'off');
 
     // Visualize the tree
     currentVisualizer.visualize(snapshot.tree);

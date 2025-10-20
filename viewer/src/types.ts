@@ -100,3 +100,28 @@ export interface DrillDownLayer {
   };
   commits: CommitSnapshot[];  // All commits in this range
 }
+
+/**
+ * Timeline V2 format with full commit history (no sampling)
+ * Designed for delta-based tree reconstruction (Phase 1 POC)
+ */
+export interface TimelineDataV2 {
+  format: 'timeline-v2';
+  repositoryPath: string;
+
+  // Metadata about the repository
+  metadata: {
+    totalCommits: number;
+    dateRange: {
+      first: string;
+      last: string;
+    };
+    tags: string[];  // All version tags in the repository
+  };
+
+  // ALL commits as deltas (no sampling)
+  commits: CommitSnapshot[];
+
+  // Note: Keyframes generated client-side for now
+  // In future, could add: keyframes?: { interval: number; snapshots: Array<{index: number; tree: DirectoryNode}> }
+}
