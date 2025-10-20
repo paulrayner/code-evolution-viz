@@ -1353,42 +1353,87 @@ function updateTimelineUI() {
 function highlightTimelineCommitFiles(commit: any) {
   if (!currentVisualizer) return;
 
-  // Calculate total changes in this commit
-  const totalChanges = commit.changes.filesAdded.length +
-                      commit.changes.filesModified.length;
+  // Timeline V2 (full delta) vs V1 (sampled) have different highlighting semantics
+  const isTimelineV2 = currentDeltaController !== null;
 
-  // Collect all files that were changed in this commit
-  const changedFiles: FileNode[] = [];
+  // Calculate changes
+  const filesAdded = commit.changes.filesAdded.length;
+  const filesModified = commit.changes.filesModified.length;
+  const filesDeleted = commit.changes.filesDeleted?.length || 0;
 
-  // Files that exist in HEAD and were modified/added in this commit
-  for (const path of [...commit.changes.filesAdded, ...commit.changes.filesModified]) {
-    const fileNode = pathToFileIndex.get(path);
-    if (fileNode) {
-      changedFiles.push(fileNode);
+  if (isTimelineV2) {
+    // TIMELINE V2: Show historical tree, highlight additions/modifications
+    // Deletions can't be highlighted (files don't exist in tree yet or will disappear)
+    const highlightableChanges = filesAdded + filesModified;
+    const totalChanges = highlightableChanges + filesDeleted;
+
+    // Collect files to highlight (only additions and modifications exist in tree)
+    const changedFiles: FileNode[] = [];
+    for (const path of [...commit.changes.filesAdded, ...commit.changes.filesModified]) {
+      const fileNode = pathToFileIndex.get(path);
+      if (fileNode) {
+        changedFiles.push(fileNode);
+      }
     }
-  }
 
-  // Handle different highlighting scenarios with appropriate warnings
-  if (changedFiles.length === 0) {
-    // Failed to find ANY files - show very dim tree
-    currentVisualizer.clearHighlight();
-    showTimelineWarning(`⚠️ Cannot highlight changes - ${totalChanges} file${totalChanges !== 1 ? 's' : ''} not in current view`);
-    console.log(`Timeline highlighting failed: 0 of ${totalChanges} files found in HEAD`);
-
-  } else if (changedFiles.length < totalChanges) {
-    // Found SOME files - highlight what we can + warn about missing
-    const filePaths = changedFiles.map(f => f.path);
-    currentVisualizer.highlightFiles(filePaths);
-    const missing = totalChanges - changedFiles.length;
-    showTimelineWarning(`⚠️ Highlighting ${changedFiles.length} of ${totalChanges} files (${missing} not in current view)`);
-    console.log(`Timeline highlighting partial: ${changedFiles.length} of ${totalChanges} files found in HEAD`);
+    if (highlightableChanges === 0) {
+      // No additions/modifications - could be deletions or empty commit
+      currentVisualizer.clearHighlight();
+      hideTimelineWarning();
+      if (filesDeleted > 0) {
+        console.log(`Timeline V2: Commit has ${filesDeleted} deletion(s) only - no highlighting`);
+      } else {
+        console.log(`Timeline V2: Empty commit (no file changes)`);
+      }
+    } else if (changedFiles.length === 0) {
+      // Should have found additions/modifications but didn't - unexpected!
+      currentVisualizer.clearHighlight();
+      showTimelineWarning(`⚠️ Cannot highlight ${highlightableChanges} change(s)`);
+      console.warn(`Timeline V2: Failed to find ${highlightableChanges} additions/modifications`);
+    } else if (changedFiles.length < highlightableChanges) {
+      // Found some but not all - partial highlighting
+      const filePaths = changedFiles.map(f => f.path);
+      currentVisualizer.highlightFiles(filePaths);
+      const missing = highlightableChanges - changedFiles.length;
+      showTimelineWarning(`⚠️ Highlighting ${changedFiles.length}/${highlightableChanges} changes`);
+      console.log(`Timeline V2: Partial highlight ${changedFiles.length}/${highlightableChanges} (${filesDeleted} deletions not shown)`);
+    } else {
+      // Found all highlightable files - success!
+      const filePaths = changedFiles.map(f => f.path);
+      currentVisualizer.highlightFiles(filePaths);
+      hideTimelineWarning();
+      console.log(`Timeline V2: Highlighted ${changedFiles.length} changes (${filesDeleted} deletions not shown)`);
+    }
 
   } else {
-    // Found ALL files - success!
-    const filePaths = changedFiles.map(f => f.path);
-    currentVisualizer.highlightFiles(filePaths);
-    hideTimelineWarning();
-    console.log(`Timeline highlighting success: ${changedFiles.length} files highlighted`);
+    // TIMELINE V1: Show HEAD tree, highlight historical files that exist in HEAD
+    const totalChanges = filesAdded + filesModified;
+    const changedFiles: FileNode[] = [];
+
+    for (const path of [...commit.changes.filesAdded, ...commit.changes.filesModified]) {
+      const fileNode = pathToFileIndex.get(path);
+      if (fileNode) {
+        changedFiles.push(fileNode);
+      }
+    }
+
+    // V1 warnings help user understand which historical files are missing from HEAD
+    if (changedFiles.length === 0) {
+      currentVisualizer.clearHighlight();
+      showTimelineWarning(`⚠️ Cannot highlight changes - ${totalChanges} file${totalChanges !== 1 ? 's' : ''} not in current view`);
+      console.log(`Timeline V1: 0 of ${totalChanges} files found in HEAD`);
+    } else if (changedFiles.length < totalChanges) {
+      const filePaths = changedFiles.map(f => f.path);
+      currentVisualizer.highlightFiles(filePaths);
+      const missing = totalChanges - changedFiles.length;
+      showTimelineWarning(`⚠️ Highlighting ${changedFiles.length} of ${totalChanges} files (${missing} not in current view)`);
+      console.log(`Timeline V1: Partial ${changedFiles.length}/${totalChanges} files in HEAD`);
+    } else {
+      const filePaths = changedFiles.map(f => f.path);
+      currentVisualizer.highlightFiles(filePaths);
+      hideTimelineWarning();
+      console.log(`Timeline V1: Highlighted all ${changedFiles.length} files`);
+    }
   }
 }
 
