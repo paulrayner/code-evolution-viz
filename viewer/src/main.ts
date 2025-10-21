@@ -212,7 +212,7 @@ function showFileDetails(file: FileNode) {
             <div style="font-size: 12px; font-weight: 600; color: #4a9eff; margin-bottom: 8px;">
               Commit Siblings (${otherFiles.length} file${otherFiles.length !== 1 ? 's' : ''})
             </div>
-            <div style="max-height: 200px; overflow-y: auto; font-size: 11px;">
+            <div style="font-size: 11px;">
           `;
 
           for (const sibling of otherFiles) {
@@ -1976,6 +1976,15 @@ async function main() {
   if (legendHeader && legend) {
     legendHeader.addEventListener('click', () => {
       legend.classList.toggle('collapsed');
+    });
+  }
+
+  // Set up info panel collapse
+  const infoPanelHeader = document.querySelector('#info-panel h3');
+  const infoPanel = document.getElementById('info-panel');
+  if (infoPanelHeader && infoPanel) {
+    infoPanelHeader.addEventListener('click', () => {
+      infoPanel.classList.toggle('collapsed');
     });
   }
 
