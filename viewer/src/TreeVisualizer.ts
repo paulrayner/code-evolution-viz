@@ -4,6 +4,7 @@ import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRe
 import { DirectoryNode, FileNode, TreeNode } from './types';
 import { getColorForExtension, DIRECTORY_COLOR } from './colorScheme';
 import { ColorMode, getColorForFile } from './colorModeManager';
+import { FilterManager } from './filterManager';
 
 interface LayoutNode {
   node: TreeNode;
@@ -41,6 +42,8 @@ export class TreeVisualizer {
   private highlightedFileTypes: Map<string, 'added' | 'modified' | 'deleted'> = new Map(); // Track type of highlighted files
   private deletedFileNodes: Map<string, FileNode> = new Map(); // Store metadata for deleted files (ghost nodes)
   private timelineMode: 'off' | 'v1' | 'v2' = 'off'; // Timeline mode: v1=spotlight, v2=additive
+  private filterManager: FilterManager = new FilterManager(); // Filter manager for HEAD view only
+  private viewMode: 'navigate' | 'overview' = 'navigate'; // View mode: navigate=depth-limited, overview=show all
 
   // Ghost rendering for Timeline V2 deletions (isolated for future replacement)
   private ghostMeshes: Set<THREE.Mesh> = new Set();
@@ -171,8 +174,119 @@ export class TreeVisualizer {
    */
   setTimelineMode(mode: 'off' | 'v1' | 'v2') {
     this.timelineMode = mode;
+
+    // Clear filters when entering timeline mode (filters only work in HEAD view)
+    if (mode !== 'off') {
+      this.filterManager.clearFilters();
+    }
+
     if (this.layoutNodes.length > 0) {
       this.rebuildVisualization();
+    }
+  }
+
+  /**
+   * Set active filter categories (HEAD view only)
+   * @param categories - Array of category names to show (e.g., ["High churn", "Very high churn"])
+   */
+  setFilter(categories: string[]) {
+    // Filters only work in HEAD view (not timeline)
+    if (this.timelineMode !== 'off') {
+      console.warn('Filters are only available in HEAD view, not timeline mode');
+      return;
+    }
+
+    this.filterManager.setActiveCategories(categories, this.colorMode);
+    this.updateNodeVisibility();
+  }
+
+  /**
+   * Clear all active filters
+   */
+  clearFilter() {
+    this.filterManager.clearFilters();
+    this.updateNodeVisibility();
+  }
+
+  /**
+   * Check if filters are currently active
+   */
+  hasActiveFilters(): boolean {
+    return this.filterManager.hasActiveFilters();
+  }
+
+  /**
+   * Get current active filter categories
+   */
+  getActiveFilterCategories(): string[] {
+    return this.filterManager.getActiveCategories();
+  }
+
+  /**
+   * Set view mode (HEAD view only)
+   * @param mode - 'navigate' (show depth 0-1 only) or 'overview' (show all depths)
+   */
+  setViewMode(mode: 'navigate' | 'overview') {
+    this.viewMode = mode;
+    if (this.layoutNodes.length > 0) {
+      this.updateNodeVisibility();
+    }
+  }
+
+  /**
+   * Get current view mode
+   */
+  getViewMode(): 'navigate' | 'overview' {
+    return this.viewMode;
+  }
+
+  /**
+   * Update visibility of all nodes based on current filter state
+   * Does NOT rebuild the scene, just shows/hides existing meshes
+   */
+  private updateNodeVisibility() {
+    // Update file and directory mesh visibility
+    for (const layoutNode of this.layoutNodes) {
+      if (layoutNode.mesh) {
+        const shouldHide = this.isNodeHidden(layoutNode);
+        const material = (layoutNode.mesh as THREE.Mesh).material as THREE.MeshPhongMaterial;
+
+        layoutNode.mesh.visible = !shouldHide;
+        material.transparent = shouldHide;
+        material.opacity = shouldHide ? 0.0 : (layoutNode.node.type === 'directory' ? 0.85 : 1.0);
+        material.needsUpdate = true;
+
+        // Update directory labels
+        if (layoutNode.node.type === 'directory') {
+          const label = layoutNode.mesh.children.find(child => child instanceof CSS2DObject) as CSS2DObject | undefined;
+          if (label && label.element instanceof HTMLDivElement) {
+            if (this.labelMode === 'always' && !shouldHide) {
+              label.element.style.visibility = 'visible';
+              label.element.style.display = 'block';
+            } else {
+              label.element.style.visibility = 'hidden';
+              label.element.style.display = 'none';
+            }
+          }
+        }
+      }
+    }
+
+    // Update edge visibility
+    for (const edge of this.edges) {
+      const edgeInfo = this.edgeNodeMap.get(edge);
+      if (!edgeInfo) continue;
+
+      const parentLayout = this.layoutNodes.find(ln => ln.node === edgeInfo.parent);
+      const childLayout = this.layoutNodes.find(ln => ln.node === edgeInfo.child);
+      const shouldBeHidden = !parentLayout || !childLayout ||
+                            this.isNodeHidden(parentLayout) ||
+                            this.isNodeHidden(childLayout);
+
+      edge.visible = !shouldBeHidden;
+      const material = edge.material as THREE.LineBasicMaterial;
+      material.opacity = shouldBeHidden ? 0.0 : 0.3;
+      material.needsUpdate = true;
     }
   }
 
@@ -487,7 +601,7 @@ export class TreeVisualizer {
 
   /**
    * Check if a layout node should be hidden
-   * Hidden if: ancestor is collapsed OR outside focus scope
+   * Hidden if: ancestor is collapsed OR outside focus scope OR filtered out (HEAD view only)
    */
   private isNodeHidden(layoutNode: LayoutNode): boolean {
     // Check collapsed ancestors
@@ -503,16 +617,42 @@ export class TreeVisualizer {
     if (this.focusedDirectory === null) {
       // In timeline mode, disable depth-based hiding so all files can be highlighted
       if (this.timelineMode === 'off') {
-        // No focus: show root + level 1 only
-        const depth = this.getNodeDepth(layoutNode);
-        return depth > 1;
+        // HEAD mode: respect view mode setting
+        if (this.viewMode === 'navigate') {
+          // Navigate mode: show root + level 1 only (default behavior)
+          const depth = this.getNodeDepth(layoutNode);
+          if (depth > 1) return true;
+        }
+        // Overview mode: no depth-based hiding (show all depths)
       }
       // Timeline mode (v1 or v2): no depth-based hiding
-      return false;
     } else {
       // Focused: show only focused directory + its direct children
-      return !this.isInFocusScope(layoutNode);
+      if (!this.isInFocusScope(layoutNode)) {
+        return true;
+      }
     }
+
+    // Filter check (HEAD view only)
+    if (this.timelineMode === 'off' && this.filterManager.hasActiveFilters()) {
+      if (layoutNode.node.type === 'file') {
+        // Files: check if they match the filter
+        const fileMatches = this.filterManager.matchesFilter(layoutNode.node, this.colorMode);
+
+        // Exception: highlighted files (commit siblings) always visible
+        if (!fileMatches && !this.highlightedFiles.has(layoutNode.node.path)) {
+          return true; // Hide filtered-out files
+        }
+      } else if (layoutNode.node.type === 'directory') {
+        // Directories: hide if NO descendants match filter
+        const hasVisibleDescendants = this.filterManager.hasVisibleDescendants(layoutNode.node, this.colorMode);
+        if (!hasVisibleDescendants) {
+          return true; // Hide empty directories
+        }
+      }
+    }
+
+    return false;
   }
 
   /**

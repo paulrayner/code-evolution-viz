@@ -225,6 +225,53 @@
       border: 2px solid white;
     }
 
+    #tag-markers {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .tag-marker {
+      position: absolute;
+      top: -3px;
+      width: 2px;
+      height: calc(100% + 6px);
+      background: #ffaa00;
+      cursor: pointer;
+      pointer-events: auto;
+      transition: background 0.2s, width 0.2s;
+    }
+
+    .tag-marker:hover {
+      background: #ffdd44;
+      width: 3px;
+    }
+
+    .tag-marker::after {
+      content: attr(data-tag);
+      position: absolute;
+      bottom: calc(100% + 4px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.9);
+      color: #ffaa00;
+      padding: 4px 8px;
+      border-radius: 3px;
+      font-size: 10px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+      border: 1px solid #ffaa00;
+    }
+
+    .tag-marker:hover::after {
+      opacity: 1;
+    }
+
     #timeline-info {
       color: #aaa;
       font-size: 11px;
@@ -318,6 +365,21 @@
       font-size: 11px;
       margin: 5px 0;
       padding: 3px 0;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .legend-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 3px;
+    }
+
+    .legend-checkbox {
+      margin-right: 8px;
+      cursor: pointer;
+      flex-shrink: 0;
+      width: 14px;
+      height: 14px;
     }
 
     .legend-color {
@@ -339,6 +401,52 @@
 
     .legend-label {
       color: #ccc;
+    }
+
+    .legend-item.unchecked .legend-label {
+      color: #666;
+      text-decoration: line-through;
+    }
+
+    .legend-item.unchecked .legend-color,
+    .legend-item.unchecked .legend-cube {
+      opacity: 0.3;
+    }
+
+    .filter-controls {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 10px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .filter-controls button {
+      padding: 3px 8px;
+      background: rgba(74, 158, 255, 0.2);
+      color: white;
+      border: 1px solid #4a9eff;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 10px;
+      transition: background 0.2s;
+      flex: 1;
+    }
+
+    .filter-controls button:hover {
+      background: rgba(74, 158, 255, 0.4);
+    }
+
+    .filter-controls button:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    #filter-status {
+      font-size: 10px;
+      color: #888;
+      margin-top: 8px;
+      font-style: italic;
     }
 
     #tooltip {
@@ -454,10 +562,21 @@
     <div id="ui">
       <div id="header">
         <h1>CodeCohesion</h1>
-        <p style="font-size: 11px; color: #888; margin: -2px 0 10px 0;">3D visualization of code evolution</p>
+        <p style="font-size: 11px; color: #888; margin: -2px 0 10px 0;">Visualizing Code Evolution</p>
         <select id="repo-selector" style="margin-bottom: 10px; padding: 5px; background: rgba(255,255,255,0.1); color: white; border: 1px solid #4a9eff; border-radius: 4px; cursor: pointer;">
           <option value="">Loading repositories...</option>
         </select>
+        <div id="mode-switcher" style="display: none; margin-bottom: 10px; align-items: center;">
+          <label style="font-size: 11px; color: #aaa; margin-right: 8px;">Visualization Mode:</label>
+          <label style="font-size: 11px; margin-right: 15px; cursor: pointer;">
+            <input type="radio" name="view-mode" value="head" checked style="margin-right: 4px; cursor: pointer;">
+            HEAD Analysis
+          </label>
+          <label style="font-size: 11px; cursor: pointer;">
+            <input type="radio" name="view-mode" value="timeline" style="margin-right: 4px; cursor: pointer;">
+            Timeline
+          </label>
+        </div>
         <div style="margin-bottom: 10px;">
           <label style="font-size: 11px; color: #aaa; margin-right: 5px;">Color by:</label>
           <select id="color-mode-selector" style="padding: 4px 10px; background: rgba(255,255,255,0.1); color: white; border: 1px solid #4a9eff; border-radius: 4px; cursor: pointer; font-size: 11px; margin-right: 15px;">
@@ -473,11 +592,11 @@
           </select>
           <label style="font-size: 11px; color: #aaa; margin-right: 5px;">Labels:</label>
           <button id="label-toggle" style="padding: 4px 10px; background: rgba(255,255,255,0.1); color: white; border: 1px solid #4a9eff; border-radius: 4px; cursor: pointer; font-size: 11px;">Always On</button>
+          <label style="font-size: 11px; color: #aaa; margin-left: 15px; margin-right: 5px;">View:</label>
+          <button id="view-mode-toggle" style="padding: 4px 10px; background: rgba(255,255,255,0.1); color: white; border: 1px solid #4a9eff; border-radius: 4px; cursor: pointer; font-size: 11px;">Navigate</button>
           <label style="font-size: 11px; color: #aaa; margin-left: 15px; margin-right: 5px;">Highlight Commit:</label>
           <button id="highlight-commit-toggle" style="padding: 4px 10px; background: rgba(255,255,255,0.1); color: white; border: 1px solid #4a9eff; border-radius: 4px; cursor: pointer; font-size: 11px;">Off</button>
         </div>
-        <p id="repo-name">Loading...</p>
-        <p id="commit-info"></p>
       </div>
 
       <div id="stats-panel">
@@ -531,16 +650,20 @@
             <option value="500">500x</option>
             <option value="1000">1000x</option>
           </select>
+          <label style="font-size: 11px; color: #aaa; margin-left: 15px;">Jump to:</label>
+          <select id="tag-selector" style="padding: 4px 8px; background: rgba(255,255,255,0.1); color: white; border: 1px solid #ffaa00; border-radius: 4px; cursor: pointer; font-size: 11px;">
+            <option value="">-- Select tag --</option>
+          </select>
         </div>
         <div class="timeline-row">
           <div id="timeline-scrubber">
             <div id="timeline-progress" style="width: 0%"></div>
+            <div id="tag-markers"></div>
           </div>
         </div>
-        <div id="timeline-info">
+        <div id="timeline-info" style="flex-wrap: wrap;">
           <span id="timeline-commit-info">Commit <span id="timeline-commit-index">1</span> of <span id="timeline-commit-total">-</span></span>
-          <span id="timeline-date-info">-</span>
-          <span id="timeline-message-info">-</span>
+          <span id="commit-info" style="color: #ddd; margin-left: 10px;"></span>
         </div>
       </div>
 
@@ -550,9 +673,16 @@
 
       <div id="legend">
         <h3 id="legend-title">Legend</h3>
+        <div class="filter-controls" id="filter-controls" style="display: none;">
+          <button id="filter-top-btn" title="Show only top category">Top</button>
+          <button id="filter-all-btn" title="Show all categories">All</button>
+          <button id="filter-none-btn" title="Hide all categories">None</button>
+          <button id="filter-invert-btn" title="Invert selection">Invert</button>
+        </div>
         <div id="legend-content">
           <!-- Populated dynamically by main.ts -->
         </div>
+        <div id="filter-status"></div>
       </div>
 
       <div id="tooltip"></div>

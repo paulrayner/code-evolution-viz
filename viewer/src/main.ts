@@ -686,7 +686,6 @@ function updateStatsForTree(tree: DirectoryNode, commitIndex?: number, totalComm
 /**
  * Populate legend with file extension colors
  * See viewer/docs/color-scheme.md for design rationale
- * Note: File Type mode doesn't support filtering (too granular)
  */
 function populateLegend(snapshot: RepositorySnapshot) {
   const legendContent = document.getElementById('legend-content');
@@ -716,36 +715,53 @@ function populateLegend(snapshot: RepositorySnapshot) {
   `;
   legendContent.appendChild(dirItem);
 
-  // Add present extensions (no checkboxes - file type filtering too granular)
+  // Add present extensions with checkboxes for filtering
   for (const ext of presentExtensions) {
     const info = FILE_COLORS[ext];
     const count = snapshot.stats.filesByExtension[ext];
-    const item = document.createElement('div');
+    const item = document.createElement('label');
     item.className = 'legend-item';
     item.innerHTML = `
+      <input type="checkbox" class="legend-checkbox" data-category="${info.name}" checked>
       <div class="legend-color" style="background: ${info.hex};"></div>
       <span class="legend-label">${info.name} (${count})</span>
     `;
     legendContent.appendChild(item);
+
+    // Add change event listener
+    const checkbox = item.querySelector('.legend-checkbox') as HTMLInputElement;
+    if (checkbox) {
+      checkbox.addEventListener('change', applyLegendFilters);
+    }
   }
 
-  // Add "Other" if there are unknown extensions
+  // Add "Other" if there are unknown extensions (with checkbox)
   const unknownCount = extensions
     .filter(ext => !FILE_COLORS[ext])
     .reduce((sum, ext) => sum + snapshot.stats.filesByExtension[ext], 0);
 
   if (unknownCount > 0) {
-    const item = document.createElement('div');
+    const item = document.createElement('label');
     item.className = 'legend-item';
     item.innerHTML = `
+      <input type="checkbox" class="legend-checkbox" data-category="Other" checked>
       <div class="legend-color" style="background: #aaa;"></div>
       <span class="legend-label">Other (${unknownCount})</span>
     `;
     legendContent.appendChild(item);
+
+    // Add change event listener
+    const checkbox = item.querySelector('.legend-checkbox') as HTMLInputElement;
+    if (checkbox) {
+      checkbox.addEventListener('change', applyLegendFilters);
+    }
   }
 
-  // Hide filter controls for file type mode (not supported)
-  hideFilterControls();
+  // Show filter controls for file type mode
+  showFilterControls();
+
+  // Update button states (all checkboxes start checked, so "All" should be disabled)
+  updateFilterControlStates();
 }
 
 /**
@@ -853,6 +869,16 @@ function enableTimelineMode() {
     highlightLabel.style.display = 'none';
   }
 
+  // Hide "View Mode" toggle (not applicable in timeline mode - timeline shows all depths)
+  const viewModeToggle = document.getElementById('view-mode-toggle');
+  const viewModeLabel = viewModeToggle?.previousElementSibling as HTMLElement;
+  if (viewModeToggle) {
+    viewModeToggle.style.display = 'none';
+  }
+  if (viewModeLabel && viewModeLabel.textContent?.includes('View')) {
+    viewModeLabel.style.display = 'none';
+  }
+
   // Disable filtering in timeline mode
   disableFiltering();
 
@@ -904,6 +930,16 @@ function disableTimelineMode() {
   }
   if (highlightLabel) {
     highlightLabel.style.display = '';
+  }
+
+  // Show "View Mode" toggle
+  const viewModeToggle = document.getElementById('view-mode-toggle');
+  const viewModeLabel = viewModeToggle?.previousElementSibling as HTMLElement;
+  if (viewModeToggle) {
+    viewModeToggle.style.display = '';
+  }
+  if (viewModeLabel) {
+    viewModeLabel.style.display = '';
   }
 
   // Re-enable filtering in HEAD mode
@@ -1724,6 +1760,12 @@ async function loadRepository(repoName: string) {
         currentVisualizer.setColorMode(savedColorMode);
       }
 
+      // Load saved view mode
+      const savedViewMode = localStorage.getItem('viewMode') as 'navigate' | 'overview' | null;
+      if (savedViewMode) {
+        currentVisualizer.setViewMode(savedViewMode);
+      }
+
       // Start animation
       currentVisualizer.start();
     }
@@ -1788,6 +1830,12 @@ async function main() {
     // Handle repo switching
     selector.addEventListener('change', async (e) => {
       const target = e.target as HTMLSelectElement;
+
+      // Clear filters when switching repos (fresh start for new codebase)
+      if (currentVisualizer) {
+        currentVisualizer.clearFilter();
+      }
+
       await loadRepository(target.value);
     });
   }
@@ -1818,15 +1866,22 @@ async function main() {
       const newMode = target.value as ColorMode;
       localStorage.setItem('colorMode', newMode);
 
+      // Clear filters when switching color modes (categories are incompatible)
       if (currentVisualizer) {
+        currentVisualizer.clearFilter();
         currentVisualizer.setColorMode(newMode);
       }
 
-      // Update legend for new color mode
+      // Update legend for new color mode (checkboxes will be all checked)
       if (newMode === 'fileType' && currentSnapshot) {
         populateLegend(currentSnapshot);
       } else {
         updateLegendForColorMode(newMode);
+      }
+
+      // Update stats panel to reflect cleared filters
+      if (currentSnapshot) {
+        updateStatsDisplay(currentSnapshot);
       }
     });
   }
@@ -1852,6 +1907,32 @@ async function main() {
       if (currentVisualizer) {
         currentVisualizer.setLabelMode(newMode);
       }
+    });
+  }
+
+  // Set up view mode toggle (HEAD view only - navigate vs overview)
+  const viewModeToggle = document.getElementById('view-mode-toggle') as HTMLButtonElement;
+  if (viewModeToggle) {
+    // Load saved preference from localStorage, default to 'navigate'
+    const savedViewMode = localStorage.getItem('viewMode') as 'navigate' | 'overview' | null;
+    const initialViewMode = savedViewMode || 'navigate';
+
+    // Set button text to match saved mode
+    viewModeToggle.textContent = initialViewMode === 'navigate' ? 'Navigate' : 'Overview';
+
+    // Handle toggle clicks
+    viewModeToggle.addEventListener('click', () => {
+      const currentMode = viewModeToggle.textContent === 'Navigate' ? 'navigate' : 'overview';
+      const newMode = currentMode === 'navigate' ? 'overview' : 'navigate';
+
+      viewModeToggle.textContent = newMode === 'navigate' ? 'Navigate' : 'Overview';
+      localStorage.setItem('viewMode', newMode);
+
+      if (currentVisualizer) {
+        currentVisualizer.setViewMode(newMode);
+      }
+
+      console.log('View mode:', newMode);
     });
   }
 
@@ -1899,9 +1980,25 @@ async function main() {
   }
 
   // Set up filter control buttons
+  const filterTopBtn = document.getElementById('filter-top-btn');
   const filterAllBtn = document.getElementById('filter-all-btn');
   const filterNoneBtn = document.getElementById('filter-none-btn');
   const filterInvertBtn = document.getElementById('filter-invert-btn');
+
+  if (filterTopBtn) {
+    filterTopBtn.addEventListener('click', () => {
+      const checkboxes = document.querySelectorAll('.legend-checkbox') as NodeListOf<HTMLInputElement>;
+      // Uncheck all
+      checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+      });
+      // Check only the first one (top category)
+      if (checkboxes.length > 0) {
+        checkboxes[0].checked = true;
+      }
+      applyLegendFilters(); // This will update button states
+    });
+  }
 
   if (filterAllBtn) {
     filterAllBtn.addEventListener('click', () => {
@@ -1909,7 +2006,7 @@ async function main() {
       checkboxes.forEach(checkbox => {
         checkbox.checked = true;
       });
-      applyLegendFilters();
+      applyLegendFilters(); // This will update button states
     });
   }
 
@@ -1919,7 +2016,7 @@ async function main() {
       checkboxes.forEach(checkbox => {
         checkbox.checked = false;
       });
-      applyLegendFilters();
+      applyLegendFilters(); // This will update button states
     });
   }
 
@@ -1929,7 +2026,7 @@ async function main() {
       checkboxes.forEach(checkbox => {
         checkbox.checked = !checkbox.checked;
       });
-      applyLegendFilters();
+      applyLegendFilters(); // This will update button states
     });
   }
 }
@@ -2025,11 +2122,77 @@ function updateFilterStatus() {
   const filterStatus = document.getElementById('filter-status');
   if (!filterStatus || !currentVisualizer) return;
 
-  if (currentVisualizer.hasActiveFilters()) {
-    const activeCategories = currentVisualizer.getActiveFilterCategories();
-    filterStatus.textContent = `Filtering: ${activeCategories.length} ${activeCategories.length === 1 ? 'category' : 'categories'} selected`;
-  } else {
+  // Get checkbox counts
+  const checkboxes = document.querySelectorAll('.legend-checkbox');
+  const totalCategories = checkboxes.length;
+  const activeCategories = currentVisualizer.getActiveFilterCategories();
+  const activeCount = activeCategories.length;
+
+  // If no filters OR all categories selected, no effective filtering happening
+  if (!currentVisualizer.hasActiveFilters() || activeCount === totalCategories) {
     filterStatus.textContent = '';
+  } else {
+    // Show selected/total for clarity
+    const categoryWord = activeCount === 1 ? 'category' : 'categories';
+    filterStatus.textContent = `Filtering: ${activeCount} / ${totalCategories} ${categoryWord}`;
+  }
+}
+
+/**
+ * Update filter control button states based on current selection
+ */
+function updateFilterControlStates() {
+  const checkboxes = document.querySelectorAll('.legend-checkbox') as NodeListOf<HTMLInputElement>;
+  const topBtn = document.getElementById('filter-top-btn') as HTMLButtonElement;
+  const allBtn = document.getElementById('filter-all-btn') as HTMLButtonElement;
+  const noneBtn = document.getElementById('filter-none-btn') as HTMLButtonElement;
+  const invertBtn = document.getElementById('filter-invert-btn') as HTMLButtonElement;
+
+  if (!checkboxes.length || !topBtn || !allBtn || !noneBtn || !invertBtn) return;
+
+  // Count checked/unchecked
+  let checkedCount = 0;
+  let uncheckedCount = 0;
+
+  checkboxes.forEach(checkbox => {
+    if (checkbox.checked) {
+      checkedCount++;
+    } else {
+      uncheckedCount++;
+    }
+  });
+
+  const totalCount = checkboxes.length;
+
+  // Check if only the first checkbox is checked
+  const onlyFirstChecked = checkedCount === 1 && checkboxes.length > 0 && checkboxes[0].checked;
+
+  // Hide "Top" when only the first checkbox is already checked
+  if (onlyFirstChecked) {
+    topBtn.style.display = 'none';
+  } else {
+    topBtn.style.display = '';
+  }
+
+  // Hide "All" when all are already checked
+  if (checkedCount === totalCount) {
+    allBtn.style.display = 'none';
+  } else {
+    allBtn.style.display = '';
+  }
+
+  // Hide "None" when none are checked
+  if (checkedCount === 0) {
+    noneBtn.style.display = 'none';
+  } else {
+    noneBtn.style.display = '';
+  }
+
+  // "Invert" is always visible (unless there are no checkboxes)
+  if (totalCount === 0) {
+    invertBtn.style.display = 'none';
+  } else {
+    invertBtn.style.display = '';
   }
 }
 
@@ -2075,6 +2238,9 @@ function applyLegendFilters() {
 
   // Update stats panel to reflect filtered counts
   updateStatsDisplay(currentSnapshot);
+
+  // Update button states
+  updateFilterControlStates();
 }
 
 /**
@@ -2137,6 +2303,7 @@ function updateLegendForColorMode(mode: ColorMode) {
       }
     }
     showFilterControls();
+    updateFilterControlStates();
   } else if (items.length > 0) {
     // Show color mode specific legend without counts (with checkboxes for supported modes)
     for (const item of items) {
@@ -2156,6 +2323,7 @@ function updateLegendForColorMode(mode: ColorMode) {
       }
     }
     showFilterControls();
+    updateFilterControlStates();
   } else if (mode === 'author' && currentSnapshot) {
     // For author mode, collect authors with file counts
     const authorCounts = new Map<string, number>();
@@ -2215,6 +2383,7 @@ function updateLegendForColorMode(mode: ColorMode) {
       legendContent.appendChild(legendItem);
     }
     showFilterControls();
+    updateFilterControlStates();
   }
   // Note: For fileType mode, legend is populated by populateLegend() which shows actual files present
 }
