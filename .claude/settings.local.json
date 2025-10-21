@@ -53,7 +53,9 @@
       "Bash(git reset:*)",
       "Bash(ts-node:*)",
       "Bash(npx ts-node:*)",
-      "Bash(git remote set-url:*)"
+      "Bash(git remote set-url:*)",
+      "Bash(open https://paulrayner.github.io/codecohesion/)",
+      "Bash(open \"http://thepaulrayner.com/codecohesion/\")"
     ]
   }
 }
