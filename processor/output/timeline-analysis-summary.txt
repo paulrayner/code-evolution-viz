@@ -1,0 +1,74 @@
+Timeline Sampling Prototype - Results Summary
+==============================================
+
+Repository: Gource (~/Documents/Gource)
+Total Commits: 988
+Analysis Date: $(date)
+
+KEY FINDINGS:
+
+1. All Scenarios Successfully Captured All 22 Version Tags ✅
+   - This is crucial - we don't miss any major releases
+   - Every sampling density (50, 100, 200, 500) included all tagged versions
+
+2. Time Gap Warnings (Expected Behavior)
+   - Maximum gaps range from 356-407 days
+   - These occur during Gource's development lulls (real quiets periods)
+   - The algorithm correctly identifies commits after these gaps as important
+   - Could be tuned by adding more "filler" commits during quiet periods if desired
+
+3. Scoring Distribution
+   - Highest score observed: 60 points
+   - Lower than expected because Gource commits are relatively small/incremental
+   - Most commits are <20 files changed, <1000 lines
+   - This is actually realistic for a mature C++ project
+
+4. Sampling Effectiveness
+   - 50 commits: Captures milestones and major structural changes
+   - 100 commits: Good balance of coverage and detail
+   - 200 commits: Very detailed history
+   - 500 commits: Nearly comprehensive (50% of all commits)
+
+5. Algorithm Validation
+   ✅ First/Last commits always selected
+   ✅ All version tags included
+   ✅ Large refactors captured (files/LOC thresholds working)
+   ✅ Time gap detection working (commits after quiet periods prioritized)
+   ✅ Temporal spread maintained (no clustering in one time period)
+
+RECOMMENDATIONS FOR SLICE 2:
+
+1. Use 100-200 commits as default for most repos
+   - Good balance of insight vs. data size
+   - Captures story without overwhelming detail
+
+2. Make sampling density user-configurable
+   - Slider: "Sparse (50) - Balanced (100) - Detailed (200) - Comprehensive (500)"
+   - Allow users to zoom in on interesting periods
+
+3. Consider adaptive sampling for very large repos
+   - React (15K commits) would need more aggressive sampling
+   - Use percentile-based targets instead of absolute numbers
+
+4. Time gap handling is working well
+   - The 300+ day gaps are real development pauses in Gource
+   - Algorithm correctly selects "return from hiatus" commits as important
+
+5. Next steps:
+   - Test on React repository (15K commits) to validate scaling
+   - Test on code-evolution-viz (small, recent repo) for different pattern
+   - Fine-tune scoring weights based on user feedback
+   - Integrate into main analyzer once validated
+
+SCORING ALGORITHM INSIGHTS:
+
+The scoring is working but could be enhanced:
+- Current max score: 60 (relatively low)
+- Suggests Gource has steady, incremental development
+- Could boost scores for:
+  * Merge commits (large integrations)
+  * Commits with many authors in thread
+  * Commits mentioned in release notes
+
+Overall: SUCCESSFUL PROTOTYPE ✅
+The importance-based sampling with temporal spread is working well and ready for integration.

@@ -1,0 +1,1251 @@
+{
+  "repositoryPath": "/Users/paul/Documents/Gource",
+  "commit": "1b4e37d71506e6ad19f15190907852978507fc6a",
+  "timestamp": "2025-08-13T13:56:09+12:00",
+  "author": "Andrew Caudwell",
+  "message": "Fixed build with Boost 1.89.0 by no longer linking boost system.",
+  "tree": {
+    "path": "",
+    "name": "root",
+    "type": "directory",
+    "children": [
+      {
+        "path": ".gitattributes",
+        "name": ".gitattributes",
+        "type": "file",
+        "loc": 1,
+        "extension": "no-extension",
+        "lastModified": "2013-04-21T10:50:05+12:00",
+        "lastAuthor": "Andrew Caudwell"
+      },
+      {
+        "path": ".github",
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "path": ".github/FUNDING.yml",
+            "name": "FUNDING.yml",
+            "type": "file",
+            "loc": 1,
+            "extension": "yml",
+            "lastModified": "2023-03-16T13:48:22+13:00",
+            "lastAuthor": "Andrew Caudwell"
+          }
+        ]
+      },
+      {
+        "path": ".gitignore",
+        "name": ".gitignore",
+        "type": "file",
+        "loc": 26,
+        "extension": "no-extension",
+        "lastModified": "2017-05-26T15:05:27+12:00",
+        "lastAuthor": "Andrew Caudwell"
+      },
+      {
+        "path": ".gitmodules",
+        "name": ".gitmodules",
+        "type": "file",
+        "loc": 3,
+        "extension": "no-extension",
+        "lastModified": "2017-02-15T07:14:35+01:00",
+        "lastAuthor": "Guido Günther"
+      },
+      {
+        "path": "COPYING",
+        "name": "COPYING",
+        "type": "file",
+        "loc": 553,
+        "extension": "no-extension",
+        "lastModified": "2009-09-11T16:25:12+12:00",
+        "lastAuthor": "Andrew Caudwell"
+      },
+      {
+        "path": "ChangeLog",
+        "name": "ChangeLog",
+        "type": "file",
+        "loc": 279,
+        "extension": "no-extension",
+        "lastModified": "2025-08-13T13:56:09+12:00",
+        "lastAuthor": "Andrew Caudwell"
+      },
+      {
+        "path": "INSTALL",
+        "name": "INSTALL",
+        "type": "file",
+        "loc": 47,
+        "extension": "no-extension",
+        "lastModified": "2025-08-13T13:56:09+12:00",
+        "lastAuthor": "Andrew Caudwell"
+      },
+      {
+        "path": "Makefile.am",
+        "name": "Makefile.am",
+        "type": "file",
+        "loc": 89,
+        "extension": "am",
+        "lastModified": "2021-12-09T13:59:21+13:00",
+        "lastAuthor": "Andrew Caudwell"
+      },
+      {
+        "path": "README.md",
+        "name": "README.md",
+        "type": "file",
+        "loc": 335,
+        "extension": "md",
+        "lastModified": "2025-03-10T12:45:31+01:00",
+        "lastAuthor": "Jakob Lorenz"
+      },
+      {
+        "path": "THANKS",
+        "name": "THANKS",
+        "type": "file",
+        "loc": 1,
+        "extension": "no-extension",
+        "lastModified": "2009-09-11T16:25:12+12:00",
+        "lastAuthor": "Andrew Caudwell"
+      },
+      {
+        "path": "autogen.sh",
+        "name": "autogen.sh",
+        "type": "file",
+        "loc": 17,
+        "extension": "sh",
+        "lastModified": "2018-03-21T23:12:19+13:00",
+        "lastAuthor": "Andrew Caudwell"
+      },
+      {
+        "path": "cmd",
+        "name": "cmd",
+        "type": "directory",
+        "children": [
+          {
+            "path": "cmd/gource",
+            "name": "gource",
+            "type": "file",
+            "loc": 3,
+            "extension": "no-extension",
+            "lastModified": "2013-04-21T10:50:05+12:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "cmd/gource.cmd",
+            "name": "gource.cmd",
+            "type": "file",
+            "loc": 2,
+            "extension": "cmd",
+            "lastModified": "2013-04-22T20:04:16+12:00",
+            "lastAuthor": "Andrew Caudwell"
+          }
+        ]
+      },
+      {
+        "path": "configure.ac",
+        "name": "configure.ac",
+        "type": "file",
+        "loc": 59,
+        "extension": "ac",
+        "lastModified": "2025-08-13T13:56:09+12:00",
+        "lastAuthor": "Andrew Caudwell"
+      },
+      {
+        "path": "contrib",
+        "name": "contrib",
+        "type": "directory",
+        "children": [
+          {
+            "path": "contrib/svn-gource.py",
+            "name": "svn-gource.py",
+            "type": "file",
+            "loc": 85,
+            "extension": "py",
+            "lastModified": "2009-12-18T10:56:42+13:00",
+            "lastAuthor": "Andrew Caudwell"
+          }
+        ]
+      },
+      {
+        "path": "data",
+        "name": "data",
+        "type": "directory",
+        "children": [
+          {
+            "path": "data/beam.png",
+            "name": "beam.png",
+            "type": "file",
+            "loc": 4,
+            "extension": "png",
+            "lastModified": "2022-02-03T13:54:54+13:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "data/bloom.tga",
+            "name": "bloom.tga",
+            "type": "file",
+            "loc": 612,
+            "extension": "tga",
+            "lastModified": "2010-05-18T17:45:22+12:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "data/bloom_alpha.tga",
+            "name": "bloom_alpha.tga",
+            "type": "file",
+            "loc": 612,
+            "extension": "tga",
+            "lastModified": "2010-05-18T17:45:22+12:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "data/file.png",
+            "name": "file.png",
+            "type": "file",
+            "loc": 149,
+            "extension": "png",
+            "lastModified": "2022-02-03T13:54:54+13:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "data/fonts",
+            "name": "fonts",
+            "type": "directory",
+            "children": [
+              {
+                "path": "data/fonts/FreeSans.ttf",
+                "name": "FreeSans.ttf",
+                "type": "file",
+                "loc": 6901,
+                "extension": "ttf",
+                "lastModified": "2012-04-13T19:47:34+12:00",
+                "lastAuthor": "Andrew Caudwell"
+              },
+              {
+                "path": "data/fonts/README",
+                "name": "README",
+                "type": "file",
+                "loc": 82,
+                "extension": "no-extension",
+                "lastModified": "2012-04-13T19:47:34+12:00",
+                "lastAuthor": "Andrew Caudwell"
+              }
+            ]
+          },
+          {
+            "path": "data/gource.1",
+            "name": "gource.1",
+            "type": "file",
+            "loc": 432,
+            "extension": "1",
+            "lastModified": "2025-03-09T13:39:19+01:00",
+            "lastAuthor": "Jakob Lorenz"
+          },
+          {
+            "path": "data/gource.style",
+            "name": "gource.style",
+            "type": "file",
+            "loc": 5,
+            "extension": "style",
+            "lastModified": "2009-12-12T13:20:02+13:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "data/shaders",
+            "name": "shaders",
+            "type": "directory",
+            "children": [
+              {
+                "path": "data/shaders/bloom.frag",
+                "name": "bloom.frag",
+                "type": "file",
+                "loc": 10,
+                "extension": "frag",
+                "lastModified": "2011-04-20T21:51:59+12:00",
+                "lastAuthor": "Andrew Caudwell"
+              },
+              {
+                "path": "data/shaders/bloom.vert",
+                "name": "bloom.vert",
+                "type": "file",
+                "loc": 8,
+                "extension": "vert",
+                "lastModified": "2011-04-19T23:40:08+12:00",
+                "lastAuthor": "Andrew Caudwell"
+              },
+              {
+                "path": "data/shaders/shadow.frag",
+                "name": "shadow.frag",
+                "type": "file",
+                "loc": 7,
+                "extension": "frag",
+                "lastModified": "2011-04-24T23:43:26+12:00",
+                "lastAuthor": "Andrew Caudwell"
+              },
+              {
+                "path": "data/shaders/shadow.vert",
+                "name": "shadow.vert",
+                "type": "file",
+                "loc": 6,
+                "extension": "vert",
+                "lastModified": "2011-05-11T21:06:58+12:00",
+                "lastAuthor": "Andrew Caudwell"
+              },
+              {
+                "path": "data/shaders/text.frag",
+                "name": "text.frag",
+                "type": "file",
+                "loc": 11,
+                "extension": "frag",
+                "lastModified": "2011-12-07T08:03:32+13:00",
+                "lastAuthor": "Andrew Caudwell"
+              },
+              {
+                "path": "data/shaders/text.vert",
+                "name": "text.vert",
+                "type": "file",
+                "loc": 6,
+                "extension": "vert",
+                "lastModified": "2011-05-11T21:06:58+12:00",
+                "lastAuthor": "Andrew Caudwell"
+              }
+            ]
+          },
+          {
+            "path": "data/user.png",
+            "name": "user.png",
+            "type": "file",
+            "loc": 211,
+            "extension": "png",
+            "lastModified": "2022-02-03T13:54:54+13:00",
+            "lastAuthor": "Andrew Caudwell"
+          }
+        ]
+      },
+      {
+        "path": "dev",
+        "name": "dev",
+        "type": "directory",
+        "children": [
+          {
+            "path": "dev/.gitignore",
+            "name": ".gitignore",
+            "type": "file",
+            "loc": 1,
+            "extension": "no-extension",
+            "lastModified": "2009-09-22T18:50:03+12:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "dev/bin",
+            "name": "bin",
+            "type": "directory",
+            "children": [
+              {
+                "path": "dev/bin/build_tar.pl",
+                "name": "build_tar.pl",
+                "type": "file",
+                "loc": 121,
+                "extension": "pl",
+                "lastModified": "2022-02-03T13:32:21+13:00",
+                "lastAuthor": "Andrew Caudwell"
+              },
+              {
+                "path": "dev/bin/build_win64.pl",
+                "name": "build_win64.pl",
+                "type": "file",
+                "loc": 235,
+                "extension": "pl",
+                "lastModified": "2021-11-13T23:19:25-06:00",
+                "lastAuthor": "Kaleb Luedtke"
+              }
+            ]
+          },
+          {
+            "path": "dev/nsis",
+            "name": "nsis",
+            "type": "directory",
+            "children": [
+              {
+                "path": "dev/nsis/disclaimer.txt",
+                "name": "disclaimer.txt",
+                "type": "file",
+                "loc": 7,
+                "extension": "txt",
+                "lastModified": "2017-05-24T16:10:16+12:00",
+                "lastAuthor": "Andrew Caudwell"
+              },
+              {
+                "path": "dev/nsis/welcome.bmp",
+                "name": "welcome.bmp",
+                "type": "file",
+                "loc": 1,
+                "extension": "bmp",
+                "lastModified": "2013-04-03T00:13:26+13:00",
+                "lastAuthor": "Andrew Caudwell"
+              },
+              {
+                "path": "dev/nsis/welcome.xcf",
+                "name": "welcome.xcf",
+                "type": "file",
+                "loc": 21,
+                "extension": "xcf",
+                "lastModified": "2013-04-03T00:13:26+13:00",
+                "lastAuthor": "Andrew Caudwell"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "gource.pro",
+        "name": "gource.pro",
+        "type": "file",
+        "loc": 142,
+        "extension": "pro",
+        "lastModified": "2022-03-03T17:44:31+13:00",
+        "lastAuthor": "Andrew Caudwell"
+      },
+      {
+        "path": "m4",
+        "name": "m4",
+        "type": "directory",
+        "children": [
+          {
+            "path": "m4/ax_boost_base.m4",
+            "name": "ax_boost_base.m4",
+            "type": "file",
+            "loc": 278,
+            "extension": "m4",
+            "lastModified": "2025-08-13T13:56:09+12:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "m4/ax_boost_filesystem.m4",
+            "name": "ax_boost_filesystem.m4",
+            "type": "file",
+            "loc": 110,
+            "extension": "m4",
+            "lastModified": "2022-11-20T09:23:50-08:00",
+            "lastAuthor": "Charles Hardin"
+          },
+          {
+            "path": "m4/ax_check_gl.m4",
+            "name": "ax_check_gl.m4",
+            "type": "file",
+            "loc": 278,
+            "extension": "m4",
+            "lastModified": "2022-11-20T09:23:50-08:00",
+            "lastAuthor": "Charles Hardin"
+          },
+          {
+            "path": "m4/ax_check_glu.m4",
+            "name": "ax_check_glu.m4",
+            "type": "file",
+            "loc": 262,
+            "extension": "m4",
+            "lastModified": "2022-11-20T09:23:50-08:00",
+            "lastAuthor": "Charles Hardin"
+          },
+          {
+            "path": "m4/ax_check_glut.m4",
+            "name": "ax_check_glut.m4",
+            "type": "file",
+            "loc": 194,
+            "extension": "m4",
+            "lastModified": "2022-11-20T09:23:50-08:00",
+            "lastAuthor": "Charles Hardin"
+          },
+          {
+            "path": "m4/ax_pthread.m4",
+            "name": "ax_pthread.m4",
+            "type": "file",
+            "loc": 249,
+            "extension": "m4",
+            "lastModified": "2010-04-06T09:50:52+12:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "m4/ax_restore_flags_with_prefix.m4",
+            "name": "ax_restore_flags_with_prefix.m4",
+            "type": "file",
+            "loc": 64,
+            "extension": "m4",
+            "lastModified": "2022-11-20T09:23:50-08:00",
+            "lastAuthor": "Charles Hardin"
+          },
+          {
+            "path": "m4/ax_save_flags_with_prefix.m4",
+            "name": "ax_save_flags_with_prefix.m4",
+            "type": "file",
+            "loc": 70,
+            "extension": "m4",
+            "lastModified": "2022-11-20T09:23:50-08:00",
+            "lastAuthor": "Charles Hardin"
+          },
+          {
+            "path": "m4/pkg.m4",
+            "name": "pkg.m4",
+            "type": "file",
+            "loc": 139,
+            "extension": "m4",
+            "lastModified": "2009-10-01T17:21:41+13:00",
+            "lastAuthor": "Andrew Caudwell"
+          }
+        ]
+      },
+      {
+        "path": "resources",
+        "name": "resources",
+        "type": "directory",
+        "children": [
+          {
+            "path": "resources/file.xcf",
+            "name": "file.xcf",
+            "type": "file",
+            "loc": 152,
+            "extension": "xcf",
+            "lastModified": "2011-11-10T09:02:35+13:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "resources/user.xcf",
+            "name": "user.xcf",
+            "type": "file",
+            "loc": 865,
+            "extension": "xcf",
+            "lastModified": "2011-11-10T09:02:35+13:00",
+            "lastAuthor": "Andrew Caudwell"
+          }
+        ]
+      },
+      {
+        "path": "scripts",
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "path": "scripts/gource-ps.pl",
+            "name": "gource-ps.pl",
+            "type": "file",
+            "loc": 135,
+            "extension": "pl",
+            "lastModified": "2010-08-09T17:36:58+12:00",
+            "lastAuthor": "Andrew Caudwell"
+          }
+        ]
+      },
+      {
+        "path": "src",
+        "name": "src",
+        "type": "directory",
+        "children": [
+          {
+            "path": "src/.gitignore",
+            "name": ".gitignore",
+            "type": "file",
+            "loc": 1,
+            "extension": "no-extension",
+            "lastModified": "2012-04-11T15:54:58+12:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "src/action.cpp",
+            "name": "action.cpp",
+            "type": "file",
+            "loc": 92,
+            "extension": "cpp",
+            "lastModified": "2018-09-30T11:31:58+02:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "src/action.h",
+            "name": "action.h",
+            "type": "file",
+            "loc": 54,
+            "extension": "h",
+            "lastModified": "2018-09-30T11:31:58+02:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "src/bloom.cpp",
+            "name": "bloom.cpp",
+            "type": "file",
+            "loc": 95,
+            "extension": "cpp",
+            "lastModified": "2011-12-28T17:28:13+13:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "src/bloom.h",
+            "name": "bloom.h",
+            "type": "file",
+            "loc": 49,
+            "extension": "h",
+            "lastModified": "2011-12-28T17:28:13+13:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "src/caption.cpp",
+            "name": "caption.cpp",
+            "type": "file",
+            "loc": 43,
+            "extension": "cpp",
+            "lastModified": "2013-03-16T14:14:33+13:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "src/caption.h",
+            "name": "caption.h",
+            "type": "file",
+            "loc": 36,
+            "extension": "h",
+            "lastModified": "2013-03-16T14:14:33+13:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "src/dirnode.cpp",
+            "name": "dirnode.cpp",
+            "type": "file",
+            "loc": 837,
+            "extension": "cpp",
+            "lastModified": "2018-10-02T16:56:15+13:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "src/dirnode.h",
+            "name": "dirnode.h",
+            "type": "file",
+            "loc": 169,
+            "extension": "h",
+            "lastModified": "2018-10-02T16:56:15+13:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "src/file.cpp",
+            "name": "file.cpp",
+            "type": "file",
+            "loc": 219,
+            "extension": "cpp",
+            "lastModified": "2022-03-03T17:44:31+13:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "src/file.h",
+            "name": "file.h",
+            "type": "file",
+            "loc": 65,
+            "extension": "h",
+            "lastModified": "2018-10-01T13:48:28+13:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "src/formats",
+            "name": "formats",
+            "type": "directory",
+            "children": [
+              {
+                "path": "src/formats/apache.cpp",
+                "name": "apache.cpp",
+                "type": "file",
+                "loc": 97,
+                "extension": "cpp",
+                "lastModified": "2013-08-06T01:02:32+12:00",
+                "lastAuthor": "Andrew Caudwell"
+              },
+              {
+                "path": "src/formats/apache.h",
+                "name": "apache.h",
+                "type": "file",
+                "loc": 25,
+                "extension": "h",
+                "lastModified": "2013-08-06T01:02:32+12:00",
+                "lastAuthor": "Andrew Caudwell"
+              },
+              {
+                "path": "src/formats/bzr.cpp",
+                "name": "bzr.cpp",
+                "type": "file",
+                "loc": 87,
+                "extension": "cpp",
+                "lastModified": "2014-05-02T12:31:11+12:00",
+                "lastAuthor": "Chris Forbes"
+              },
+              {
+                "path": "src/formats/bzr.h",
+                "name": "bzr.h",
+                "type": "file",
+                "loc": 25,
+                "extension": "h",
+                "lastModified": "2013-06-28T16:23:01+12:00",
+                "lastAuthor": "Andrew Caudwell"
+              },
+              {
+                "path": "src/formats/commitlog.cpp",
+                "name": "commitlog.cpp",
+                "type": "file",
+                "loc": 280,
+                "extension": "cpp",
+                "lastModified": "2022-01-20T18:02:01+13:00",
+                "lastAuthor": "Andrew Caudwell"
+              },
+              {
+                "path": "src/formats/commitlog.h",
+                "name": "commitlog.h",
+                "type": "file",
+                "loc": 79,
+                "extension": "h",
+                "lastModified": "2019-06-13T15:16:22+12:00",
+                "lastAuthor": "Andrew Caudwell"
+              },
+              {
+                "path": "src/formats/custom.cpp",
+                "name": "custom.cpp",
+                "type": "file",
+                "loc": 75,
+                "extension": "cpp",
+                "lastModified": "2022-01-20T18:02:01+13:00",
+                "lastAuthor": "Andrew Caudwell"
+              },
+              {
+                "path": "src/formats/custom.h",
+                "name": "custom.h",
+                "type": "file",
+                "loc": 25,
+                "extension": "h",
+                "lastModified": "2012-04-09T22:57:58+12:00",
+                "lastAuthor": "Andrew Caudwell"
+              },
+              {
+                "path": "src/formats/cvs-exp.cpp",
+                "name": "cvs-exp.cpp",
+                "type": "file",
+                "loc": 100,
+                "extension": "cpp",
+                "lastModified": "2013-06-28T16:23:01+12:00",
+                "lastAuthor": "Andrew Caudwell"
+              },
+              {
+                "path": "src/formats/cvs-exp.h",
+                "name": "cvs-exp.h",
+                "type": "file",
+                "loc": 24,
+                "extension": "h",
+                "lastModified": "2013-06-28T16:23:01+12:00",
+                "lastAuthor": "Andrew Caudwell"
+              },
+              {
+                "path": "src/formats/cvs2cl.cpp",
+                "name": "cvs2cl.cpp",
+                "type": "file",
+                "loc": 110,
+                "extension": "cpp",
+                "lastModified": "2013-06-28T16:23:01+12:00",
+                "lastAuthor": "Andrew Caudwell"
+              },
+              {
+                "path": "src/formats/cvs2cl.h",
+                "name": "cvs2cl.h",
+                "type": "file",
+                "loc": 25,
+                "extension": "h",
+                "lastModified": "2013-06-28T16:23:01+12:00",
+                "lastAuthor": "Andrew Caudwell"
+              },
+              {
+                "path": "src/formats/git.cpp",
+                "name": "git.cpp",
+                "type": "file",
+                "loc": 176,
+                "extension": "cpp",
+                "lastModified": "2025-03-10T12:45:31+01:00",
+                "lastAuthor": "Jakob Lorenz"
+              },
+              {
+                "path": "src/formats/git.h",
+                "name": "git.h",
+                "type": "file",
+                "loc": 26,
+                "extension": "h",
+                "lastModified": "2019-06-13T15:16:22+12:00",
+                "lastAuthor": "Andrew Caudwell"
+              },
+              {
+                "path": "src/formats/gitraw.cpp",
+                "name": "gitraw.cpp",
+                "type": "file",
+                "loc": 64,
+                "extension": "cpp",
+                "lastModified": "2023-05-06T01:11:54+08:00",
+                "lastAuthor": "Zhizhen He"
+              },
+              {
+                "path": "src/formats/gitraw.h",
+                "name": "gitraw.h",
+                "type": "file",
+                "loc": 25,
+                "extension": "h",
+                "lastModified": "2012-04-09T22:57:58+12:00",
+                "lastAuthor": "Andrew Caudwell"
+              },
+              {
+                "path": "src/formats/hg.cpp",
+                "name": "hg.cpp",
+                "type": "file",
+                "loc": 104,
+                "extension": "cpp",
+                "lastModified": "2018-09-28T11:00:05+12:00",
+                "lastAuthor": "Andrew Caudwell"
+              },
+              {
+                "path": "src/formats/hg.h",
+                "name": "hg.h",
+                "type": "file",
+                "loc": 26,
+                "extension": "h",
+                "lastModified": "2013-06-28T16:23:01+12:00",
+                "lastAuthor": "Andrew Caudwell"
+              },
+              {
+                "path": "src/formats/svn.cpp",
+                "name": "svn.cpp",
+                "type": "file",
+                "loc": 207,
+                "extension": "cpp",
+                "lastModified": "2016-07-31T21:49:44+12:00",
+                "lastAuthor": "Andrew Caudwell"
+              },
+              {
+                "path": "src/formats/svn.h",
+                "name": "svn.h",
+                "type": "file",
+                "loc": 28,
+                "extension": "h",
+                "lastModified": "2013-06-28T16:23:01+12:00",
+                "lastAuthor": "Andrew Caudwell"
+              }
+            ]
+          },
+          {
+            "path": "src/gource.cpp",
+            "name": "gource.cpp",
+            "type": "file",
+            "loc": 1960,
+            "extension": "cpp",
+            "lastModified": "2023-05-06T01:11:54+08:00",
+            "lastAuthor": "Zhizhen He"
+          },
+          {
+            "path": "src/gource.h",
+            "name": "gource.h",
+            "type": "file",
+            "loc": 205,
+            "extension": "h",
+            "lastModified": "2020-11-02T22:21:28-08:00",
+            "lastAuthor": "Jeff Pitman"
+          },
+          {
+            "path": "src/gource_settings.cpp",
+            "name": "gource_settings.cpp",
+            "type": "file",
+            "loc": 1199,
+            "extension": "cpp",
+            "lastModified": "2025-03-09T13:39:19+01:00",
+            "lastAuthor": "Jakob Lorenz"
+          },
+          {
+            "path": "src/gource_settings.h",
+            "name": "gource_settings.h",
+            "type": "file",
+            "loc": 137,
+            "extension": "h",
+            "lastModified": "2025-03-09T13:39:19+01:00",
+            "lastAuthor": "Jakob Lorenz"
+          },
+          {
+            "path": "src/gource_shell.cpp",
+            "name": "gource_shell.cpp",
+            "type": "file",
+            "loc": 226,
+            "extension": "cpp",
+            "lastModified": "2022-03-03T14:11:08+13:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "src/gource_shell.h",
+            "name": "gource_shell.h",
+            "type": "file",
+            "loc": 47,
+            "extension": "h",
+            "lastModified": "2022-03-03T14:11:08+13:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "src/key.cpp",
+            "name": "key.cpp",
+            "type": "file",
+            "loc": 231,
+            "extension": "cpp",
+            "lastModified": "2022-03-03T17:44:31+13:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "src/key.h",
+            "name": "key.h",
+            "type": "file",
+            "loc": 75,
+            "extension": "h",
+            "lastModified": "2011-12-20T15:45:25+13:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "src/logmill.cpp",
+            "name": "logmill.cpp",
+            "type": "file",
+            "loc": 248,
+            "extension": "cpp",
+            "lastModified": "2019-11-14T21:13:00+13:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "src/logmill.h",
+            "name": "logmill.h",
+            "type": "file",
+            "loc": 50,
+            "extension": "h",
+            "lastModified": "2012-04-12T13:02:11+12:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "src/main.cpp",
+            "name": "main.cpp",
+            "type": "file",
+            "loc": 176,
+            "extension": "cpp",
+            "lastModified": "2022-04-25T21:00:58-07:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "src/main.h",
+            "name": "main.h",
+            "type": "file",
+            "loc": 18,
+            "extension": "h",
+            "lastModified": "2010-05-08T13:01:03+12:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "src/pawn.cpp",
+            "name": "pawn.cpp",
+            "type": "file",
+            "loc": 138,
+            "extension": "cpp",
+            "lastModified": "2019-11-27T21:29:29+01:00",
+            "lastAuthor": "Marcel Petrick"
+          },
+          {
+            "path": "src/pawn.h",
+            "name": "pawn.h",
+            "type": "file",
+            "loc": 74,
+            "extension": "h",
+            "lastModified": "2012-04-10T18:13:57+12:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "src/slider.cpp",
+            "name": "slider.cpp",
+            "type": "file",
+            "loc": 112,
+            "extension": "cpp",
+            "lastModified": "2022-04-20T20:50:32-07:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "src/slider.h",
+            "name": "slider.h",
+            "type": "file",
+            "loc": 45,
+            "extension": "h",
+            "lastModified": "2022-04-20T20:50:32-07:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "src/spline.cpp",
+            "name": "spline.cpp",
+            "type": "file",
+            "loc": 99,
+            "extension": "cpp",
+            "lastModified": "2018-09-21T10:35:07+12:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "src/spline.h",
+            "name": "spline.h",
+            "type": "file",
+            "loc": 34,
+            "extension": "h",
+            "lastModified": "2018-09-21T10:35:07+12:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "src/test",
+            "name": "test",
+            "type": "directory",
+            "children": [
+              {
+                "path": "src/test/datetime_tests.cpp",
+                "name": "datetime_tests.cpp",
+                "type": "file",
+                "loc": 79,
+                "extension": "cpp",
+                "lastModified": "2021-12-02T14:21:46+13:00",
+                "lastAuthor": "Andrew Caudwell"
+              },
+              {
+                "path": "src/test/main.cpp",
+                "name": "main.cpp",
+                "type": "file",
+                "loc": 2,
+                "extension": "cpp",
+                "lastModified": "2021-12-02T14:21:46+13:00",
+                "lastAuthor": "Andrew Caudwell"
+              },
+              {
+                "path": "src/test/regex_tests.cpp",
+                "name": "regex_tests.cpp",
+                "type": "file",
+                "loc": 35,
+                "extension": "cpp",
+                "lastModified": "2021-12-09T13:59:21+13:00",
+                "lastAuthor": "Andrew Caudwell"
+              }
+            ]
+          },
+          {
+            "path": "src/textbox.cpp",
+            "name": "textbox.cpp",
+            "type": "file",
+            "loc": 113,
+            "extension": "cpp",
+            "lastModified": "2011-12-20T15:45:25+13:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "src/textbox.h",
+            "name": "textbox.h",
+            "type": "file",
+            "loc": 48,
+            "extension": "h",
+            "lastModified": "2011-12-20T15:45:25+13:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "src/tinyxml",
+            "name": "tinyxml",
+            "type": "directory",
+            "children": [
+              {
+                "path": "src/tinyxml/tinystr.cpp",
+                "name": "tinystr.cpp",
+                "type": "file",
+                "loc": 88,
+                "extension": "cpp",
+                "lastModified": "2014-03-17T10:21:03+13:00",
+                "lastAuthor": "Andrew Caudwell"
+              },
+              {
+                "path": "src/tinyxml/tinystr.h",
+                "name": "tinystr.h",
+                "type": "file",
+                "loc": 243,
+                "extension": "h",
+                "lastModified": "2023-05-06T01:11:54+08:00",
+                "lastAuthor": "Zhizhen He"
+              },
+              {
+                "path": "src/tinyxml/tinyxml.cpp",
+                "name": "tinyxml.cpp",
+                "type": "file",
+                "loc": 1554,
+                "extension": "cpp",
+                "lastModified": "2014-03-17T10:21:03+13:00",
+                "lastAuthor": "Andrew Caudwell"
+              },
+              {
+                "path": "src/tinyxml/tinyxml.h",
+                "name": "tinyxml.h",
+                "type": "file",
+                "loc": 1477,
+                "extension": "h",
+                "lastModified": "2023-05-06T01:11:54+08:00",
+                "lastAuthor": "Zhizhen He"
+              },
+              {
+                "path": "src/tinyxml/tinyxmlerror.cpp",
+                "name": "tinyxmlerror.cpp",
+                "type": "file",
+                "loc": 44,
+                "extension": "cpp",
+                "lastModified": "2023-05-06T01:11:54+08:00",
+                "lastAuthor": "Zhizhen He"
+              },
+              {
+                "path": "src/tinyxml/tinyxmlparser.cpp",
+                "name": "tinyxmlparser.cpp",
+                "type": "file",
+                "loc": 1443,
+                "extension": "cpp",
+                "lastModified": "2023-05-06T01:11:54+08:00",
+                "lastAuthor": "Zhizhen He"
+              }
+            ]
+          },
+          {
+            "path": "src/user.cpp",
+            "name": "user.cpp",
+            "type": "file",
+            "loc": 296,
+            "extension": "cpp",
+            "lastModified": "2023-05-06T01:11:54+08:00",
+            "lastAuthor": "Zhizhen He"
+          },
+          {
+            "path": "src/user.h",
+            "name": "user.h",
+            "type": "file",
+            "loc": 86,
+            "extension": "h",
+            "lastModified": "2011-12-20T15:45:25+13:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "src/zoomcamera.cpp",
+            "name": "zoomcamera.cpp",
+            "type": "file",
+            "loc": 135,
+            "extension": "cpp",
+            "lastModified": "2012-02-16T15:12:34+13:00",
+            "lastAuthor": "Andrew Caudwell"
+          },
+          {
+            "path": "src/zoomcamera.h",
+            "name": "zoomcamera.h",
+            "type": "file",
+            "loc": 64,
+            "extension": "h",
+            "lastModified": "2011-12-20T15:45:25+13:00",
+            "lastAuthor": "Andrew Caudwell"
+          }
+        ]
+      },
+      {
+        "path": "tests",
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "path": "tests/logs",
+            "name": "logs",
+            "type": "directory",
+            "children": [
+              {
+                "path": "tests/logs/custom-dir-delete.log",
+                "name": "custom-dir-delete.log",
+                "type": "file",
+                "loc": 5,
+                "extension": "log",
+                "lastModified": "2013-04-15T13:15:22+12:00",
+                "lastAuthor": "Andrew Caudwell"
+              },
+              {
+                "path": "tests/logs/file-removal.log",
+                "name": "file-removal.log",
+                "type": "file",
+                "loc": 10,
+                "extension": "log",
+                "lastModified": "2013-04-15T13:15:22+12:00",
+                "lastAuthor": "Andrew Caudwell"
+              },
+              {
+                "path": "tests/logs/file-to-dir.log",
+                "name": "file-to-dir.log",
+                "type": "file",
+                "loc": 4,
+                "extension": "log",
+                "lastModified": "2013-04-15T13:15:22+12:00",
+                "lastAuthor": "Andrew Caudwell"
+              },
+              {
+                "path": "tests/logs/svn-dir-delete.log",
+                "name": "svn-dir-delete.log",
+                "type": "file",
+                "loc": 23,
+                "extension": "log",
+                "lastModified": "2013-04-15T13:15:22+12:00",
+                "lastAuthor": "Andrew Caudwell"
+              },
+              {
+                "path": "tests/logs/utf8-caption.log",
+                "name": "utf8-caption.log",
+                "type": "file",
+                "loc": 2,
+                "extension": "log",
+                "lastModified": "2022-02-03T16:51:12+13:00",
+                "lastAuthor": "Andrew Caudwell"
+              },
+              {
+                "path": "tests/logs/utf8.log",
+                "name": "utf8.log",
+                "type": "file",
+                "loc": 2,
+                "extension": "log",
+                "lastModified": "2013-04-15T18:34:05+12:00",
+                "lastAuthor": "Andrew Caudwell"
+              }
+            ]
+          },
+          {
+            "path": "tests/test.conf",
+            "name": "test.conf",
+            "type": "file",
+            "loc": 35,
+            "extension": "conf",
+            "lastModified": "2017-02-17T11:34:44+13:00",
+            "lastAuthor": "Andrew Caudwell"
+          }
+        ]
+      }
+    ]
+  },
+  "stats": {
+    "totalFiles": 120,
+    "totalLoc": 28011,
+    "filesByExtension": {
+      "1": 1,
+      "no-extension": 11,
+      "yml": 1,
+      "am": 1,
+      "md": 1,
+      "sh": 1,
+      "cmd": 1,
+      "ac": 1,
+      "py": 1,
+      "png": 3,
+      "tga": 2,
+      "ttf": 1,
+      "style": 1,
+      "frag": 3,
+      "vert": 3,
+      "pl": 3,
+      "txt": 1,
+      "bmp": 1,
+      "xcf": 3,
+      "pro": 1,
+      "m4": 9,
+      "cpp": 34,
+      "h": 29,
+      "log": 6,
+      "conf": 1
+    }
+  }
+}

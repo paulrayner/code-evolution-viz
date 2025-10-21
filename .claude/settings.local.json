@@ -50,7 +50,10 @@
       "Bash(git stash:*)",
       "Bash(git for-each-ref:*)",
       "Bash(git update-ref:*)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(ts-node:*)",
+      "Bash(npx ts-node:*)",
+      "Bash(git remote set-url:*)"
     ]
   }
 }

@@ -187,7 +187,7 @@ export class TreeBuilder {
         return null;
       }
 
-      const child = node.children.find(c => c.name === part);
+      const child: TreeNode | undefined = node.children.find((c: TreeNode) => c.name === part);
       if (!child) {
         return null;
       }

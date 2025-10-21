@@ -1386,6 +1386,7 @@ function setupTimelineV2Controls() {
     let isDragging = false;
 
     const seekToPosition = (clientX: number) => {
+      if (!currentDeltaController) return;
       const rect = scrubber.getBoundingClientRect();
       const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
       const percentage = x / rect.width;
@@ -2431,7 +2432,7 @@ function updateTimelineUI() {
   highlightTimelineCommitFiles(commit);
 }
 
-function highlightTimelineCommitFiles(commit: any, commitIndex: number) {
+function highlightTimelineCommitFiles(commit: any, commitIndex?: number) {
   if (!currentVisualizer) return;
 
   // Timeline V2 (full delta) vs V1 (sampled) have different highlighting semantics
