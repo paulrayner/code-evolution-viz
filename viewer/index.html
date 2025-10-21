@@ -74,12 +74,19 @@
       backdrop-filter: blur(10px);
       min-width: 250px;
       max-width: 400px;
+      max-height: calc(100vh - 40px);
       pointer-events: auto;
       display: none;
+      overflow: hidden;
     }
 
     #info-panel.visible {
       display: block;
+    }
+
+    #info-panel.collapsed {
+      max-height: 40px;
+      overflow: hidden;
     }
 
     #info-panel h3 {
@@ -87,6 +94,20 @@
       font-weight: 600;
       margin-bottom: 10px;
       color: #4a9eff;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #info-panel h3::after {
+      content: '▼';
+      font-size: 10px;
+      transition: transform 0.2s;
+    }
+
+    #info-panel.collapsed h3::after {
+      transform: rotate(-90deg);
     }
 
     #info-panel .info-row {
@@ -109,6 +130,11 @@
     #info-panel .value {
       color: #fff;
       font-weight: 500;
+    }
+
+    #info-content {
+      max-height: calc(100vh - 120px);
+      overflow-y: auto;
     }
 
     #loading {
