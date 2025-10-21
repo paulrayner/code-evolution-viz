@@ -5,19 +5,51 @@ import { ColorMode, getLegendItems, getColorModeName, getColorForFile, assignAut
 import { DeltaReplayController } from './DeltaReplayController';
 
 /**
- * Get list of available repositories
+ * Get list of available repositories (base names only, no -timeline variants)
  */
 async function getAvailableRepos(): Promise<string[]> {
   try {
     const response = await fetch('/data/repos.json');
     if (response.ok) {
       const data = await response.json();
-      return data.repos || [];
+      const repos = data.repos || [];
+
+      // Remove duplicates by stripping -timeline or -timeline-full suffix
+      const baseRepos = new Set<string>();
+      for (const repo of repos) {
+        // Strip -timeline-full or -timeline suffix to get base name
+        const baseName = repo.replace(/-timeline(-full)?$/, '');
+        baseRepos.add(baseName);
+      }
+
+      return Array.from(baseRepos).sort();
     }
   } catch (error) {
     console.warn('Could not load repos list, using default');
   }
   return ['gource']; // Default fallback
+}
+
+/**
+ * Check if timeline data exists for a repository
+ * Checks for both -timeline-full.json and -timeline.json
+ */
+async function checkTimelineExists(repoName: string): Promise<boolean> {
+  // Try -timeline-full.json first (V2 format)
+  try {
+    const response = await fetch(`/data/${repoName}-timeline-full.json`, { method: 'HEAD' });
+    if (response.ok) return true;
+  } catch {
+    // Fall through to check other variant
+  }
+
+  // Try -timeline.json (alternative naming)
+  try {
+    const response = await fetch(`/data/${repoName}-timeline.json`, { method: 'HEAD' });
+    return response.ok;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -35,19 +67,10 @@ async function loadData(repoName: string = 'gource'): Promise<RepositorySnapshot
 
 /**
  * Update UI with repository info
+ * (Repository name is now shown in dropdown only, no separate display)
  */
 function updateHeader(snapshot: RepositorySnapshot) {
-  const repoName = document.getElementById('repo-name');
-  const commitInfo = document.getElementById('commit-info');
-
-  if (repoName) {
-    repoName.textContent = snapshot.repositoryPath.split('/').pop() || 'Repository';
-  }
-
-  if (commitInfo) {
-    const date = new Date(snapshot.timestamp).toLocaleDateString();
-    commitInfo.textContent = `${snapshot.commit.substring(0, 7)} • ${date} • ${snapshot.stats.totalFiles} files • ${snapshot.stats.totalLoc.toLocaleString()} LOC`;
-  }
+  // Repository name removed from header - shown in dropdown instead
 }
 
 /**
@@ -427,11 +450,92 @@ function countDirectories(node: TreeNode): number {
 }
 
 /**
+ * Count visible files and LOC (respecting current filters)
+ */
+function countVisibleStats(tree: TreeNode): { files: number; loc: number } {
+  if (!currentVisualizer || !currentSnapshot) {
+    return { files: 0, loc: 0 };
+  }
+
+  const colorMode = (localStorage.getItem('colorMode') as ColorMode) || 'fileType';
+  let files = 0;
+  let loc = 0;
+
+  const processNode = (node: TreeNode) => {
+    if (node.type === 'file') {
+      // Check if this file matches the current filter
+      if (currentVisualizer!.hasActiveFilters()) {
+        // Get file's category and check if it's in active filters
+        const activeCategories = currentVisualizer!.getActiveFilterCategories();
+        const fileColorInfo = getColorForFile(node, colorMode);
+        if (activeCategories.includes(fileColorInfo.name)) {
+          files++;
+          loc += node.loc;
+        }
+      } else {
+        files++;
+        loc += node.loc;
+      }
+    } else {
+      for (const child of node.children) {
+        processNode(child);
+      }
+    }
+  };
+
+  processNode(tree);
+  return { files, loc };
+}
+
+/**
  * Populate statistics panel
  */
 function populateStats(snapshot: RepositorySnapshot) {
-  document.getElementById('stat-files')!.textContent = snapshot.stats.totalFiles.toLocaleString();
-  document.getElementById('stat-loc')!.textContent = snapshot.stats.totalLoc.toLocaleString();
+  updateStatsDisplay(snapshot);
+}
+
+/**
+ * Update statistics display with filter awareness
+ * Called when filters change to update counts
+ */
+function updateStatsDisplay(snapshot: RepositorySnapshot) {
+  // Check if filters are active
+  const hasFilters = currentVisualizer?.hasActiveFilters() || false;
+
+  let visibleFiles = snapshot.stats.totalFiles;
+  let visibleLoc = snapshot.stats.totalLoc;
+
+  if (hasFilters) {
+    // Count only visible files/LOC when filters are active
+    const counts = countVisibleStats(snapshot.tree);
+    visibleFiles = counts.files;
+    visibleLoc = counts.loc;
+  }
+
+  // Update file count (with filter indicator if needed)
+  const statFilesEl = document.getElementById('stat-files');
+  if (statFilesEl) {
+    if (hasFilters && visibleFiles < snapshot.stats.totalFiles) {
+      statFilesEl.textContent = `${visibleFiles.toLocaleString()} / ${snapshot.stats.totalFiles.toLocaleString()}`;
+      statFilesEl.title = `Showing ${visibleFiles} of ${snapshot.stats.totalFiles} files (filtered)`;
+    } else {
+      statFilesEl.textContent = snapshot.stats.totalFiles.toLocaleString();
+      statFilesEl.title = '';
+    }
+  }
+
+  // Update LOC count (with filter indicator if needed)
+  const statLocEl = document.getElementById('stat-loc');
+  if (statLocEl) {
+    if (hasFilters && visibleLoc < snapshot.stats.totalLoc) {
+      statLocEl.textContent = `${visibleLoc.toLocaleString()} / ${snapshot.stats.totalLoc.toLocaleString()}`;
+      statLocEl.title = `Showing ${visibleLoc} of ${snapshot.stats.totalLoc} LOC (filtered)`;
+    } else {
+      statLocEl.textContent = snapshot.stats.totalLoc.toLocaleString();
+      statLocEl.title = '';
+    }
+  }
+
   document.getElementById('stat-dirs')!.textContent = (countDirectories(snapshot.tree) - 1).toString(); // -1 for root
   document.getElementById('stat-depth')!.textContent = calculateMaxDepth(snapshot.tree).toString();
 
@@ -582,6 +686,7 @@ function updateStatsForTree(tree: DirectoryNode, commitIndex?: number, totalComm
 /**
  * Populate legend with file extension colors
  * See viewer/docs/color-scheme.md for design rationale
+ * Note: File Type mode doesn't support filtering (too granular)
  */
 function populateLegend(snapshot: RepositorySnapshot) {
   const legendContent = document.getElementById('legend-content');
@@ -602,7 +707,7 @@ function populateLegend(snapshot: RepositorySnapshot) {
     .filter(ext => FILE_COLORS[ext])
     .sort((a, b) => snapshot.stats.filesByExtension[b] - snapshot.stats.filesByExtension[a]);
 
-  // Add directory entry first
+  // Add directory entry first (no checkbox - directories always visible)
   const dirItem = document.createElement('div');
   dirItem.className = 'legend-item';
   dirItem.innerHTML = `
@@ -611,7 +716,7 @@ function populateLegend(snapshot: RepositorySnapshot) {
   `;
   legendContent.appendChild(dirItem);
 
-  // Add present extensions
+  // Add present extensions (no checkboxes - file type filtering too granular)
   for (const ext of presentExtensions) {
     const info = FILE_COLORS[ext];
     const count = snapshot.stats.filesByExtension[ext];
@@ -638,6 +743,9 @@ function populateLegend(snapshot: RepositorySnapshot) {
     `;
     legendContent.appendChild(item);
   }
+
+  // Hide filter controls for file type mode (not supported)
+  hideFilterControls();
 }
 
 /**
@@ -657,6 +765,10 @@ let currentDeltaController: DeltaReplayController | null = null; // Timeline V2 
 let commitToFilesIndex: Map<string, FileNode[]> = new Map();
 let highlightCommitEnabled: boolean = true;
 let currentHighlightedCommit: string | null = null;
+
+// Mode switcher state
+let currentRepoBaseName: string = '';
+let timelineAvailable: boolean = false;
 
 // Timeline playback state
 let timelineIndex: number = 0;
@@ -717,6 +829,126 @@ function buildPathIndex(tree: DirectoryNode): Map<string, FileNode> {
 }
 
 let pathToFileIndex: Map<string, FileNode> = new Map();
+
+// Timeline V2 compatible color modes (only modes that work without lifetime analytics)
+const TIMELINE_V2_COMPATIBLE_MODES: ColorMode[] = ['fileType', 'lastModified', 'author'];
+
+// Store original color mode when entering timeline mode
+let savedColorModeBeforeTimeline: ColorMode | null = null;
+
+// Store original option text (to avoid appending " (requires HEAD analysis)" multiple times)
+const originalColorModeOptionText = new Map<string, string>();
+
+/**
+ * Enable Timeline mode UI changes (both V1 and V2)
+ */
+function enableTimelineMode() {
+  // Hide "Highlight Commit" toggle (not applicable in timeline mode)
+  const highlightToggle = document.getElementById('highlight-commit-toggle');
+  const highlightLabel = highlightToggle?.previousElementSibling as HTMLElement;
+  if (highlightToggle) {
+    highlightToggle.style.display = 'none';
+  }
+  if (highlightLabel && highlightLabel.textContent?.includes('Highlight Commit')) {
+    highlightLabel.style.display = 'none';
+  }
+
+  // Disable filtering in timeline mode
+  disableFiltering();
+
+  // Hide incompatible color modes (remove from dropdown)
+  const colorModeSelector = document.getElementById('color-mode-selector') as HTMLSelectElement;
+  if (colorModeSelector) {
+    // Save current mode
+    savedColorModeBeforeTimeline = colorModeSelector.value as ColorMode;
+
+    // Remove incompatible options from dropdown
+    const optionsToRemove: HTMLOptionElement[] = [];
+    Array.from(colorModeSelector.options).forEach(option => {
+      const mode = option.value as ColorMode;
+
+      // Store original option element on first run
+      if (!originalColorModeOptionText.has(mode)) {
+        originalColorModeOptionText.set(mode, option.outerHTML);
+      }
+
+      if (!TIMELINE_V2_COMPATIBLE_MODES.includes(mode)) {
+        optionsToRemove.push(option);
+      }
+    });
+
+    // Remove incompatible options
+    optionsToRemove.forEach(option => option.remove());
+
+    // If current mode is incompatible, switch to fileType
+    if (!TIMELINE_V2_COMPATIBLE_MODES.includes(savedColorModeBeforeTimeline)) {
+      colorModeSelector.value = 'fileType';
+      localStorage.setItem('colorMode', 'fileType');
+      if (currentVisualizer) {
+        currentVisualizer.setColorMode('fileType');
+      }
+      console.log(`Switched from incompatible mode '${savedColorModeBeforeTimeline}' to 'fileType'`);
+    }
+  }
+}
+
+/**
+ * Disable Timeline mode UI changes (restore to static mode)
+ */
+function disableTimelineMode() {
+  // Show "Highlight Commit" toggle
+  const highlightToggle = document.getElementById('highlight-commit-toggle');
+  const highlightLabel = highlightToggle?.previousElementSibling as HTMLElement;
+  if (highlightToggle) {
+    highlightToggle.style.display = '';
+  }
+  if (highlightLabel) {
+    highlightLabel.style.display = '';
+  }
+
+  // Re-enable filtering in HEAD mode
+  enableFiltering();
+
+  // Restore all color modes (re-add removed options)
+  const colorModeSelector = document.getElementById('color-mode-selector') as HTMLSelectElement;
+  if (colorModeSelector) {
+    // Only restore if we actually removed options (i.e., originalColorModeOptionText has data)
+    if (originalColorModeOptionText.size > 0) {
+      // Get list of all color modes that should exist
+      const allModes: ColorMode[] = ['fileType', 'lastModified', 'author', 'churn', 'contributors', 'fileAge', 'recentActivity', 'stability', 'recency'];
+
+      // Clear and rebuild the selector with all options in correct order
+      const currentValue = colorModeSelector.value;
+      colorModeSelector.innerHTML = '';
+
+      for (const mode of allModes) {
+        if (originalColorModeOptionText.has(mode)) {
+          // Restore from saved HTML
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = originalColorModeOptionText.get(mode) || '';
+          const option = tempDiv.firstChild as HTMLOptionElement;
+          if (option) {
+            colorModeSelector.appendChild(option);
+          }
+        }
+      }
+
+      // Restore previous color mode if it was changed
+      if (savedColorModeBeforeTimeline && !TIMELINE_V2_COMPATIBLE_MODES.includes(savedColorModeBeforeTimeline)) {
+        colorModeSelector.value = savedColorModeBeforeTimeline;
+        localStorage.setItem('colorMode', savedColorModeBeforeTimeline);
+        if (currentVisualizer) {
+          currentVisualizer.setColorMode(savedColorModeBeforeTimeline);
+        }
+        console.log(`Restored color mode to '${savedColorModeBeforeTimeline}'`);
+      } else {
+        // Keep current value if compatible
+        colorModeSelector.value = currentValue;
+      }
+      savedColorModeBeforeTimeline = null;
+    }
+  }
+}
 
 /**
  * Collect all lastModified dates from the tree
@@ -863,11 +1095,7 @@ async function loadTimelineV2(data: TimelineDataV2, repoName: string) {
     // Set up V2 playback controls
     setupTimelineV2Controls();
 
-    // Update header
-    const repoNameEl = document.getElementById('repo-name');
-    if (repoNameEl) {
-      repoNameEl.textContent = data.repositoryPath.split('/').pop() || 'Repository';
-    }
+    // Repository name is shown in dropdown only (no separate header element)
 
     // Display initial commit info (index 0)
     // The onCommit callback only fires on user interaction, not on initial load
@@ -931,6 +1159,12 @@ async function loadTimelineV2(data: TimelineDataV2, repoName: string) {
     if (timelineControls) {
       timelineControls.style.display = 'flex';
     }
+
+    // Set up tag navigation
+    setupTagNavigation();
+
+    // Enable Timeline mode UI
+    enableTimelineMode();
 
     console.log('\n✅ Timeline V2 loaded successfully!\n');
 
@@ -1168,6 +1402,150 @@ function updateTimelineV2UI(index: number) {
     const percentage = ((index + 1) / total) * 100;
     progressEl.style.width = `${percentage}%`;
   }
+
+  // Update tag selector to match current position
+  updateTagSelectorForCurrentCommit(index);
+}
+
+/**
+ * Set up tag navigation (dropdown and markers)
+ */
+function setupTagNavigation() {
+  if (!currentDeltaController) return;
+
+  const metadata = currentDeltaController.getMetadata();
+  const tags = metadata.tags;
+
+  if (tags.length === 0) {
+    console.log('No tags found in repository');
+    return;
+  }
+
+  console.log(`Setting up tag navigation: ${tags.length} tags found`);
+
+  // Populate tag dropdown
+  const tagSelector = document.getElementById('tag-selector') as HTMLSelectElement;
+  if (tagSelector) {
+    // Clear existing options (except the first "-- Select tag --")
+    tagSelector.innerHTML = '<option value="">-- Select tag --</option>';
+
+    // Add tags in reverse order (newest first, assuming tags are chronological)
+    for (let i = tags.length - 1; i >= 0; i--) {
+      const option = document.createElement('option');
+      option.value = tags[i];
+      option.textContent = tags[i];
+      tagSelector.appendChild(option);
+    }
+
+    // Handle tag selection
+    tagSelector.addEventListener('change', (e) => {
+      const target = e.target as HTMLSelectElement;
+      const selectedTag = target.value;
+
+      if (selectedTag && currentDeltaController) {
+        const success = currentDeltaController.seekToTag(selectedTag);
+        if (!success) {
+          console.warn(`Tag not found: ${selectedTag}`);
+        }
+      }
+    });
+  }
+
+  // Render tag markers on timeline scrubber
+  renderTagMarkers();
+}
+
+/**
+ * Render visual tag markers on the timeline scrubber
+ */
+function renderTagMarkers() {
+  if (!currentDeltaController) return;
+
+  const tagMarkersContainer = document.getElementById('tag-markers');
+  if (!tagMarkersContainer) return;
+
+  // Clear existing markers
+  tagMarkersContainer.innerHTML = '';
+
+  const totalCommits = currentDeltaController.getTotalCommits();
+  const metadata = currentDeltaController.getMetadata();
+
+  // Find all commits with tags
+  const taggedCommits: Array<{ index: number; tags: string[] }> = [];
+
+  for (let i = 0; i < totalCommits; i++) {
+    const commit = currentDeltaController.getCommitAtIndex(i);
+    if (commit && commit.tags.length > 0) {
+      taggedCommits.push({ index: i, tags: commit.tags });
+    }
+  }
+
+  console.log(`Rendering ${taggedCommits.length} tag markers`);
+
+  // Render markers
+  for (const tagged of taggedCommits) {
+    const percentage = (tagged.index / (totalCommits - 1)) * 100;
+    const marker = document.createElement('div');
+    marker.className = 'tag-marker';
+    marker.style.left = `${percentage}%`;
+    marker.setAttribute('data-tag', tagged.tags.join(', '));
+
+    // Make marker clickable to seek
+    marker.addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevent scrubber click
+      currentDeltaController?.seekToCommit(tagged.index);
+    });
+
+    tagMarkersContainer.appendChild(marker);
+  }
+}
+
+/**
+ * Update tag selector to reflect current commit's tags
+ */
+function updateTagSelectorForCurrentCommit(index: number) {
+  if (!currentDeltaController) return;
+
+  const commit = currentDeltaController.getCommitAtIndex(index);
+  const tagSelector = document.getElementById('tag-selector') as HTMLSelectElement;
+
+  if (tagSelector && commit) {
+    if (commit.tags.length > 0) {
+      // Set selector to first tag at this commit
+      tagSelector.value = commit.tags[0];
+    } else {
+      // Reset to placeholder if no tag at current commit
+      tagSelector.value = '';
+    }
+  }
+}
+
+/**
+ * Get currently selected mode from radio buttons
+ */
+function getSelectedMode(): 'head' | 'timeline' {
+  const radio = document.querySelector('input[name="view-mode"]:checked') as HTMLInputElement;
+  return (radio?.value as 'head' | 'timeline') || 'head';
+}
+
+/**
+ * Set mode radio button programmatically
+ */
+function setSelectedMode(mode: 'head' | 'timeline') {
+  const radio = document.querySelector(`input[name="view-mode"][value="${mode}"]`) as HTMLInputElement;
+  if (radio) {
+    radio.checked = true;
+  }
+}
+
+/**
+ * Show or hide mode switcher
+ */
+function updateModeSwitcherVisibility(show: boolean) {
+  const modeSwitcher = document.getElementById('mode-switcher');
+  if (modeSwitcher) {
+    modeSwitcher.style.display = show ? 'flex' : 'none';
+  }
 }
 
 /**
@@ -1182,7 +1560,70 @@ async function loadRepository(repoName: string) {
 
   try {
     console.log(`Loading repository: ${repoName}`);
-    const data = await loadData(repoName);
+
+    // Store current base repository name
+    currentRepoBaseName = repoName;
+
+    // Check if timeline data exists
+    timelineAvailable = await checkTimelineExists(repoName);
+    console.log(`Timeline available for ${repoName}: ${timelineAvailable}`);
+
+    // Show/hide mode switcher based on timeline availability
+    updateModeSwitcherVisibility(timelineAvailable);
+
+    // Get selected mode
+    const mode = getSelectedMode();
+
+    // Determine which file to load and load it
+    let data: any;
+    let fileToLoad = repoName;
+
+    if (mode === 'timeline' && timelineAvailable) {
+      // Try loading timeline files in order: -timeline-full, then -timeline
+      let loaded = false;
+
+      // Try -timeline-full first
+      try {
+        console.log(`Trying to load: ${repoName}-timeline-full.json`);
+        const testData = await loadData(`${repoName}-timeline-full`);
+        // If we got here without error, the file exists and is valid JSON
+        data = testData;
+        fileToLoad = `${repoName}-timeline-full`;
+        loaded = true;
+        console.log(`Successfully loaded: ${fileToLoad}.json`);
+      } catch (e) {
+        console.log(`Could not load -timeline-full: ${e}`);
+      }
+
+      // If -timeline-full failed, try -timeline
+      if (!loaded) {
+        try {
+          console.log(`Trying to load: ${repoName}-timeline.json`);
+          const testData = await loadData(`${repoName}-timeline`);
+          data = testData;
+          fileToLoad = `${repoName}-timeline`;
+          loaded = true;
+          console.log(`Successfully loaded: ${fileToLoad}.json`);
+        } catch (e) {
+          console.log(`Could not load -timeline: ${e}`);
+        }
+      }
+
+      // If neither timeline file worked, fall back to HEAD
+      if (!loaded) {
+        console.warn(`No timeline file could be loaded for ${repoName}, falling back to HEAD mode`);
+        setSelectedMode('head');
+        fileToLoad = repoName;
+        data = await loadData(fileToLoad);
+      }
+    } else {
+      console.log(`Loading HEAD mode: ${fileToLoad}`);
+      // If user selected timeline but it's not available, switch back to HEAD
+      if (mode === 'timeline') {
+        setSelectedMode('head');
+      }
+      data = await loadData(fileToLoad);
+    }
 
     // Detect format and extract snapshot
     let snapshot: RepositorySnapshot;
@@ -1190,7 +1631,7 @@ async function loadRepository(repoName: string) {
     if ('format' in data && data.format === 'timeline-v2') {
       // Timeline V2: Full delta format - need to handle specially
       console.log('🎬 Timeline V2 (Full Delta) format detected');
-      await loadTimelineV2(data as TimelineDataV2, repoName);
+      await loadTimelineV2(data as TimelineDataV2, fileToLoad);
       return; // Early return - V2 uses different loading path
     } else if ('format' in data && data.format === 'timeline-v1') {
       // Timeline V1: Sampled format
@@ -1209,6 +1650,11 @@ async function loadRepository(repoName: string) {
 
     currentSnapshot = snapshot;
     console.log('Data loaded:', snapshot);
+
+    // For static HEAD mode only: disable timeline mode UI
+    if (!currentTimelineData && !currentDeltaController) {
+      disableTimelineMode();
+    }
 
     // Build commit hash index
     commitToFilesIndex = buildCommitIndex(snapshot.tree);
@@ -1243,8 +1689,12 @@ async function loadRepository(repoName: string) {
         timelineControls.style.display = 'flex';
         // Set up timeline controls (only once per load)
         setupTimelineControls();
+        // Enable Timeline V1 mode UI (limit color options, hide incompatible features)
+        enableTimelineMode();
       } else {
         timelineControls.style.display = 'none';
+        // Re-enable filtering for HEAD view
+        enableFiltering();
       }
     }
 
@@ -1342,6 +1792,17 @@ async function main() {
     });
   }
 
+  // Set up mode switcher (HEAD vs Timeline)
+  const modeRadios = document.querySelectorAll('input[name="view-mode"]');
+  modeRadios.forEach(radio => {
+    radio.addEventListener('change', async () => {
+      // Reload current repository with new mode
+      if (currentRepoBaseName) {
+        await loadRepository(currentRepoBaseName);
+      }
+    });
+  });
+
   // Set up color mode selector
   const colorModeSelector = document.getElementById('color-mode-selector') as HTMLSelectElement;
   if (colorModeSelector) {
@@ -1436,6 +1897,184 @@ async function main() {
       legend.classList.toggle('collapsed');
     });
   }
+
+  // Set up filter control buttons
+  const filterAllBtn = document.getElementById('filter-all-btn');
+  const filterNoneBtn = document.getElementById('filter-none-btn');
+  const filterInvertBtn = document.getElementById('filter-invert-btn');
+
+  if (filterAllBtn) {
+    filterAllBtn.addEventListener('click', () => {
+      const checkboxes = document.querySelectorAll('.legend-checkbox') as NodeListOf<HTMLInputElement>;
+      checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
+      });
+      applyLegendFilters();
+    });
+  }
+
+  if (filterNoneBtn) {
+    filterNoneBtn.addEventListener('click', () => {
+      const checkboxes = document.querySelectorAll('.legend-checkbox') as NodeListOf<HTMLInputElement>;
+      checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+      });
+      applyLegendFilters();
+    });
+  }
+
+  if (filterInvertBtn) {
+    filterInvertBtn.addEventListener('click', () => {
+      const checkboxes = document.querySelectorAll('.legend-checkbox') as NodeListOf<HTMLInputElement>;
+      checkboxes.forEach(checkbox => {
+        checkbox.checked = !checkbox.checked;
+      });
+      applyLegendFilters();
+    });
+  }
+}
+
+/**
+ * Show filter controls (for modes that support filtering)
+ */
+function showFilterControls() {
+  const filterControls = document.getElementById('filter-controls');
+  if (filterControls) {
+    filterControls.style.display = 'flex';
+  }
+}
+
+/**
+ * Hide filter controls (for modes that don't support filtering or in timeline mode)
+ */
+function hideFilterControls() {
+  const filterControls = document.getElementById('filter-controls');
+  const filterStatus = document.getElementById('filter-status');
+  if (filterControls) {
+    filterControls.style.display = 'none';
+  }
+  if (filterStatus) {
+    filterStatus.textContent = '';
+  }
+}
+
+/**
+ * Disable filtering (when entering timeline mode)
+ * Disables checkboxes and shows explanatory message
+ */
+function disableFiltering() {
+  const checkboxes = document.querySelectorAll('.legend-checkbox') as NodeListOf<HTMLInputElement>;
+  const filterControls = document.getElementById('filter-controls');
+  const filterStatus = document.getElementById('filter-status');
+
+  // Disable all checkboxes
+  checkboxes.forEach(checkbox => {
+    checkbox.disabled = true;
+    checkbox.checked = true; // Reset to all checked
+  });
+
+  // Disable filter buttons
+  if (filterControls) {
+    const buttons = filterControls.querySelectorAll('button');
+    buttons.forEach(button => {
+      (button as HTMLButtonElement).disabled = true;
+    });
+  }
+
+  // Show message explaining why filtering is disabled
+  if (filterStatus) {
+    filterStatus.textContent = 'Filtering disabled in timeline mode';
+    filterStatus.style.color = '#888';
+  }
+
+  // Clear any active filters
+  if (currentVisualizer) {
+    currentVisualizer.clearFilter();
+  }
+}
+
+/**
+ * Enable filtering (when returning to HEAD mode)
+ * Re-enables checkboxes and filter controls
+ */
+function enableFiltering() {
+  const checkboxes = document.querySelectorAll('.legend-checkbox') as NodeListOf<HTMLInputElement>;
+  const filterControls = document.getElementById('filter-controls');
+
+  // Enable all checkboxes
+  checkboxes.forEach(checkbox => {
+    checkbox.disabled = false;
+  });
+
+  // Enable filter buttons
+  if (filterControls) {
+    const buttons = filterControls.querySelectorAll('button');
+    buttons.forEach(button => {
+      (button as HTMLButtonElement).disabled = false;
+    });
+  }
+
+  // Clear status message (will be updated by applyLegendFilters if needed)
+  updateFilterStatus();
+}
+
+/**
+ * Update filter status message
+ */
+function updateFilterStatus() {
+  const filterStatus = document.getElementById('filter-status');
+  if (!filterStatus || !currentVisualizer) return;
+
+  if (currentVisualizer.hasActiveFilters()) {
+    const activeCategories = currentVisualizer.getActiveFilterCategories();
+    filterStatus.textContent = `Filtering: ${activeCategories.length} ${activeCategories.length === 1 ? 'category' : 'categories'} selected`;
+  } else {
+    filterStatus.textContent = '';
+  }
+}
+
+/**
+ * Apply current legend checkbox state to visualizer
+ */
+function applyLegendFilters() {
+  if (!currentVisualizer || !currentSnapshot) return;
+
+  // Get all checked checkboxes
+  const checkboxes = document.querySelectorAll('.legend-checkbox') as NodeListOf<HTMLInputElement>;
+  const checkedCategories: string[] = [];
+
+  checkboxes.forEach(checkbox => {
+    if (checkbox.checked) {
+      const category = checkbox.dataset.category;
+      if (category) {
+        checkedCategories.push(category);
+      }
+    }
+  });
+
+  // Apply filter (empty array = show all)
+  if (checkedCategories.length === 0) {
+    currentVisualizer.clearFilter();
+  } else {
+    currentVisualizer.setFilter(checkedCategories);
+  }
+
+  // Update visual state
+  checkboxes.forEach(checkbox => {
+    const legendItem = checkbox.closest('.legend-item');
+    if (legendItem) {
+      if (checkbox.checked) {
+        legendItem.classList.remove('unchecked');
+      } else {
+        legendItem.classList.add('unchecked');
+      }
+    }
+  });
+
+  updateFilterStatus();
+
+  // Update stats panel to reflect filtered counts
+  updateStatsDisplay(currentSnapshot);
 }
 
 /**
@@ -1476,31 +2115,47 @@ function updateLegendForColorMode(mode: ColorMode) {
 
     const totalFiles = currentSnapshot.stats.totalFiles;
 
-    // Show intervals with counts and percentages
+    // Show intervals with counts and percentages (with checkboxes)
     for (const item of items) {
       const count = intervalCounts.get(item.name) || 0;
       const percentage = ((count / totalFiles) * 100).toFixed(1);
       const fileLabel = count === 1 ? 'file' : 'files';
 
-      const legendItem = document.createElement('div');
+      const legendItem = document.createElement('label');
       legendItem.className = 'legend-item';
       legendItem.innerHTML = `
+        <input type="checkbox" class="legend-checkbox" data-category="${item.name}" checked>
         <div class="legend-color" style="background: ${item.hex};"></div>
         <span class="legend-label">${item.name} <span style="color: #888;">(${count} ${fileLabel}, ${percentage}%)</span></span>
       `;
       legendContent.appendChild(legendItem);
+
+      // Add change event listener
+      const checkbox = legendItem.querySelector('.legend-checkbox') as HTMLInputElement;
+      if (checkbox) {
+        checkbox.addEventListener('change', applyLegendFilters);
+      }
     }
+    showFilterControls();
   } else if (items.length > 0) {
-    // Show color mode specific legend without counts (fallback for other modes)
+    // Show color mode specific legend without counts (with checkboxes for supported modes)
     for (const item of items) {
-      const legendItem = document.createElement('div');
+      const legendItem = document.createElement('label');
       legendItem.className = 'legend-item';
       legendItem.innerHTML = `
+        <input type="checkbox" class="legend-checkbox" data-category="${item.name}" checked>
         <div class="legend-color" style="background: ${item.hex};"></div>
         <span class="legend-label">${item.name}</span>
       `;
       legendContent.appendChild(legendItem);
+
+      // Add change event listener
+      const checkbox = legendItem.querySelector('.legend-checkbox') as HTMLInputElement;
+      if (checkbox) {
+        checkbox.addEventListener('change', applyLegendFilters);
+      }
     }
+    showFilterControls();
   } else if (mode === 'author' && currentSnapshot) {
     // For author mode, collect authors with file counts
     const authorCounts = new Map<string, number>();
@@ -1530,14 +2185,21 @@ function updateLegendForColorMode(mode: ColorMode) {
     for (const [author, count] of displayAuthors) {
       const percentage = ((count / totalFiles) * 100).toFixed(1);
       const colorInfo = getColorForFile({ lastAuthor: author } as FileNode, 'author');
-      const legendItem = document.createElement('div');
+      const legendItem = document.createElement('label');
       legendItem.className = 'legend-item';
       const fileLabel = count === 1 ? 'file' : 'files';
       legendItem.innerHTML = `
+        <input type="checkbox" class="legend-checkbox" data-category="${author}" checked>
         <div class="legend-color" style="background: ${colorInfo.hex};"></div>
         <span class="legend-label">${author} <span style="color: #888;">(${count} ${fileLabel}, ${percentage}%)</span></span>
       `;
       legendContent.appendChild(legendItem);
+
+      // Add change event listener
+      const checkbox = legendItem.querySelector('.legend-checkbox') as HTMLInputElement;
+      if (checkbox) {
+        checkbox.addEventListener('change', applyLegendFilters);
+      }
     }
 
     if (sortedAuthors.length > 20) {
@@ -1552,6 +2214,7 @@ function updateLegendForColorMode(mode: ColorMode) {
       `;
       legendContent.appendChild(legendItem);
     }
+    showFilterControls();
   }
   // Note: For fileType mode, legend is populated by populateLegend() which shows actual files present
 }
@@ -1572,33 +2235,14 @@ function updateTimelineUI() {
     progressBar.style.width = `${progress}%`;
   }
 
-  // Update commit info
+  // Update commit counter
   const commitIndexEl = document.getElementById('timeline-commit-index');
   const commitTotalEl = document.getElementById('timeline-commit-total');
-  const dateInfoEl = document.getElementById('timeline-date-info');
-  const messageInfoEl = document.getElementById('timeline-message-info');
 
   if (commitIndexEl) commitIndexEl.textContent = (timelineIndex + 1).toString();
   if (commitTotalEl) commitTotalEl.textContent = commits.length.toString();
 
-  if (dateInfoEl) {
-    const date = new Date(commit.date);
-    dateInfoEl.textContent = date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  }
-
-  if (messageInfoEl) {
-    const shortMessage = commit.message.split('\n')[0];
-    messageInfoEl.textContent = shortMessage.length > 60
-      ? shortMessage.substring(0, 57) + '...'
-      : shortMessage;
-    messageInfoEl.title = commit.message; // Full message on hover
-  }
-
-  // Update header to show current commit
+  // Update commit info in timeline (below the scrubber)
   const commitInfo = document.getElementById('commit-info');
   if (commitInfo && currentSnapshot) {
     const date = new Date(commit.date).toLocaleDateString();
