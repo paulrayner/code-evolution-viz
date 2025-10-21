@@ -9,7 +9,7 @@ import { DeltaReplayController } from './DeltaReplayController';
  */
 async function getAvailableRepos(): Promise<string[]> {
   try {
-    const response = await fetch('/data/repos.json');
+    const response = await fetch('./data/repos.json');
     if (response.ok) {
       const data = await response.json();
       const repos = data.repos || [];
@@ -37,7 +37,7 @@ async function getAvailableRepos(): Promise<string[]> {
 async function checkTimelineExists(repoName: string): Promise<boolean> {
   // Try -timeline-full.json first (V2 format)
   try {
-    const response = await fetch(`/data/${repoName}-timeline-full.json`, { method: 'HEAD' });
+    const response = await fetch(`./data/${repoName}-timeline-full.json`, { method: 'HEAD' });
     if (response.ok) return true;
   } catch {
     // Fall through to check other variant
@@ -45,7 +45,7 @@ async function checkTimelineExists(repoName: string): Promise<boolean> {
 
   // Try -timeline.json (alternative naming)
   try {
-    const response = await fetch(`/data/${repoName}-timeline.json`, { method: 'HEAD' });
+    const response = await fetch(`./data/${repoName}-timeline.json`, { method: 'HEAD' });
     return response.ok;
   } catch {
     return false;
@@ -56,7 +56,7 @@ async function checkTimelineExists(repoName: string): Promise<boolean> {
  * Load repository data (supports both static and timeline formats)
  */
 async function loadData(repoName: string = 'gource'): Promise<RepositorySnapshot | TimelineData> {
-  const response = await fetch(`/data/${repoName}.json`);
+  const response = await fetch(`./data/${repoName}.json`);
 
   if (!response.ok) {
     throw new Error(`Failed to load data: ${response.statusText}`);
