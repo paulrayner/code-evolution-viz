@@ -2064,24 +2064,20 @@ function disableFiltering() {
   const filterControls = document.getElementById('filter-controls');
   const filterStatus = document.getElementById('filter-status');
 
-  // Disable all checkboxes
+  // Hide all checkboxes
   checkboxes.forEach(checkbox => {
-    checkbox.disabled = true;
+    checkbox.style.display = 'none';
     checkbox.checked = true; // Reset to all checked
   });
 
-  // Disable filter buttons
+  // Hide filter controls
   if (filterControls) {
-    const buttons = filterControls.querySelectorAll('button');
-    buttons.forEach(button => {
-      (button as HTMLButtonElement).disabled = true;
-    });
+    filterControls.style.display = 'none';
   }
 
-  // Show message explaining why filtering is disabled
+  // Clear status message
   if (filterStatus) {
-    filterStatus.textContent = 'Filtering disabled in timeline mode';
-    filterStatus.style.color = '#888';
+    filterStatus.textContent = '';
   }
 
   // Clear any active filters
@@ -2098,20 +2094,22 @@ function enableFiltering() {
   const checkboxes = document.querySelectorAll('.legend-checkbox') as NodeListOf<HTMLInputElement>;
   const filterControls = document.getElementById('filter-controls');
 
-  // Enable all checkboxes
+  // Show all checkboxes
   checkboxes.forEach(checkbox => {
+    checkbox.style.display = '';
     checkbox.disabled = false;
   });
 
-  // Enable filter buttons
+  // Show filter controls
   if (filterControls) {
+    filterControls.style.display = '';
     const buttons = filterControls.querySelectorAll('button');
     buttons.forEach(button => {
       (button as HTMLButtonElement).disabled = false;
     });
   }
 
-  // Clear status message (will be updated by applyLegendFilters if needed)
+  // Update status message (will be updated by applyLegendFilters if needed)
   updateFilterStatus();
 }
 
