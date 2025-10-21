@@ -4,7 +4,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
 ![Node](https://img.shields.io/badge/node-%3E%3D18-green)
 
-**[🚀 Live Demo](https://paulrayner.github.io/codecohesion/)** | Explore React, Gource, cBioPortal, and more!
+**[🚀 Live Demo](https://thepaulrayner.com/codecohesion/)** | Explore React, Gource, cBioPortal, and more!
 
 ![Timeline V2 Visualization](docs/images/timeline-v2-gource.png)
 *Interactive 3D timeline showing repository evolution with cohesion analysis*
