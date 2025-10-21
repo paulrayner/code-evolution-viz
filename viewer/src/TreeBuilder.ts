@@ -238,6 +238,13 @@ export class TreeBuilder {
   }
 
   /**
+   * Set the tree (for initializing from a cloned keyframe)
+   */
+  setTree(tree: DirectoryNode): void {
+    this.tree = tree;
+  }
+
+  /**
    * Export all file paths (for validation)
    */
   exportPaths(): string[] {
