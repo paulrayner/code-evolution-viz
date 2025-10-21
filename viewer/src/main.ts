@@ -757,26 +757,33 @@ async function loadTimelineV2(data: TimelineDataV2, repoName: string) {
     console.log(`Date range: ${data.metadata.dateRange.first.substring(0, 10)} to ${data.metadata.dateRange.last.substring(0, 10)}`);
     console.log(`Tags: ${data.metadata.tags.length}`);
 
-    // Update loading indicator
-    if (loading) {
-      loading.innerHTML = `
-        <div class="spinner"></div>
-        <p>Generating keyframes...</p>
-        <p id="progress-text">0 / ${data.metadata.totalCommits}</p>
-      `;
-    }
-
     // Create delta controller
     currentDeltaController = new DeltaReplayController(data);
     currentTimelineData = null; // Clear V1 data
 
-    // Generate all keyframes
+    // Update loading indicator based on keyframe mode
+    const mode = currentDeltaController.getKeyframeMode();
+    if (loading) {
+      loading.innerHTML = `
+        <div class="spinner"></div>
+        <p>${mode === 'full' ? 'Generating full keyframes...' : 'Generating strategic keyframes...'}</p>
+        <p id="progress-text">0 / ${data.metadata.totalCommits}</p>
+      `;
+    }
+
+    // Generate keyframes (adaptive strategy)
     await currentDeltaController.generateKeyframes((current, total) => {
       const progressText = document.getElementById('progress-text');
       if (progressText) {
         progressText.textContent = `${current} / ${total}`;
       }
     });
+
+    // Log keyframe stats
+    const stats = currentDeltaController.getKeyframeStats();
+    console.log(`📊 Keyframe strategy: ${stats.mode}`);
+    console.log(`   Base keyframes: ${stats.baseKeyframes}`);
+    console.log(`   Total commits: ${stats.totalCommits}`);
 
     // VALIDATION: Try to load static HEAD snapshot for comparison
     const staticName = repoName.replace('-timeline-full', '');

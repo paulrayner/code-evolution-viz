@@ -1,5 +1,6 @@
 import { TreeBuilder } from './TreeBuilder';
 import { TimelineDataV2, DirectoryNode, CommitSnapshot, RepositorySnapshot } from './types';
+import { LRUCache } from './LRUCache';
 
 /**
  * Event data emitted during playback
@@ -10,59 +11,198 @@ export interface CommitEvent {
   tree: DirectoryNode;
 }
 
+// Threshold for switching between full vs sparse keyframe generation
+// Repos with ≤ this many commits: Full keyframe generation (every commit)
+// Repos with > this many commits: Sparse keyframe generation (strategic commits only)
+const FULL_KEYFRAME_THRESHOLD = 2000;
+
+// For sparse mode: Generate keyframe every N commits
+const SPARSE_KEYFRAME_INTERVAL = 500;
+
+// Maximum number of dynamically-generated keyframes to cache
+const DYNAMIC_CACHE_SIZE = 200;
+
 /**
  * DeltaReplayController - Manages playback of timeline-v2 data
- * Generates keyframes and provides VCR-style controls
- * Phase 1 POC for full delta timeline
+ * Uses adaptive keyframe strategy based on repository size:
+ * - Small repos (≤2000 commits): Full keyframe generation for instant seeking
+ * - Large repos (>2000 commits): Sparse keyframes + on-demand generation
  */
 export class DeltaReplayController {
   private data: TimelineDataV2;
   private treeBuilder: TreeBuilder;
-  private keyframes: Map<number, DirectoryNode> = new Map();
+  private baseKeyframes: Map<number, DirectoryNode> = new Map(); // Strategic/pre-generated keyframes
+  private dynamicCache: LRUCache<number, DirectoryNode>; // On-demand keyframes
   private currentIndex: number = 0;
   private isPlaying: boolean = false;
   private playbackSpeed: number = 50; // commits per second (default 50x speed)
   private listeners: Map<string, Function[]> = new Map();
   private playbackInterval: number | null = null;
+  private useSparseMode: boolean = false;
 
   constructor(data: TimelineDataV2) {
     this.data = data;
     this.treeBuilder = new TreeBuilder();
+    this.dynamicCache = new LRUCache(DYNAMIC_CACHE_SIZE);
+    this.useSparseMode = data.commits.length > FULL_KEYFRAME_THRESHOLD;
   }
 
   /**
-   * Generate all keyframes by applying deltas sequentially
-   * For Gource (988 commits), we generate a keyframe for EVERY commit
+   * Generate keyframes using adaptive strategy
    */
   async generateKeyframes(onProgress?: (index: number, total: number) => void): Promise<void> {
-    console.log(`🔨 Generating keyframes for ${this.data.commits.length} commits...`);
     const startTime = Date.now();
+
+    if (this.useSparseMode) {
+      await this.generateSparseKeyframes(onProgress);
+    } else {
+      await this.generateFullKeyframes(onProgress);
+    }
+
+    const elapsed = Date.now() - startTime;
+    const stats = this.treeBuilder.getStats();
+
+    console.log(`✅ Generated ${this.baseKeyframes.size} base keyframes in ${elapsed}ms`);
+    console.log(`📊 Final tree: ${stats.totalFiles} files, ${stats.totalDirs} directories, depth ${stats.depth}`);
+  }
+
+  /**
+   * Full keyframe generation for small repos
+   * Generates a keyframe for EVERY commit
+   */
+  private async generateFullKeyframes(onProgress?: (index: number, total: number) => void): Promise<void> {
+    console.log(`🔨 Full keyframe mode: Generating keyframe for all ${this.data.commits.length} commits`);
 
     for (let i = 0; i < this.data.commits.length; i++) {
       // Apply delta
       this.treeBuilder.applyDelta(this.data.commits[i]);
 
       // Store keyframe (clone the tree)
-      this.keyframes.set(i, this.treeBuilder.clone());
+      this.baseKeyframes.set(i, this.treeBuilder.clone());
 
       // Report progress every 100 commits
       if (onProgress && (i % 100 === 0 || i === this.data.commits.length - 1)) {
         onProgress(i + 1, this.data.commits.length);
       }
     }
+  }
 
-    const elapsed = Date.now() - startTime;
-    const stats = this.treeBuilder.getStats();
+  /**
+   * Sparse keyframe generation for large repos
+   * Generates keyframes at strategic intervals + all version tags
+   */
+  private async generateSparseKeyframes(onProgress?: (index: number, total: number) => void): Promise<void> {
+    console.log(`🔨 Sparse keyframe mode: Generating strategic keyframes for ${this.data.commits.length} commits`);
+    console.log(`   Interval: Every ${SPARSE_KEYFRAME_INTERVAL} commits + all version tags`);
 
-    console.log(`✅ Generated ${this.keyframes.size} keyframes in ${elapsed}ms`);
-    console.log(`📊 Final tree: ${stats.totalFiles} files, ${stats.totalDirs} directories, depth ${stats.depth}`);
+    // Collect indices where we want keyframes
+    const keyframeIndices = new Set<number>();
+
+    // Add start and end
+    keyframeIndices.add(0);
+    keyframeIndices.add(this.data.commits.length - 1);
+
+    // Add every Nth commit
+    for (let i = 0; i < this.data.commits.length; i += SPARSE_KEYFRAME_INTERVAL) {
+      keyframeIndices.add(i);
+    }
+
+    // Add all version tags
+    for (let i = 0; i < this.data.commits.length; i++) {
+      if (this.data.commits[i].tags.length > 0) {
+        keyframeIndices.add(i);
+      }
+    }
+
+    const sortedIndices = Array.from(keyframeIndices).sort((a, b) => a - b);
+    console.log(`   Total strategic keyframes: ${sortedIndices.length}`);
+
+    // Generate keyframes by replaying deltas
+    let lastGeneratedIndex = -1;
+
+    for (const targetIndex of sortedIndices) {
+      // Replay deltas from last generated index to target
+      for (let i = lastGeneratedIndex + 1; i <= targetIndex; i++) {
+        this.treeBuilder.applyDelta(this.data.commits[i]);
+      }
+
+      // Store keyframe
+      this.baseKeyframes.set(targetIndex, this.treeBuilder.clone());
+      lastGeneratedIndex = targetIndex;
+
+      // Report progress
+      if (onProgress) {
+        const progress = sortedIndices.indexOf(targetIndex) + 1;
+        onProgress(progress, sortedIndices.length);
+      }
+    }
   }
 
   /**
    * Get tree at specific commit index
+   * Uses adaptive strategy: return pre-generated keyframe or generate on-demand
    */
   getTreeAtCommit(index: number): DirectoryNode | null {
-    return this.keyframes.get(index) || null;
+    if (index < 0 || index >= this.data.commits.length) {
+      return null;
+    }
+
+    // Check base keyframes first
+    if (this.baseKeyframes.has(index)) {
+      return this.baseKeyframes.get(index)!;
+    }
+
+    // Check dynamic cache
+    if (this.dynamicCache.has(index)) {
+      return this.dynamicCache.get(index)!;
+    }
+
+    // Need to generate on-demand
+    return this.generateTreeOnDemand(index);
+  }
+
+  /**
+   * Generate tree on-demand by replaying deltas from nearest base keyframe
+   */
+  private generateTreeOnDemand(targetIndex: number): DirectoryNode | null {
+    // Find nearest base keyframe before targetIndex
+    let startIndex = -1;
+    let startTree: DirectoryNode | null = null;
+
+    for (let i = targetIndex; i >= 0; i--) {
+      if (this.baseKeyframes.has(i)) {
+        startIndex = i;
+        startTree = this.baseKeyframes.get(i)!;
+        break;
+      }
+    }
+
+    if (startIndex === -1 || !startTree) {
+      console.error(`No base keyframe found before index ${targetIndex}`);
+      return null;
+    }
+
+    // If we're generating the exact keyframe we started from, just return it
+    if (startIndex === targetIndex) {
+      return startTree;
+    }
+
+    // Clone the start tree and replay deltas
+    const builder = new TreeBuilder();
+    // Initialize builder with cloned start tree
+    builder.setTree(JSON.parse(JSON.stringify(startTree)));
+
+    // Replay deltas from startIndex+1 to targetIndex
+    for (let i = startIndex + 1; i <= targetIndex; i++) {
+      builder.applyDelta(this.data.commits[i]);
+    }
+
+    const tree = builder.clone();
+
+    // Cache the generated tree
+    this.dynamicCache.set(targetIndex, tree);
+
+    return tree;
   }
 
   /**
@@ -87,6 +227,25 @@ export class DeltaReplayController {
    */
   getTotalCommits(): number {
     return this.data.commits.length;
+  }
+
+  /**
+   * Get keyframe generation mode
+   */
+  getKeyframeMode(): 'full' | 'sparse' {
+    return this.useSparseMode ? 'sparse' : 'full';
+  }
+
+  /**
+   * Get keyframe stats
+   */
+  getKeyframeStats() {
+    return {
+      mode: this.getKeyframeMode(),
+      baseKeyframes: this.baseKeyframes.size,
+      dynamicCacheSize: this.dynamicCache.size(),
+      totalCommits: this.data.commits.length
+    };
   }
 
   /**
@@ -236,7 +395,7 @@ export class DeltaReplayController {
    * Emit commit event with current state
    */
   private emitCommitEvent(): void {
-    const tree = this.keyframes.get(this.currentIndex);
+    const tree = this.getTreeAtCommit(this.currentIndex);
     const commit = this.data.commits[this.currentIndex];
 
     if (tree && commit) {
@@ -259,7 +418,7 @@ export class DeltaReplayController {
     missing: string[];
     extra: string[];
   } {
-    const finalTree = this.keyframes.get(this.data.commits.length - 1);
+    const finalTree = this.getTreeAtCommit(this.data.commits.length - 1);
 
     if (!finalTree) {
       return {
@@ -367,6 +526,7 @@ export class DeltaReplayController {
   destroy(): void {
     this.pause();
     this.listeners.clear();
-    this.keyframes.clear();
+    this.baseKeyframes.clear();
+    this.dynamicCache.clear();
   }
 }
