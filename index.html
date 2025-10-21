@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Interactive 3D code cohesion visualization with timeline evolution">
+  <meta name="keywords" content="code cohesion, architecture visualization, DDD, bounded contexts, temporal coupling">
+  <title>CodeCohesion</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      overflow: hidden;
+      background: #1a1a1a;
+      color: #ffffff;
+    }
+
+    #container {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+
+    #canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    #ui {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    #header {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 15px 20px;
+      border-radius: 8px;
+      backdrop-filter: blur(10px);
+      pointer-events: auto;
+    }
+
+    #header h1 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    #header p {
+      font-size: 12px;
+      color: #aaa;
+      margin: 2px 0;
+    }
+
+    #info-panel {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 15px 20px;
+      border-radius: 8px;
+      backdrop-filter: blur(10px);
+      min-width: 250px;
+      max-width: 400px;
+      max-height: calc(100vh - 40px);
+      pointer-events: auto;
+      display: none;
+      overflow: hidden;
+    }
+
+    #info-panel.visible {
+      display: block;
+    }
+
+    #info-panel.collapsed {
+      max-height: 40px;
+      overflow: hidden;
+    }
+
+    #info-panel h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: #4a9eff;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #info-panel h3::after {
+      content: '▼';
+      font-size: 10px;
+      transition: transform 0.2s;
+    }
+
+    #info-panel.collapsed h3::after {
+      transform: rotate(-90deg);
+    }
+
+    #info-panel .info-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      margin: 5px 0;
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    #info-panel .info-row:last-child {
+      border-bottom: none;
+    }
+
+    #info-panel .label {
+      color: #888;
+    }
+
+    #info-panel .value {
+      color: #fff;
+      font-weight: 500;
+    }
+
+    #info-content {
+      max-height: calc(100vh - 120px);
+      overflow-y: auto;
+    }
+
+    #loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      font-size: 16px;
+    }
+
+    #loading.hidden {
+      display: none;
+    }
+
+    .spinner {
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-top: 3px solid #4a9eff;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 15px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    #controls {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.7);
+      padding: 10px 15px;
+      border-radius: 8px;
+      backdrop-filter: blur(10px);
+      pointer-events: auto;
+      font-size: 12px;
+      color: #aaa;
+    }
+
+    #timeline-controls {
+      position: absolute;
+      bottom: 70px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.7);
+      padding: 15px 20px;
+      border-radius: 8px;
+      backdrop-filter: blur(10px);
+      pointer-events: auto;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 600px;
+    }
+
+    #timeline-controls .timeline-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #timeline-controls button {
+      padding: 6px 12px;
+      background: rgba(74, 158, 255, 0.2);
+      color: white;
+      border: 1px solid #4a9eff;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background 0.2s;
+    }
+
+    #timeline-controls button:hover {
+      background: rgba(74, 158, 255, 0.4);
+    }
+
+    #timeline-controls button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    #timeline-scrubber {
+      flex: 1;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
+      position: relative;
+      cursor: pointer;
+    }
+
+    #timeline-progress {
+      height: 100%;
+      background: #4a9eff;
+      border-radius: 3px;
+      position: relative;
+      transition: width 0.1s linear;
+    }
+
+    #timeline-progress::after {
+      content: '';
+      position: absolute;
+      right: -6px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 12px;
+      height: 12px;
+      background: #4a9eff;
+      border-radius: 50%;
+      border: 2px solid white;
+    }
+
+    #tag-markers {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .tag-marker {
+      position: absolute;
+      top: -3px;
+      width: 2px;
+      height: calc(100% + 6px);
+      background: #ffaa00;
+      cursor: pointer;
+      pointer-events: auto;
+      transition: background 0.2s, width 0.2s;
+    }
+
+    .tag-marker:hover {
+      background: #ffdd44;
+      width: 3px;
+    }
+
+    .tag-marker::after {
+      content: attr(data-tag);
+      position: absolute;
+      bottom: calc(100% + 4px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.9);
+      color: #ffaa00;
+      padding: 4px 8px;
+      border-radius: 3px;
+      font-size: 10px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+      border: 1px solid #ffaa00;
+    }
+
+    .tag-marker:hover::after {
+      opacity: 1;
+    }
+
+    #timeline-info {
+      color: #aaa;
+      font-size: 11px;
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      align-items: center;
+    }
+
+    #jump-to-commit {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    #jump-to-commit input {
+      width: 60px;
+      padding: 2px 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 3px;
+      color: white;
+      font-size: 11px;
+      text-align: center;
+    }
+
+    #jump-to-commit input:focus {
+      outline: none;
+      border-color: #4a9eff;
+      background: rgba(74, 158, 255, 0.1);
+    }
+
+    #jump-to-commit button {
+      padding: 2px 8px;
+      background: rgba(74, 158, 255, 0.2);
+      color: white;
+      border: 1px solid #4a9eff;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 10px;
+      transition: background 0.2s;
+    }
+
+    #jump-to-commit button:hover {
+      background: rgba(74, 158, 255, 0.4);
+    }
+
+    #legend {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 15px 20px;
+      border-radius: 8px;
+      backdrop-filter: blur(10px);
+      pointer-events: auto;
+      min-width: 200px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    #legend.collapsed {
+      max-height: 40px;
+      overflow: hidden;
+    }
+
+    #legend h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: #4a9eff;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #legend h3::after {
+      content: '▼';
+      font-size: 10px;
+      transition: transform 0.2s;
+    }
+
+    #legend.collapsed h3::after {
+      transform: rotate(-90deg);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      font-size: 11px;
+      margin: 5px 0;
+      padding: 3px 0;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .legend-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 3px;
+    }
+
+    .legend-checkbox {
+      margin-right: 8px;
+      cursor: pointer;
+      flex-shrink: 0;
+      width: 14px;
+      height: 14px;
+    }
+
+    .legend-color {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      margin-right: 10px;
+      flex-shrink: 0;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .legend-cube {
+      width: 16px;
+      height: 16px;
+      margin-right: 10px;
+      flex-shrink: 0;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .legend-label {
+      color: #ccc;
+    }
+
+    .legend-item.unchecked .legend-label {
+      color: #666;
+      text-decoration: line-through;
+    }
+
+    .legend-item.unchecked .legend-color,
+    .legend-item.unchecked .legend-cube {
+      opacity: 0.3;
+    }
+
+    .filter-controls {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 10px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .filter-controls button {
+      padding: 3px 8px;
+      background: rgba(74, 158, 255, 0.2);
+      color: white;
+      border: 1px solid #4a9eff;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 10px;
+      transition: background 0.2s;
+      flex: 1;
+    }
+
+    .filter-controls button:hover {
+      background: rgba(74, 158, 255, 0.4);
+    }
+
+    .filter-controls button:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    #filter-status {
+      font-size: 10px;
+      color: #888;
+      margin-top: 8px;
+      font-style: italic;
+    }
+
+    #tooltip {
+      position: absolute;
+      background: rgba(0, 0, 0, 0.9);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      pointer-events: none;
+      display: none;
+      z-index: 1000;
+      white-space: nowrap;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    #stats-panel {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 15px 20px;
+      border-radius: 8px;
+      backdrop-filter: blur(10px);
+      pointer-events: auto;
+      min-width: 200px;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+
+    #stats-panel.collapsed {
+      max-height: 40px;
+      overflow: hidden;
+    }
+
+    #stats-panel h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: #4a9eff;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #stats-panel h3::after {
+      content: '▼';
+      font-size: 10px;
+      transition: transform 0.2s;
+    }
+
+    #stats-panel.collapsed h3::after {
+      transform: rotate(-90deg);
+    }
+
+    #stats-panel .stat-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      margin: 5px 0;
+      padding: 3px 0;
+    }
+
+    #stats-panel .stat-label {
+      color: #888;
+    }
+
+    #stats-panel .stat-value {
+      color: #fff;
+      font-weight: 500;
+      font-family: monospace;
+    }
+
+    #stats-panel .stat-bar {
+      margin: 6px 0;
+    }
+
+    #stats-panel .stat-bar-label {
+      font-size: 10px;
+      color: #aaa;
+      margin-bottom: 2px;
+    }
+
+    #stats-panel .stat-bar-fill {
+      height: 14px;
+      border-radius: 3px;
+      position: relative;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    #stats-panel .stat-bar-fill-inner {
+      height: 100%;
+      transition: width 0.3s ease;
+      display: flex;
+      align-items: center;
+      padding-left: 4px;
+    }
+
+    #stats-panel .stat-bar-text {
+      font-size: 9px;
+      color: white;
+      font-weight: bold;
+      text-shadow: 0 0 2px black;
+    }
+  </style>
+  <script type="module" crossorigin src="/codecohesion/assets/index-5yQS-EN8.js"></script>
+</head>
+<body>
+  <div id="container">
+    <canvas id="canvas"></canvas>
+
+    <div id="ui">
+      <div id="header">
+        <h1>CodeCohesion</h1>
+        <p style="font-size: 11px; color: #888; margin: -2px 0 10px 0;">Visualizing Code Evolution</p>
+        <select id="repo-selector" style="margin-bottom: 10px; padding: 5px; background: rgba(255,255,255,0.1); color: white; border: 1px solid #4a9eff; border-radius: 4px; cursor: pointer;">
+          <option value="">Loading repositories...</option>
+        </select>
+        <div id="mode-switcher" style="display: none; margin-bottom: 10px; align-items: center;">
+          <label style="font-size: 11px; color: #aaa; margin-right: 8px;">Visualization Mode:</label>
+          <label style="font-size: 11px; margin-right: 15px; cursor: pointer;">
+            <input type="radio" name="view-mode" value="head" checked style="margin-right: 4px; cursor: pointer;">
+            HEAD Analysis
+          </label>
+          <label style="font-size: 11px; cursor: pointer;">
+            <input type="radio" name="view-mode" value="timeline" style="margin-right: 4px; cursor: pointer;">
+            Timeline
+          </label>
+        </div>
+        <div style="margin-bottom: 10px;">
+          <label style="font-size: 11px; color: #aaa; margin-right: 5px;">Color by:</label>
+          <select id="color-mode-selector" style="padding: 4px 10px; background: rgba(255,255,255,0.1); color: white; border: 1px solid #4a9eff; border-radius: 4px; cursor: pointer; font-size: 11px; margin-right: 15px;">
+            <option value="fileType">File Type</option>
+            <option value="lastModified">Last Modified</option>
+            <option value="author">Author</option>
+            <option value="churn">Churn (Lifetime Commits)</option>
+            <option value="contributors">Contributors (Lifetime)</option>
+            <option value="fileAge">File Age</option>
+            <option value="recentActivity">Recent Activity (90 days)</option>
+            <option value="stability">Code Stability</option>
+            <option value="recency">Recency</option>
+          </select>
+          <label style="font-size: 11px; color: #aaa; margin-right: 5px;">Labels:</label>
+          <button id="label-toggle" style="padding: 4px 10px; background: rgba(255,255,255,0.1); color: white; border: 1px solid #4a9eff; border-radius: 4px; cursor: pointer; font-size: 11px;">Always On</button>
+          <label style="font-size: 11px; color: #aaa; margin-left: 15px; margin-right: 5px;">View:</label>
+          <button id="view-mode-toggle" style="padding: 4px 10px; background: rgba(255,255,255,0.1); color: white; border: 1px solid #4a9eff; border-radius: 4px; cursor: pointer; font-size: 11px;">Navigate</button>
+          <label style="font-size: 11px; color: #aaa; margin-left: 15px; margin-right: 5px;">Highlight Commit:</label>
+          <button id="highlight-commit-toggle" style="padding: 4px 10px; background: rgba(255,255,255,0.1); color: white; border: 1px solid #4a9eff; border-radius: 4px; cursor: pointer; font-size: 11px;">Off</button>
+        </div>
+      </div>
+
+      <div id="stats-panel">
+        <h3>Repository Stats</h3>
+        <div id="stats-content">
+          <div class="stat-row">
+            <span class="stat-label">Total Files:</span>
+            <span class="stat-value" id="stat-files">-</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Total LOC:</span>
+            <span class="stat-value" id="stat-loc">-</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Directories:</span>
+            <span class="stat-value" id="stat-dirs">-</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Max Depth:</span>
+            <span class="stat-value" id="stat-depth">-</span>
+          </div>
+          <div id="lang-breakdown"></div>
+        </div>
+      </div>
+
+      <div id="info-panel">
+        <h3 id="selected-name">File Details</h3>
+        <div id="info-content"></div>
+      </div>
+
+      <div id="loading">
+        <div class="spinner"></div>
+        <p>Loading visualization...</p>
+      </div>
+
+      <div id="timeline-controls">
+        <div id="timeline-warning" style="display: none; position: absolute; bottom: 100%; margin-bottom: 10px; left: 0; right: 0; background: rgba(0, 0, 0, 0.8); border: 1px solid rgba(0, 0, 0, 0.9); color: #ffeb99; padding: 8px 12px; border-radius: 4px; font-size: 11px;">
+          <span id="timeline-warning-text"></span>
+        </div>
+        <div class="timeline-row">
+          <button id="go-to-start-btn">|◀ Start</button>
+          <button id="play-pause-btn">▶ Play</button>
+          <button id="step-back-btn">◀ Step</button>
+          <button id="step-forward-btn">Step ▶</button>
+          <label style="font-size: 11px; color: #aaa; margin-left: 10px;">Speed:</label>
+          <select id="speed-selector" style="padding: 4px 8px; background: rgba(255,255,255,0.1); color: white; border: 1px solid #4a9eff; border-radius: 4px; cursor: pointer; font-size: 11px;">
+            <option value="1">1x</option>
+            <option value="10">10x</option>
+            <option value="50" selected>50x</option>
+            <option value="100">100x</option>
+            <option value="500">500x</option>
+            <option value="1000">1000x</option>
+          </select>
+          <label style="font-size: 11px; color: #aaa; margin-left: 15px;">Jump to:</label>
+          <select id="tag-selector" style="padding: 4px 8px; background: rgba(255,255,255,0.1); color: white; border: 1px solid #ffaa00; border-radius: 4px; cursor: pointer; font-size: 11px;">
+            <option value="">-- Select tag --</option>
+          </select>
+        </div>
+        <div class="timeline-row">
+          <div id="timeline-scrubber">
+            <div id="timeline-progress" style="width: 0%"></div>
+            <div id="tag-markers"></div>
+          </div>
+        </div>
+        <div id="timeline-info" style="flex-wrap: wrap;">
+          <span id="timeline-commit-info">Commit <span id="timeline-commit-index">1</span> of <span id="timeline-commit-total">-</span></span>
+          <span id="commit-info" style="color: #ddd; margin-left: 10px;"></span>
+        </div>
+      </div>
+
+      <div id="controls">
+        <strong>Controls:</strong> Left-click + drag to rotate | Right-click + drag to pan | Scroll to zoom | Click nodes for details
+      </div>
+
+      <div id="legend">
+        <h3 id="legend-title">Legend</h3>
+        <div class="filter-controls" id="filter-controls" style="display: none;">
+          <button id="filter-top-btn" title="Show only top category">Top</button>
+          <button id="filter-all-btn" title="Show all categories">All</button>
+          <button id="filter-none-btn" title="Hide all categories">None</button>
+          <button id="filter-invert-btn" title="Invert selection">Invert</button>
+        </div>
+        <div id="legend-content">
+          <!-- Populated dynamically by main.ts -->
+        </div>
+        <div id="filter-status"></div>
+      </div>
+
+      <div id="tooltip"></div>
+    </div>
+  </div>
+
+</body>
+</html>

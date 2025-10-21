@@ -1,0 +1,1359 @@
+{
+  "format": "timeline-v1",
+  "repositoryPath": "/Users/paul/Documents/code-evolution-viz",
+  "headSnapshot": {
+    "repositoryPath": "/Users/paul/Documents/code-evolution-viz",
+    "commit": "956b16ae6c87655e89757c610ea3f8c16e85b1f6",
+    "timestamp": "2025-10-18T15:49:33+02:00",
+    "author": "Paul Rayner",
+    "message": "Revert \"fix: Dynamic camera maxDistance for large repositories in timeline mode\"",
+    "tree": {
+      "path": "",
+      "name": "root",
+      "type": "directory",
+      "children": [
+        {
+          "path": ".claude",
+          "name": ".claude",
+          "type": "directory",
+          "children": [
+            {
+              "path": ".claude/claude.md",
+              "name": "claude.md",
+              "type": "file",
+              "loc": 122,
+              "extension": "md",
+              "lastModified": "2025-10-18T12:59:56+02:00",
+              "lastAuthor": "Paul Rayner",
+              "lastCommitHash": "7d2974f7c4dc542f59c0b5f0a70fcaffab13117f",
+              "commitCount": 1,
+              "contributorCount": 1,
+              "firstCommitDate": "2025-10-18T12:59:56+02:00",
+              "recentLinesChanged": 159,
+              "avgLinesPerCommit": 159,
+              "daysSinceLastModified": 0
+            },
+            {
+              "path": ".claude/settings.local.json",
+              "name": "settings.local.json",
+              "type": "file",
+              "loc": 47,
+              "extension": "json",
+              "lastModified": "2025-10-17T15:32:32+02:00",
+              "lastAuthor": "Paul Rayner",
+              "lastCommitHash": "a4b9b67f6edeea3390deb1380932347cd2c66a82",
+              "commitCount": 1,
+              "contributorCount": 1,
+              "firstCommitDate": "2025-10-17T15:32:32+02:00",
+              "recentLinesChanged": 3,
+              "avgLinesPerCommit": 3,
+              "daysSinceLastModified": 1
+            }
+          ]
+        },
+        {
+          "path": ".gitignore",
+          "name": ".gitignore",
+          "type": "file",
+          "loc": 8,
+          "extension": "no-extension",
+          "lastModified": "2025-10-17T14:54:01+02:00",
+          "lastAuthor": "Paul Rayner",
+          "lastCommitHash": "e3ddbbb91d7c17c8f37cde33c3a180c3094d6c2b",
+          "commitCount": 1,
+          "contributorCount": 1,
+          "firstCommitDate": "2025-10-17T14:54:01+02:00",
+          "recentLinesChanged": 10,
+          "avgLinesPerCommit": 10,
+          "daysSinceLastModified": 1
+        },
+        {
+          "path": "CONTRIBUTING.md",
+          "name": "CONTRIBUTING.md",
+          "type": "file",
+          "loc": 228,
+          "extension": "md",
+          "lastModified": "2025-10-17T21:53:41+02:00",
+          "lastAuthor": "Paul Rayner",
+          "lastCommitHash": "3172875432bc63a2ec9ba0e8ebe9aaa6d6531622",
+          "commitCount": 1,
+          "contributorCount": 1,
+          "firstCommitDate": "2025-10-17T21:53:41+02:00",
+          "recentLinesChanged": 309,
+          "avgLinesPerCommit": 309,
+          "daysSinceLastModified": 0
+        },
+        {
+          "path": "LICENSE",
+          "name": "LICENSE",
+          "type": "file",
+          "loc": 17,
+          "extension": "no-extension",
+          "lastModified": "2025-10-18T00:11:42+02:00",
+          "lastAuthor": "Paul Rayner",
+          "lastCommitHash": "aa784f94f1f1967b402b80af24bc0fbc44fe9ffa",
+          "commitCount": 1,
+          "contributorCount": 1,
+          "firstCommitDate": "2025-10-18T00:11:42+02:00",
+          "recentLinesChanged": 21,
+          "avgLinesPerCommit": 21,
+          "daysSinceLastModified": 0
+        },
+        {
+          "path": "PROGRESS.md",
+          "name": "PROGRESS.md",
+          "type": "file",
+          "loc": 492,
+          "extension": "md",
+          "lastModified": "2025-10-18T13:10:03+02:00",
+          "lastAuthor": "Paul Rayner",
+          "lastCommitHash": "e433af5da4e262c3770cdecabc2f254a2b910e16",
+          "commitCount": 7,
+          "contributorCount": 1,
+          "firstCommitDate": "2025-10-17T19:46:43+02:00",
+          "recentLinesChanged": 868,
+          "avgLinesPerCommit": 124,
+          "daysSinceLastModified": 0
+        },
+        {
+          "path": "README.md",
+          "name": "README.md",
+          "type": "file",
+          "loc": 242,
+          "extension": "md",
+          "lastModified": "2025-10-18T00:36:33+02:00",
+          "lastAuthor": "Paul Rayner",
+          "lastCommitHash": "ee66046ac3a1ca97b7a90439d99e64193406b872",
+          "commitCount": 2,
+          "contributorCount": 1,
+          "firstCommitDate": "2025-10-17T14:54:01+02:00",
+          "recentLinesChanged": 549,
+          "avgLinesPerCommit": 275,
+          "daysSinceLastModified": 0
+        },
+        {
+          "path": "docs",
+          "name": "docs",
+          "type": "directory",
+          "children": [
+            {
+              "path": "docs/gource-reference",
+              "name": "gource-reference",
+              "type": "directory",
+              "children": [
+                {
+                  "path": "docs/gource-reference/learnings.md",
+                  "name": "learnings.md",
+                  "type": "file",
+                  "loc": 127,
+                  "extension": "md",
+                  "lastModified": "2025-10-17T14:54:01+02:00",
+                  "lastAuthor": "Paul Rayner",
+                  "lastCommitHash": "e3ddbbb91d7c17c8f37cde33c3a180c3094d6c2b",
+                  "commitCount": 1,
+                  "contributorCount": 1,
+                  "firstCommitDate": "2025-10-17T14:54:01+02:00",
+                  "recentLinesChanged": 165,
+                  "avgLinesPerCommit": 165,
+                  "daysSinceLastModified": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "processor",
+          "name": "processor",
+          "type": "directory",
+          "children": [
+            {
+              "path": "processor/.gitignore",
+              "name": ".gitignore",
+              "type": "file",
+              "loc": 5,
+              "extension": "no-extension",
+              "lastModified": "2025-10-17T14:54:01+02:00",
+              "lastAuthor": "Paul Rayner",
+              "lastCommitHash": "e3ddbbb91d7c17c8f37cde33c3a180c3094d6c2b",
+              "commitCount": 1,
+              "contributorCount": 1,
+              "firstCommitDate": "2025-10-17T14:54:01+02:00",
+              "recentLinesChanged": 5,
+              "avgLinesPerCommit": 5,
+              "daysSinceLastModified": 1
+            },
+            {
+              "path": "processor/README.md",
+              "name": "README.md",
+              "type": "file",
+              "loc": 32,
+              "extension": "md",
+              "lastModified": "2025-10-17T14:54:01+02:00",
+              "lastAuthor": "Paul Rayner",
+              "lastCommitHash": "e3ddbbb91d7c17c8f37cde33c3a180c3094d6c2b",
+              "commitCount": 1,
+              "contributorCount": 1,
+              "firstCommitDate": "2025-10-17T14:54:01+02:00",
+              "recentLinesChanged": 47,
+              "avgLinesPerCommit": 47,
+              "daysSinceLastModified": 1
+            },
+            {
+              "path": "processor/output",
+              "name": "output",
+              "type": "directory",
+              "children": [
+                {
+                  "path": "processor/output/.gitkeep",
+                  "name": ".gitkeep",
+                  "type": "file",
+                  "loc": 0,
+                  "extension": "no-extension",
+                  "lastModified": "2025-10-17T14:54:01+02:00",
+                  "lastAuthor": "Paul Rayner",
+                  "lastCommitHash": "e3ddbbb91d7c17c8f37cde33c3a180c3094d6c2b",
+                  "commitCount": 1,
+                  "contributorCount": 1,
+                  "firstCommitDate": "2025-10-17T14:54:01+02:00",
+                  "recentLinesChanged": 0,
+                  "avgLinesPerCommit": 0,
+                  "daysSinceLastModified": 1
+                }
+              ]
+            },
+            {
+              "path": "processor/package-lock.json",
+              "name": "package-lock.json",
+              "type": "file",
+              "loc": 292,
+              "extension": "json",
+              "lastModified": "2025-10-17T14:54:01+02:00",
+              "lastAuthor": "Paul Rayner",
+              "lastCommitHash": "e3ddbbb91d7c17c8f37cde33c3a180c3094d6c2b",
+              "commitCount": 1,
+              "contributorCount": 1,
+              "firstCommitDate": "2025-10-17T14:54:01+02:00",
+              "recentLinesChanged": 292,
+              "avgLinesPerCommit": 292,
+              "daysSinceLastModified": 1
+            },
+            {
+              "path": "processor/package.json",
+              "name": "package.json",
+              "type": "file",
+              "loc": 23,
+              "extension": "json",
+              "lastModified": "2025-10-17T14:54:01+02:00",
+              "lastAuthor": "Paul Rayner",
+              "lastCommitHash": "e3ddbbb91d7c17c8f37cde33c3a180c3094d6c2b",
+              "commitCount": 1,
+              "contributorCount": 1,
+              "firstCommitDate": "2025-10-17T14:54:01+02:00",
+              "recentLinesChanged": 22,
+              "avgLinesPerCommit": 22,
+              "daysSinceLastModified": 1
+            },
+            {
+              "path": "processor/src",
+              "name": "src",
+              "type": "directory",
+              "children": [
+                {
+                  "path": "processor/src/analyze.ts",
+                  "name": "analyze.ts",
+                  "type": "file",
+                  "loc": 361,
+                  "extension": "ts",
+                  "lastModified": "2025-10-18T14:23:49+02:00",
+                  "lastAuthor": "Paul Rayner",
+                  "lastCommitHash": "ed6763d9a24fc07af74a872e2fb4c71c83d60fb1",
+                  "commitCount": 8,
+                  "contributorCount": 1,
+                  "firstCommitDate": "2025-10-17T14:54:01+02:00",
+                  "recentLinesChanged": 550,
+                  "avgLinesPerCommit": 69,
+                  "daysSinceLastModified": 0
+                },
+                {
+                  "path": "processor/src/timeline-analyzer.ts",
+                  "name": "timeline-analyzer.ts",
+                  "type": "file",
+                  "loc": 535,
+                  "extension": "ts",
+                  "lastModified": "2025-10-18T01:45:37+02:00",
+                  "lastAuthor": "Paul Rayner",
+                  "lastCommitHash": "e2077a63500a1b1e208bf1a64f598ede1cd0c954",
+                  "commitCount": 1,
+                  "contributorCount": 1,
+                  "firstCommitDate": "2025-10-18T01:45:37+02:00",
+                  "recentLinesChanged": 624,
+                  "avgLinesPerCommit": 624,
+                  "daysSinceLastModified": 0
+                },
+                {
+                  "path": "processor/src/types.ts",
+                  "name": "types.ts",
+                  "type": "file",
+                  "loc": 95,
+                  "extension": "ts",
+                  "lastModified": "2025-10-18T14:23:49+02:00",
+                  "lastAuthor": "Paul Rayner",
+                  "lastCommitHash": "ed6763d9a24fc07af74a872e2fb4c71c83d60fb1",
+                  "commitCount": 7,
+                  "contributorCount": 1,
+                  "firstCommitDate": "2025-10-17T14:54:01+02:00",
+                  "recentLinesChanged": 102,
+                  "avgLinesPerCommit": 15,
+                  "daysSinceLastModified": 0
+                }
+              ]
+            },
+            {
+              "path": "processor/tsconfig.json",
+              "name": "tsconfig.json",
+              "type": "file",
+              "loc": 17,
+              "extension": "json",
+              "lastModified": "2025-10-17T14:54:01+02:00",
+              "lastAuthor": "Paul Rayner",
+              "lastCommitHash": "e3ddbbb91d7c17c8f37cde33c3a180c3094d6c2b",
+              "commitCount": 1,
+              "contributorCount": 1,
+              "firstCommitDate": "2025-10-17T14:54:01+02:00",
+              "recentLinesChanged": 17,
+              "avgLinesPerCommit": 17,
+              "daysSinceLastModified": 1
+            }
+          ]
+        },
+        {
+          "path": "viewer",
+          "name": "viewer",
+          "type": "directory",
+          "children": [
+            {
+              "path": "viewer/.gitignore",
+              "name": ".gitignore",
+              "type": "file",
+              "loc": 4,
+              "extension": "no-extension",
+              "lastModified": "2025-10-17T14:54:01+02:00",
+              "lastAuthor": "Paul Rayner",
+              "lastCommitHash": "e3ddbbb91d7c17c8f37cde33c3a180c3094d6c2b",
+              "commitCount": 1,
+              "contributorCount": 1,
+              "firstCommitDate": "2025-10-17T14:54:01+02:00",
+              "recentLinesChanged": 4,
+              "avgLinesPerCommit": 4,
+              "daysSinceLastModified": 1
+            },
+            {
+              "path": "viewer/README.md",
+              "name": "README.md",
+              "type": "file",
+              "loc": 33,
+              "extension": "md",
+              "lastModified": "2025-10-17T14:54:01+02:00",
+              "lastAuthor": "Paul Rayner",
+              "lastCommitHash": "e3ddbbb91d7c17c8f37cde33c3a180c3094d6c2b",
+              "commitCount": 1,
+              "contributorCount": 1,
+              "firstCommitDate": "2025-10-17T14:54:01+02:00",
+              "recentLinesChanged": 46,
+              "avgLinesPerCommit": 46,
+              "daysSinceLastModified": 1
+            },
+            {
+              "path": "viewer/docs",
+              "name": "docs",
+              "type": "directory",
+              "children": [
+                {
+                  "path": "viewer/docs/color-scheme.md",
+                  "name": "color-scheme.md",
+                  "type": "file",
+                  "loc": 82,
+                  "extension": "md",
+                  "lastModified": "2025-10-17T15:21:37+02:00",
+                  "lastAuthor": "Paul Rayner",
+                  "lastCommitHash": "7a3926061acf6f884a8ef31dfbccf955d719bd75",
+                  "commitCount": 1,
+                  "contributorCount": 1,
+                  "firstCommitDate": "2025-10-17T15:21:37+02:00",
+                  "recentLinesChanged": 105,
+                  "avgLinesPerCommit": 105,
+                  "daysSinceLastModified": 1
+                }
+              ]
+            },
+            {
+              "path": "viewer/index.html",
+              "name": "index.html",
+              "type": "file",
+              "loc": 456,
+              "extension": "html",
+              "lastModified": "2025-10-18T14:23:49+02:00",
+              "lastAuthor": "Paul Rayner",
+              "lastCommitHash": "ed6763d9a24fc07af74a872e2fb4c71c83d60fb1",
+              "commitCount": 12,
+              "contributorCount": 1,
+              "firstCommitDate": "2025-10-17T14:54:01+02:00",
+              "recentLinesChanged": 528,
+              "avgLinesPerCommit": 44,
+              "daysSinceLastModified": 0
+            },
+            {
+              "path": "viewer/package-lock.json",
+              "name": "package-lock.json",
+              "type": "file",
+              "loc": 1009,
+              "extension": "json",
+              "lastModified": "2025-10-17T14:54:01+02:00",
+              "lastAuthor": "Paul Rayner",
+              "lastCommitHash": "e3ddbbb91d7c17c8f37cde33c3a180c3094d6c2b",
+              "commitCount": 1,
+              "contributorCount": 1,
+              "firstCommitDate": "2025-10-17T14:54:01+02:00",
+              "recentLinesChanged": 1009,
+              "avgLinesPerCommit": 1009,
+              "daysSinceLastModified": 1
+            },
+            {
+              "path": "viewer/package.json",
+              "name": "package.json",
+              "type": "file",
+              "loc": 21,
+              "extension": "json",
+              "lastModified": "2025-10-17T14:54:01+02:00",
+              "lastAuthor": "Paul Rayner",
+              "lastCommitHash": "e3ddbbb91d7c17c8f37cde33c3a180c3094d6c2b",
+              "commitCount": 1,
+              "contributorCount": 1,
+              "firstCommitDate": "2025-10-17T14:54:01+02:00",
+              "recentLinesChanged": 21,
+              "avgLinesPerCommit": 21,
+              "daysSinceLastModified": 1
+            },
+            {
+              "path": "viewer/public",
+              "name": "public",
+              "type": "directory",
+              "children": [
+                {
+                  "path": "viewer/public/data",
+                  "name": "data",
+                  "type": "directory",
+                  "children": [
+                    {
+                      "path": "viewer/public/data/.gitkeep",
+                      "name": ".gitkeep",
+                      "type": "file",
+                      "loc": 0,
+                      "extension": "no-extension",
+                      "lastModified": "2025-10-17T14:54:01+02:00",
+                      "lastAuthor": "Paul Rayner",
+                      "lastCommitHash": "e3ddbbb91d7c17c8f37cde33c3a180c3094d6c2b",
+                      "commitCount": 1,
+                      "contributorCount": 1,
+                      "firstCommitDate": "2025-10-17T14:54:01+02:00",
+                      "recentLinesChanged": 0,
+                      "avgLinesPerCommit": 0,
+                      "daysSinceLastModified": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "path": "viewer/src",
+              "name": "src",
+              "type": "directory",
+              "children": [
+                {
+                  "path": "viewer/src/TreeVisualizer.ts",
+                  "name": "TreeVisualizer.ts",
+                  "type": "file",
+                  "loc": 917,
+                  "extension": "ts",
+                  "lastModified": "2025-10-18T15:49:33+02:00",
+                  "lastAuthor": "Paul Rayner",
+                  "lastCommitHash": "956b16ae6c87655e89757c610ea3f8c16e85b1f6",
+                  "commitCount": 17,
+                  "contributorCount": 1,
+                  "firstCommitDate": "2025-10-17T14:54:01+02:00",
+                  "recentLinesChanged": 1747,
+                  "avgLinesPerCommit": 103,
+                  "daysSinceLastModified": 0
+                },
+                {
+                  "path": "viewer/src/colorModeManager.ts",
+                  "name": "colorModeManager.ts",
+                  "type": "file",
+                  "loc": 496,
+                  "extension": "ts",
+                  "lastModified": "2025-10-18T14:23:49+02:00",
+                  "lastAuthor": "Paul Rayner",
+                  "lastCommitHash": "ed6763d9a24fc07af74a872e2fb4c71c83d60fb1",
+                  "commitCount": 7,
+                  "contributorCount": 1,
+                  "firstCommitDate": "2025-10-17T20:00:44+02:00",
+                  "recentLinesChanged": 691,
+                  "avgLinesPerCommit": 99,
+                  "daysSinceLastModified": 0
+                },
+                {
+                  "path": "viewer/src/colorScheme.ts",
+                  "name": "colorScheme.ts",
+                  "type": "file",
+                  "loc": 88,
+                  "extension": "ts",
+                  "lastModified": "2025-10-17T15:21:37+02:00",
+                  "lastAuthor": "Paul Rayner",
+                  "lastCommitHash": "7a3926061acf6f884a8ef31dfbccf955d719bd75",
+                  "commitCount": 1,
+                  "contributorCount": 1,
+                  "firstCommitDate": "2025-10-17T15:21:37+02:00",
+                  "recentLinesChanged": 98,
+                  "avgLinesPerCommit": 98,
+                  "daysSinceLastModified": 1
+                },
+                {
+                  "path": "viewer/src/main.ts",
+                  "name": "main.ts",
+                  "type": "file",
+                  "loc": 1059,
+                  "extension": "ts",
+                  "lastModified": "2025-10-18T14:23:49+02:00",
+                  "lastAuthor": "Paul Rayner",
+                  "lastCommitHash": "ed6763d9a24fc07af74a872e2fb4c71c83d60fb1",
+                  "commitCount": 20,
+                  "contributorCount": 1,
+                  "firstCommitDate": "2025-10-17T14:54:01+02:00",
+                  "recentLinesChanged": 1408,
+                  "avgLinesPerCommit": 70,
+                  "daysSinceLastModified": 0
+                },
+                {
+                  "path": "viewer/src/types.ts",
+                  "name": "types.ts",
+                  "type": "file",
+                  "loc": 95,
+                  "extension": "ts",
+                  "lastModified": "2025-10-18T14:23:49+02:00",
+                  "lastAuthor": "Paul Rayner",
+                  "lastCommitHash": "ed6763d9a24fc07af74a872e2fb4c71c83d60fb1",
+                  "commitCount": 7,
+                  "contributorCount": 1,
+                  "firstCommitDate": "2025-10-17T14:54:01+02:00",
+                  "recentLinesChanged": 102,
+                  "avgLinesPerCommit": 15,
+                  "daysSinceLastModified": 0
+                }
+              ]
+            },
+            {
+              "path": "viewer/tsconfig.json",
+              "name": "tsconfig.json",
+              "type": "file",
+              "loc": 16,
+              "extension": "json",
+              "lastModified": "2025-10-17T14:54:01+02:00",
+              "lastAuthor": "Paul Rayner",
+              "lastCommitHash": "e3ddbbb91d7c17c8f37cde33c3a180c3094d6c2b",
+              "commitCount": 1,
+              "contributorCount": 1,
+              "firstCommitDate": "2025-10-17T14:54:01+02:00",
+              "recentLinesChanged": 16,
+              "avgLinesPerCommit": 16,
+              "daysSinceLastModified": 1
+            },
+            {
+              "path": "viewer/vite.config.ts",
+              "name": "vite.config.ts",
+              "type": "file",
+              "loc": 12,
+              "extension": "ts",
+              "lastModified": "2025-10-17T14:54:01+02:00",
+              "lastAuthor": "Paul Rayner",
+              "lastCommitHash": "e3ddbbb91d7c17c8f37cde33c3a180c3094d6c2b",
+              "commitCount": 1,
+              "contributorCount": 1,
+              "firstCommitDate": "2025-10-17T14:54:01+02:00",
+              "recentLinesChanged": 13,
+              "avgLinesPerCommit": 13,
+              "daysSinceLastModified": 1
+            }
+          ]
+        }
+      ]
+    },
+    "commitMessages": {
+      "7d2974f7c4dc542f59c0b5f0a70fcaffab13117f": "feat: improve legend ordering and add metadata to file details",
+      "a4b9b67f6edeea3390deb1380932347cd2c66a82": "Major UX improvements: understanding repository structure at a glance",
+      "e3ddbbb91d7c17c8f37cde33c3a180c3094d6c2b": "Initial implementation: Slice 1 - View codebase structure with file sizes",
+      "3172875432bc63a2ec9ba0e8ebe9aaa6d6531622": "MVP Slice 2: Add commit author coloring and visualization",
+      "aa784f94f1f1967b402b80af24bc0fbc44fe9ffa": "Initial commit",
+      "e433af5da4e262c3770cdecabc2f254a2b910e16": "Revert \"docs: Update PROGRESS.md with Slice 2 completion\"",
+      "ee66046ac3a1ca97b7a90439d99e64193406b872": "Update README with comprehensive project documentation",
+      "ed6763d9a24fc07af74a872e2fb4c71c83d60fb1": "feat: implement MVP Slices 6-8 with three new metrics and label clarifications",
+      "e2077a63500a1b1e208bf1a64f598ede1cd0c954": "Slice 2 Phase 2: Implement timeline analyzer with adaptive sampling",
+      "7a3926061acf6f884a8ef31dfbccf955d719bd75": "Comprehensive color scheme overhaul and refactoring",
+      "956b16ae6c87655e89757c610ea3f8c16e85b1f6": "Revert \"fix: Dynamic camera maxDistance for large repositories in timeline mode\""
+    },
+    "stats": {
+      "totalFiles": 31,
+      "totalLoc": 6931,
+      "filesByExtension": {
+        "md": 8,
+        "json": 7,
+        "no-extension": 6,
+        "ts": 9,
+        "html": 1
+      }
+    }
+  },
+  "timeline": {
+    "totalCommits": 35,
+    "dateRange": {
+      "first": "2025-10-17T12:54:01.000Z",
+      "last": "2025-10-18T13:49:33.000Z"
+    },
+    "baseSampling": {
+      "algorithm": "adaptive-v2",
+      "targetCount": 200,
+      "actualCount": 35,
+      "commits": [
+        {
+          "hash": "e3ddbbb91d7c17c8f37cde33c3a180c3094d6c2b",
+          "date": "2025-10-17T12:54:01.000Z",
+          "author": "Paul Rayner",
+          "message": "Initial implementation: Slice 1 - View codebase structure with file sizes",
+          "tags": [],
+          "isMergeCommit": false,
+          "importanceScore": 110,
+          "changes": {
+            "filesAdded": [],
+            "filesModified": [],
+            "filesDeleted": [],
+            "totalFilesChanged": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        {
+          "hash": "7a3926061acf6f884a8ef31dfbccf955d719bd75",
+          "date": "2025-10-17T13:21:37.000Z",
+          "author": "Paul Rayner",
+          "message": "Comprehensive color scheme overhaul and refactoring",
+          "tags": [],
+          "isMergeCommit": false,
+          "importanceScore": 60,
+          "changes": {
+            "filesAdded": [
+              "viewer/docs/color-scheme.md",
+              "viewer/src/colorScheme.ts"
+            ],
+            "filesModified": [
+              "viewer/index.html",
+              "viewer/src/TreeVisualizer.ts",
+              "viewer/src/main.ts"
+            ],
+            "filesDeleted": [],
+            "totalFilesChanged": 5,
+            "linesAdded": 494,
+            "linesDeleted": 48
+          }
+        },
+        {
+          "hash": "a4b9b67f6edeea3390deb1380932347cd2c66a82",
+          "date": "2025-10-17T13:32:32.000Z",
+          "author": "Paul Rayner",
+          "message": "Major UX improvements: understanding repository structure at a glance",
+          "tags": [],
+          "isMergeCommit": false,
+          "importanceScore": 53,
+          "changes": {
+            "filesAdded": [
+              ".claude/settings.local.json",
+              "viewer/index.html"
+            ],
+            "filesModified": [
+              "viewer/src/TreeVisualizer.ts",
+              "viewer/src/main.ts"
+            ],
+            "filesDeleted": [],
+            "totalFilesChanged": 4,
+            "linesAdded": 398,
+            "linesDeleted": 15
+          }
+        },
+        {
+          "hash": "c23ce553bc2c059ed8a2aac96b8c90b7ecc9a251",
+          "date": "2025-10-17T13:48:50.000Z",
+          "author": "Paul Rayner",
+          "message": "Advanced interaction features: hover highlighting and collapsible directories",
+          "tags": [],
+          "isMergeCommit": false,
+          "importanceScore": 10,
+          "changes": {
+            "filesAdded": [
+              "viewer/index.html",
+              "viewer/src/main.ts"
+            ],
+            "filesModified": [
+              "viewer/src/TreeVisualizer.ts"
+            ],
+            "filesDeleted": [],
+            "totalFilesChanged": 3,
+            "linesAdded": 170,
+            "linesDeleted": 36
+          }
+        },
+        {
+          "hash": "9de163297e68ecb61a1e8fcc623a7b54364d0f67",
+          "date": "2025-10-17T14:27:55.000Z",
+          "author": "Paul Rayner",
+          "message": "Hierarchical focus mode: solar system visualization with drill-down navigation",
+          "tags": [],
+          "isMergeCommit": false,
+          "importanceScore": 10,
+          "changes": {
+            "filesAdded": [],
+            "filesModified": [
+              "viewer/index.html",
+              "viewer/src/TreeVisualizer.ts"
+            ],
+            "filesDeleted": [],
+            "totalFilesChanged": 2,
+            "linesAdded": 182,
+            "linesDeleted": 31
+          }
+        },
+        {
+          "hash": "d851d18fc5deba903e9bf41cee6d4617486f884d",
+          "date": "2025-10-17T17:46:43.000Z",
+          "author": "Paul Rayner",
+          "message": "Slice 1 enhancements: Fix directory sizing and add label toggle",
+          "tags": [],
+          "isMergeCommit": false,
+          "importanceScore": 60,
+          "changes": {
+            "filesAdded": [
+              "PROGRESS.md",
+              "viewer/index.html"
+            ],
+            "filesModified": [
+              "viewer/src/TreeVisualizer.ts",
+              "viewer/src/main.ts"
+            ],
+            "filesDeleted": [],
+            "totalFilesChanged": 4,
+            "linesAdded": 747,
+            "linesDeleted": 33
+          }
+        },
+        {
+          "hash": "bdd5bf338da9d2e06a073dbbff63075a59fd059f",
+          "date": "2025-10-17T17:50:47.000Z",
+          "author": "Paul Rayner",
+          "message": "Improve directory sizing with square root scaling",
+          "tags": [],
+          "isMergeCommit": false,
+          "importanceScore": 10,
+          "changes": {
+            "filesAdded": [],
+            "filesModified": [
+              "viewer/src/TreeVisualizer.ts"
+            ],
+            "filesDeleted": [],
+            "totalFilesChanged": 1,
+            "linesAdded": 4,
+            "linesDeleted": 2
+          }
+        },
+        {
+          "hash": "03ccf59e9a448edaab0bad61653c23224a3844a8",
+          "date": "2025-10-17T17:57:23.000Z",
+          "author": "Paul Rayner",
+          "message": "MVP Slice 1 part 1: Add lastModified date to processor",
+          "tags": [],
+          "isMergeCommit": false,
+          "importanceScore": 20,
+          "changes": {
+            "filesAdded": [
+              "processor/src/types.ts",
+              "viewer/src/types.ts"
+            ],
+            "filesModified": [
+              "PROGRESS.md",
+              "processor/src/analyze.ts"
+            ],
+            "filesDeleted": [],
+            "totalFilesChanged": 4,
+            "linesAdded": 102,
+            "linesDeleted": 21
+          }
+        },
+        {
+          "hash": "87603cc207a024274aeabc1345fbd0770828ee2a",
+          "date": "2025-10-17T18:00:44.000Z",
+          "author": "Paul Rayner",
+          "message": "MVP Slice 1 part 2: Color mode UI and manager",
+          "tags": [],
+          "isMergeCommit": false,
+          "importanceScore": 20,
+          "changes": {
+            "filesAdded": [
+              "viewer/index.html",
+              "viewer/src/colorModeManager.ts"
+            ],
+            "filesModified": [
+              "viewer/src/TreeVisualizer.ts",
+              "viewer/src/main.ts"
+            ],
+            "filesDeleted": [],
+            "totalFilesChanged": 4,
+            "linesAdded": 171,
+            "linesDeleted": 3
+          }
+        },
+        {
+          "hash": "1241f520eeb054720fc6a85e6d4ae8e86f5d203c",
+          "date": "2025-10-17T18:49:28.000Z",
+          "author": "Paul Rayner",
+          "message": "Apply color mode to all tree nodes and add lastModified to UI",
+          "tags": [],
+          "isMergeCommit": false,
+          "importanceScore": 10,
+          "changes": {
+            "filesAdded": [],
+            "filesModified": [
+              "viewer/src/TreeVisualizer.ts",
+              "viewer/src/main.ts"
+            ],
+            "filesDeleted": [],
+            "totalFilesChanged": 2,
+            "linesAdded": 115,
+            "linesDeleted": 5
+          }
+        },
+        {
+          "hash": "3172875432bc63a2ec9ba0e8ebe9aaa6d6531622",
+          "date": "2025-10-17T19:53:41.000Z",
+          "author": "Paul Rayner",
+          "message": "MVP Slice 2: Add commit author coloring and visualization",
+          "tags": [],
+          "isMergeCommit": false,
+          "importanceScore": 75,
+          "changes": {
+            "filesAdded": [
+              "CONTRIBUTING.md",
+              "processor/src/types.ts",
+              "viewer/index.html",
+              "viewer/src/types.ts"
+            ],
+            "filesModified": [
+              "processor/src/analyze.ts",
+              "viewer/src/colorModeManager.ts",
+              "viewer/src/main.ts"
+            ],
+            "filesDeleted": [],
+            "totalFilesChanged": 7,
+            "linesAdded": 454,
+            "linesDeleted": 14
+          }
+        },
+        {
+          "hash": "eb05d1ac8253ba3ad51c72b6ef1c5d5887a3344b",
+          "date": "2025-10-17T19:57:20.000Z",
+          "author": "Paul Rayner",
+          "message": "Sort author legend by file count instead of alphabetically",
+          "tags": [],
+          "isMergeCommit": false,
+          "importanceScore": 10,
+          "changes": {
+            "filesAdded": [],
+            "filesModified": [
+              "viewer/src/main.ts"
+            ],
+            "filesDeleted": [],
+            "totalFilesChanged": 1,
+            "linesAdded": 7,
+            "linesDeleted": 5
+          }
+        },
+        {
+          "hash": "c71b03d7cfa1a97645de2503a2d596b057644311",
+          "date": "2025-10-17T21:06:23.000Z",
+          "author": "Paul Rayner",
+          "message": "Add commit siblings highlighting feature",
+          "tags": [],
+          "isMergeCommit": false,
+          "importanceScore": 68,
+          "changes": {
+            "filesAdded": [
+              "processor/src/types.ts",
+              "viewer/src/types.ts"
+            ],
+            "filesModified": [
+              "processor/src/analyze.ts",
+              "viewer/index.html",
+              "viewer/src/TreeVisualizer.ts",
+              "viewer/src/colorModeManager.ts",
+              "viewer/src/main.ts"
+            ],
+            "filesDeleted": [],
+            "totalFilesChanged": 7,
+            "linesAdded": 358,
+            "linesDeleted": 67
+          }
+        },
+        {
+          "hash": "af32d0269d9d1653f1dd8279b36c2bfb78724ffd",
+          "date": "2025-10-17T22:09:37.000Z",
+          "author": "Paul Rayner",
+          "message": "Adaptive \"Last Modified\" color mode with extended time intervals",
+          "tags": [],
+          "isMergeCommit": false,
+          "importanceScore": 10,
+          "changes": {
+            "filesAdded": [],
+            "filesModified": [
+              "viewer/src/colorModeManager.ts",
+              "viewer/src/main.ts"
+            ],
+            "filesDeleted": [],
+            "totalFilesChanged": 2,
+            "linesAdded": 253,
+            "linesDeleted": 34
+          }
+        },
+        {
+          "hash": "aa784f94f1f1967b402b80af24bc0fbc44fe9ffa",
+          "date": "2025-10-17T22:11:42.000Z",
+          "author": "Paul Rayner",
+          "message": "Initial commit",
+          "tags": [],
+          "isMergeCommit": false,
+          "importanceScore": 10,
+          "changes": {
+            "filesAdded": [],
+            "filesModified": [],
+            "filesDeleted": [],
+            "totalFilesChanged": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        {
+          "hash": "21e3f66ef08db584c150b6534bc7d7d99efde779",
+          "date": "2025-10-17T22:12:18.000Z",
+          "author": "Paul Rayner",
+          "message": "Merge branch 'main' of https://github.com/paulrayner/code-evolution-viz",
+          "tags": [],
+          "isMergeCommit": true,
+          "importanceScore": 40,
+          "changes": {
+            "filesAdded": [
+              "LICENSE"
+            ],
+            "filesModified": [],
+            "filesDeleted": [],
+            "totalFilesChanged": 1,
+            "linesAdded": 21,
+            "linesDeleted": 0
+          }
+        },
+        {
+          "hash": "027821a46a2d09e8fb0f88460809d55a23d7d5c4",
+          "date": "2025-10-17T22:29:47.000Z",
+          "author": "Paul Rayner",
+          "message": "Fix label visibility bug: hide labels for invisible nodes in 'Always On' mode",
+          "tags": [],
+          "isMergeCommit": false,
+          "importanceScore": 10,
+          "changes": {
+            "filesAdded": [],
+            "filesModified": [
+              "PROGRESS.md",
+              "viewer/src/TreeVisualizer.ts"
+            ],
+            "filesDeleted": [],
+            "totalFilesChanged": 2,
+            "linesAdded": 42,
+            "linesDeleted": 33
+          }
+        },
+        {
+          "hash": "ee66046ac3a1ca97b7a90439d99e64193406b872",
+          "date": "2025-10-17T22:36:33.000Z",
+          "author": "Paul Rayner",
+          "message": "Update README with comprehensive project documentation",
+          "tags": [],
+          "isMergeCommit": false,
+          "importanceScore": 18,
+          "changes": {
+            "filesAdded": [],
+            "filesModified": [
+              "README.md"
+            ],
+            "filesDeleted": [],
+            "totalFilesChanged": 1,
+            "linesAdded": 269,
+            "linesDeleted": 120
+          }
+        },
+        {
+          "hash": "efe81b4cec1acbaf403889371687e985f0efc136",
+          "date": "2025-10-17T22:45:03.000Z",
+          "author": "Paul Rayner",
+          "message": "Change UI defaults: enable Highlight Commit and set labels to Hover Only",
+          "tags": [],
+          "isMergeCommit": false,
+          "importanceScore": 10,
+          "changes": {
+            "filesAdded": [],
+            "filesModified": [
+              "viewer/src/TreeVisualizer.ts",
+              "viewer/src/main.ts"
+            ],
+            "filesDeleted": [],
+            "totalFilesChanged": 2,
+            "linesAdded": 7,
+            "linesDeleted": 7
+          }
+        },
+        {
+          "hash": "0eb8751bb77d659bac5dfa5c972d6da3bacc9438",
+          "date": "2025-10-17T23:12:42.000Z",
+          "author": "Paul Rayner",
+          "message": "Add commit message display in highlight commit mode",
+          "tags": [],
+          "isMergeCommit": false,
+          "importanceScore": 20,
+          "changes": {
+            "filesAdded": [
+              "processor/src/types.ts",
+              "viewer/src/types.ts"
+            ],
+            "filesModified": [
+              "processor/src/analyze.ts",
+              "viewer/src/main.ts"
+            ],
+            "filesDeleted": [],
+            "totalFilesChanged": 4,
+            "linesAdded": 56,
+            "linesDeleted": 10
+          }
+        },
+        {
+          "hash": "39b737c37318f084dd0041718db170d1e97623d3",
+          "date": "2025-10-17T23:15:51.000Z",
+          "author": "Paul Rayner",
+          "message": "Update PROGRESS.md to reflect completed MVP Slices 1 & 2",
+          "tags": [],
+          "isMergeCommit": false,
+          "importanceScore": 10,
+          "changes": {
+            "filesAdded": [],
+            "filesModified": [
+              "PROGRESS.md"
+            ],
+            "filesDeleted": [],
+            "totalFilesChanged": 1,
+            "linesAdded": 35,
+            "linesDeleted": 10
+          }
+        },
+        {
+          "hash": "d2f871bd12ec98092a0d44359e3237f997ab2976",
+          "date": "2025-10-17T23:34:35.000Z",
+          "author": "Paul Rayner",
+          "message": "Implement MVP Slices 3-5: Churn, Contributors, and File Age color modes",
+          "tags": [],
+          "isMergeCommit": false,
+          "importanceScore": 38,
+          "changes": {
+            "filesAdded": [
+              "processor/src/types.ts",
+              "viewer/index.html",
+              "viewer/src/types.ts"
+            ],
+            "filesModified": [
+              "processor/src/analyze.ts",
+              "viewer/src/colorModeManager.ts"
+            ],
+            "filesDeleted": [],
+            "totalFilesChanged": 5,
+            "linesAdded": 291,
+            "linesDeleted": 13
+          }
+        },
+        {
+          "hash": "e2077a63500a1b1e208bf1a64f598ede1cd0c954",
+          "date": "2025-10-17T23:45:37.000Z",
+          "author": "Paul Rayner",
+          "message": "Slice 2 Phase 2: Implement timeline analyzer with adaptive sampling",
+          "tags": [],
+          "isMergeCommit": false,
+          "importanceScore": 35,
+          "changes": {
+            "filesAdded": [
+              "processor/src/timeline-analyzer.ts"
+            ],
+            "filesModified": [
+              "processor/src/analyze.ts"
+            ],
+            "filesDeleted": [],
+            "totalFilesChanged": 2,
+            "linesAdded": 691,
+            "linesDeleted": 17
+          }
+        },
+        {
+          "hash": "fb0e90af4ceda1acceba52489b65e2a5958a2c6f",
+          "date": "2025-10-17T23:49:37.000Z",
+          "author": "Paul Rayner",
+          "message": "Slice 2 Phase 3: Add timeline format detection and UI foundation",
+          "tags": [],
+          "isMergeCommit": false,
+          "importanceScore": 10,
+          "changes": {
+            "filesAdded": [
+              "viewer/index.html"
+            ],
+            "filesModified": [
+              "viewer/src/main.ts"
+            ],
+            "filesDeleted": [],
+            "totalFilesChanged": 2,
+            "linesAdded": 142,
+            "linesDeleted": 5
+          }
+        },
+        {
+          "hash": "75a0b67ac7c331144659f8b51e92ab4748b03b71",
+          "date": "2025-10-17T23:52:48.000Z",
+          "author": "Paul Rayner",
+          "message": "Slice 2 Phase 3.3-3.4: Implement working timeline playback",
+          "tags": [],
+          "isMergeCommit": false,
+          "importanceScore": 10,
+          "changes": {
+            "filesAdded": [
+              "viewer/src/main.ts"
+            ],
+            "filesModified": [],
+            "filesDeleted": [],
+            "totalFilesChanged": 1,
+            "linesAdded": 176,
+            "linesDeleted": 0
+          }
+        },
+        {
+          "hash": "5fc62f4c3210f7aa789a764e6d8fe0ecd95855d2",
+          "date": "2025-10-17T23:53:56.000Z",
+          "author": "Paul Rayner",
+          "message": "Slice 2 Phase 3.5: Add file change visualization to timeline playback",
+          "tags": [],
+          "isMergeCommit": false,
+          "importanceScore": 10,
+          "changes": {
+            "filesAdded": [
+              "viewer/src/main.ts"
+            ],
+            "filesModified": [],
+            "filesDeleted": [],
+            "totalFilesChanged": 1,
+            "linesAdded": 59,
+            "linesDeleted": 0
+          }
+        },
+        {
+          "hash": "b6273150ab4a3f8cc53bc534330b8eeea13f7b5e",
+          "date": "2025-10-18T00:26:53.000Z",
+          "author": "Paul Rayner",
+          "message": "Fix timeline visibility: Add timeline mode to show all files",
+          "tags": [],
+          "isMergeCommit": false,
+          "importanceScore": 10,
+          "changes": {
+            "filesAdded": [
+              "viewer/src/main.ts"
+            ],
+            "filesModified": [
+              "viewer/src/TreeVisualizer.ts"
+            ],
+            "filesDeleted": [],
+            "totalFilesChanged": 2,
+            "linesAdded": 24,
+            "linesDeleted": 3
+          }
+        },
+        {
+          "hash": "51a88495c7cf8ff4181a136a06b100e4ebe4b936",
+          "date": "2025-10-18T08:07:20.000Z",
+          "author": "Paul Rayner",
+          "message": "Fix TypeScript compilation errors in timeline code",
+          "tags": [],
+          "isMergeCommit": false,
+          "importanceScore": 10,
+          "changes": {
+            "filesAdded": [],
+            "filesModified": [
+              "viewer/src/TreeVisualizer.ts",
+              "viewer/src/main.ts"
+            ],
+            "filesDeleted": [],
+            "totalFilesChanged": 2,
+            "linesAdded": 5,
+            "linesDeleted": 2
+          }
+        },
+        {
+          "hash": "7d2974f7c4dc542f59c0b5f0a70fcaffab13117f",
+          "date": "2025-10-18T10:59:56.000Z",
+          "author": "Paul Rayner",
+          "message": "feat: improve legend ordering and add metadata to file details",
+          "tags": [],
+          "isMergeCommit": false,
+          "importanceScore": 10,
+          "changes": {
+            "filesAdded": [
+              ".claude/claude.md",
+              "viewer/src/main.ts"
+            ],
+            "filesModified": [
+              "viewer/src/colorModeManager.ts"
+            ],
+            "filesDeleted": [],
+            "totalFilesChanged": 3,
+            "linesAdded": 198,
+            "linesDeleted": 9
+          }
+        },
+        {
+          "hash": "4585cbbac56e72954f513ff4b5fd60534bcf9ce2",
+          "date": "2025-10-18T11:05:10.000Z",
+          "author": "Paul Rayner",
+          "message": "docs: update PROGRESS.md for completed MVP Slices 3-5",
+          "tags": [],
+          "isMergeCommit": false,
+          "importanceScore": 10,
+          "changes": {
+            "filesAdded": [],
+            "filesModified": [
+              "PROGRESS.md"
+            ],
+            "filesDeleted": [],
+            "totalFilesChanged": 1,
+            "linesAdded": 34,
+            "linesDeleted": 19
+          }
+        },
+        {
+          "hash": "c92acd1f7d1e3d944526c6614836e2c609e80154",
+          "date": "2025-10-18T11:07:40.000Z",
+          "author": "Paul Rayner",
+          "message": "docs: Update PROGRESS.md with Slice 2 completion",
+          "tags": [],
+          "isMergeCommit": false,
+          "importanceScore": 10,
+          "changes": {
+            "filesAdded": [],
+            "filesModified": [
+              "PROGRESS.md"
+            ],
+            "filesDeleted": [],
+            "totalFilesChanged": 1,
+            "linesAdded": 47,
+            "linesDeleted": 19
+          }
+        },
+        {
+          "hash": "e433af5da4e262c3770cdecabc2f254a2b910e16",
+          "date": "2025-10-18T11:10:03.000Z",
+          "author": "Paul Rayner",
+          "message": "Revert \"docs: Update PROGRESS.md with Slice 2 completion\"",
+          "tags": [],
+          "isMergeCommit": false,
+          "importanceScore": 10,
+          "changes": {
+            "filesAdded": [],
+            "filesModified": [
+              "PROGRESS.md"
+            ],
+            "filesDeleted": [],
+            "totalFilesChanged": 1,
+            "linesAdded": 19,
+            "linesDeleted": 47
+          }
+        },
+        {
+          "hash": "ed6763d9a24fc07af74a872e2fb4c71c83d60fb1",
+          "date": "2025-10-18T12:23:49.000Z",
+          "author": "Paul Rayner",
+          "message": "feat: implement MVP Slices 6-8 with three new metrics and label clarifications",
+          "tags": [],
+          "isMergeCommit": false,
+          "importanceScore": 68,
+          "changes": {
+            "filesAdded": [
+              "processor/src/types.ts",
+              "viewer/src/types.ts"
+            ],
+            "filesModified": [
+              "processor/src/analyze.ts",
+              "viewer/index.html",
+              "viewer/src/TreeVisualizer.ts",
+              "viewer/src/colorModeManager.ts",
+              "viewer/src/main.ts"
+            ],
+            "filesDeleted": [],
+            "totalFilesChanged": 7,
+            "linesAdded": 368,
+            "linesDeleted": 20
+          }
+        },
+        {
+          "hash": "28f74cbfd8ae6d0265ceb3cf5988c205c0c84688",
+          "date": "2025-10-18T12:25:14.000Z",
+          "author": "Paul Rayner",
+          "message": "fix: Dynamic camera maxDistance for large repositories in timeline mode",
+          "tags": [],
+          "isMergeCommit": false,
+          "importanceScore": 10,
+          "changes": {
+            "filesAdded": [
+              "viewer/src/TreeVisualizer.ts"
+            ],
+            "filesModified": [],
+            "filesDeleted": [],
+            "totalFilesChanged": 1,
+            "linesAdded": 5,
+            "linesDeleted": 0
+          }
+        },
+        {
+          "hash": "956b16ae6c87655e89757c610ea3f8c16e85b1f6",
+          "date": "2025-10-18T13:49:33.000Z",
+          "author": "Paul Rayner",
+          "message": "Revert \"fix: Dynamic camera maxDistance for large repositories in timeline mode\"",
+          "tags": [],
+          "isMergeCommit": false,
+          "importanceScore": 110,
+          "changes": {
+            "filesAdded": [],
+            "filesModified": [
+              "viewer/src/TreeVisualizer.ts"
+            ],
+            "filesDeleted": [],
+            "totalFilesChanged": 1,
+            "linesAdded": 8,
+            "linesDeleted": 165
+          }
+        }
+      ]
+    }
+  }
+}
