@@ -1,7 +1,8 @@
 import { FileNode } from './types';
 import { getColorForExtension } from './colorScheme';
+import { couplingLoader } from './couplingLoader';
 
-export type ColorMode = 'fileType' | 'lastModified' | 'author' | 'churn' | 'contributors' | 'fileAge' | 'recentActivity' | 'stability' | 'recency';
+export type ColorMode = 'fileType' | 'lastModified' | 'author' | 'churn' | 'contributors' | 'fileAge' | 'recentActivity' | 'stability' | 'recency' | 'cluster';
 
 export interface ColorInfo {
   hex: string;
@@ -185,6 +186,28 @@ export function assignAuthorColors(authorsByRank: string[]): void {
       nextColorIndex++;
     }
   }
+}
+
+/**
+ * Get color for a cluster (bounded context)
+ * Uses 12 distinct colors that are maximally distinguishable
+ */
+function getClusterColor(clusterId: number): number {
+  const colors = [
+    0x4a9eff,  // Blue
+    0x50c878,  // Green
+    0xff6b6b,  // Red
+    0xffd700,  // Gold
+    0x9b59b6,  // Purple
+    0xff8c42,  // Orange
+    0x1abc9c,  // Teal
+    0xe84393,  // Pink
+    0x6c5ce7,  // Indigo
+    0xfdcb6e,  // Yellow
+    0x00b894,  // Cyan
+    0xd63031,  // Crimson
+  ];
+  return colors[clusterId % colors.length];
 }
 
 /**
@@ -381,6 +404,21 @@ export function getColorForFile(file: FileNode, mode: ColorMode): ColorInfo {
     case 'recency':
       return getColorByRecency(file.daysSinceLastModified);
 
+    case 'cluster': {
+      const clusterId = couplingLoader.getClusterForFile(file.path);
+
+      if (clusterId === null) {
+        return { hex: '#888888', name: 'Unclustered' };
+      }
+
+      const cluster = couplingLoader.getClusters().find(c => c.id === clusterId);
+      const color = getClusterColor(clusterId);
+      return {
+        hex: `#${color.toString(16).padStart(6, '0')}`,
+        name: cluster?.name ?? `Cluster ${clusterId}`
+      };
+    }
+
     default:
       return getColorForExtension(file.extension);
   }
@@ -524,6 +562,20 @@ export function getLegendItems(mode: ColorMode): ColorInfo[] {
       // For file type mode, legend is populated dynamically based on files present
       return [];
 
+    case 'cluster': {
+      // Show legend items for each cluster, ordered by size (descending)
+      const clusters = couplingLoader.getClusters();
+
+      if (clusters.length === 0) {
+        return [{ hex: '#888888', name: 'No coupling data' }];
+      }
+
+      return clusters.map(cluster => ({
+        hex: `#${getClusterColor(cluster.id).toString(16).padStart(6, '0')}`,
+        name: `${cluster.name} (${cluster.fileCount} files)`
+      }));
+    }
+
     default:
       return [];
   }
@@ -552,6 +604,8 @@ export function getColorModeName(mode: ColorMode): string {
       return 'Code Stability';
     case 'recency':
       return 'Recency';
+    case 'cluster':
+      return 'Bounded Contexts';
     default:
       return 'Unknown';
   }
