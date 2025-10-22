@@ -75,8 +75,19 @@ function updateHeader(snapshot: RepositorySnapshot) {
 
 /**
  * Show file details panel
+ * @param file - The file node to show details for
+ * @param handleCommitHighlighting - Whether to toggle commit sibling highlighting (default: false for hover, true for click)
  */
-function showFileDetails(file: FileNode) {
+function showFileDetails(file: FileNode, handleCommitHighlighting: boolean = false) {
+  console.log('🔍 showFileDetails called:', {
+    fileName: file.name,
+    filePath: file.path,
+    handleCommitHighlighting,
+    highlightCommitEnabled,
+    lastCommitHash: file.lastCommitHash,
+    commitIndexSize: commitToFilesIndex.size
+  });
+
   const panel = document.getElementById('info-panel');
   const nameEl = document.getElementById('selected-name');
   const contentEl = document.getElementById('info-content');
@@ -178,10 +189,12 @@ function showFileDetails(file: FileNode) {
     </div>
   `;
 
-  // Handle commit sibling highlighting with toggle behavior
-  if (highlightCommitEnabled && file.lastCommitHash) {
+  // Handle commit sibling highlighting with toggle behavior (only on click, not hover)
+  if (handleCommitHighlighting && highlightCommitEnabled && file.lastCommitHash) {
+    console.log('✅ Commit highlighting conditions met');
     // Check if clicking on a file that's part of the currently highlighted commit
     if (currentHighlightedCommit === file.lastCommitHash) {
+      console.log('🔄 Toggling OFF - same commit clicked again');
       // Toggle OFF - clear highlighting
       if (currentVisualizer) {
         currentVisualizer.clearHighlight();
@@ -191,6 +204,11 @@ function showFileDetails(file: FileNode) {
       // New commit or first time - show highlighting
       const commitSiblings = commitToFilesIndex.get(file.lastCommitHash) || [];
       const otherFiles = commitSiblings.filter(f => f.path !== file.path);
+      console.log('📝 Commit siblings found:', {
+        totalSiblings: commitSiblings.length,
+        otherFiles: otherFiles.length,
+        commitHash: file.lastCommitHash
+      });
 
       // Get commit message if available
       const commitMessage = currentSnapshot?.commitMessages?.[file.lastCommitHash];
@@ -250,6 +268,11 @@ function showFileDetails(file: FileNode) {
     }
   } else {
     // Clear highlighting if mode is off
+    console.log('❌ Commit highlighting skipped:', {
+      handleCommitHighlighting,
+      highlightCommitEnabled,
+      hasCommitHash: !!file.lastCommitHash
+    });
     if (currentVisualizer) {
       currentVisualizer.clearHighlight();
     }
@@ -259,6 +282,15 @@ function showFileDetails(file: FileNode) {
   contentEl.innerHTML = detailsHtml;
 
   panel.classList.add('visible');
+
+  // Visual feedback for clicks (flash the panel header)
+  if (handleCommitHighlighting && nameEl) {
+    nameEl.style.transition = 'background-color 0.3s';
+    nameEl.style.backgroundColor = 'rgba(74, 158, 255, 0.3)';
+    setTimeout(() => {
+      nameEl.style.backgroundColor = '';
+    }, 300);
+  }
 }
 
 /**
@@ -798,6 +830,10 @@ let commitToFilesIndex: Map<string, FileNode[]> = new Map();
 let highlightCommitEnabled: boolean = true;
 let currentHighlightedCommit: string | null = null;
 
+// Track clicked (selected) nodes to persist details panel
+let lastClickedFile: FileNode | null = null;
+let lastClickedDir: DirectoryNode | null = null;
+
 // Mode switcher state
 let currentRepoBaseName: string = '';
 let timelineAvailable: boolean = false;
@@ -1185,9 +1221,33 @@ async function loadTimelineV2(data: TimelineDataV2, repoName: string) {
 
     if (!currentVisualizer) {
       currentVisualizer = new TreeVisualizer(canvas);
-      currentVisualizer.setOnFileClick(showFileDetails);
-      currentVisualizer.setOnDirClick(showDirectoryDetails);
-      currentVisualizer.setOnHover(showTooltip);
+      currentVisualizer.setOnFileClick((file) => {
+        lastClickedFile = file;
+        lastClickedDir = null;
+        showFileDetails(file, true); // true = handle commit highlighting on click
+      });
+      currentVisualizer.setOnDirClick((dir) => {
+        lastClickedDir = dir;
+        lastClickedFile = null;
+        showDirectoryDetails(dir);
+      });
+      currentVisualizer.setOnHover((node, event) => {
+        if (!node) {
+          // Only hide panel if nothing is currently clicked/selected
+          if (!lastClickedFile && !lastClickedDir) {
+            const panel = document.getElementById('info-panel');
+            if (panel) panel.classList.remove('visible');
+          }
+          return;
+        }
+
+        // Show details based on node type (temporary preview, doesn't affect clicked state)
+        if (node.type === 'file') {
+          showFileDetails(node, false); // false = no commit highlighting (just preview)
+        } else {
+          showDirectoryDetails(node);
+        }
+      });
 
       const savedMode = localStorage.getItem('labelMode') as 'always' | 'hover' | null;
       if (savedMode) {
@@ -1847,9 +1907,33 @@ async function loadRepository(repoName: string) {
       currentVisualizer = new TreeVisualizer(canvas);
 
       // Set up interaction handlers
-      currentVisualizer.setOnFileClick(showFileDetails);
-      currentVisualizer.setOnDirClick(showDirectoryDetails);
-      currentVisualizer.setOnHover(showTooltip);
+      currentVisualizer.setOnFileClick((file) => {
+        lastClickedFile = file;
+        lastClickedDir = null;
+        showFileDetails(file, true); // true = handle commit highlighting on click
+      });
+      currentVisualizer.setOnDirClick((dir) => {
+        lastClickedDir = dir;
+        lastClickedFile = null;
+        showDirectoryDetails(dir);
+      });
+      currentVisualizer.setOnHover((node, event) => {
+        if (!node) {
+          // Only hide panel if nothing is currently clicked/selected
+          if (!lastClickedFile && !lastClickedDir) {
+            const panel = document.getElementById('info-panel');
+            if (panel) panel.classList.remove('visible');
+          }
+          return;
+        }
+
+        // Show details based on node type (temporary preview, doesn't affect clicked state)
+        if (node.type === 'file') {
+          showFileDetails(node, false); // false = no commit highlighting (just preview)
+        } else {
+          showDirectoryDetails(node);
+        }
+      });
 
       // Load saved label mode
       const savedMode = localStorage.getItem('labelMode') as 'always' | 'hover' | null;
