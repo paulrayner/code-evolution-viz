@@ -77,9 +77,15 @@ codecohesion/
 ### Processor (Analysis)
 ```bash
 cd processor
-npm run analyze -- ../path/to/repo  # Analyze a repository
-npm run analyze:timeline -- ../path/to/repo  # Generate timeline data
+npm run dev -- ../path/to/repo                           # Static analysis (V1 format)
+npm run analyze:full-delta -- ../path/to/repo --full-delta  # Timeline V2 (delta-compressed, with tags)
 ```
+
+**Timeline V2 Format:**
+- Uses delta compression for smaller file sizes
+- Supports git tags and tag navigation
+- Outputs to `processor/output/{repo-name}-timeline-full.json`
+- Format identifier: `"format": "timeline-v2"`
 
 ### Viewer (Visualization)
 ```bash
