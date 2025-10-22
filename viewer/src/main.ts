@@ -1222,9 +1222,18 @@ async function loadTimelineV2(data: TimelineDataV2, repoName: string) {
     if (!currentVisualizer) {
       currentVisualizer = new TreeVisualizer(canvas);
       currentVisualizer.setOnFileClick((file) => {
+        // Check if we're about to toggle OFF highlighting (clicking same file twice)
+        const wasHighlighted = currentHighlightedCommit === file.lastCommitHash;
+
         lastClickedFile = file;
         lastClickedDir = null;
         showFileDetails(file, true); // true = handle commit highlighting on click
+
+        // If we toggled OFF highlighting, clear the selection to restore hover mode
+        if (wasHighlighted && currentHighlightedCommit === null) {
+          lastClickedFile = null;
+          lastClickedDir = null;
+        }
       });
       currentVisualizer.setOnDirClick((dir) => {
         lastClickedDir = dir;
@@ -1241,11 +1250,15 @@ async function loadTimelineV2(data: TimelineDataV2, repoName: string) {
           return;
         }
 
-        // Show details based on node type (temporary preview, doesn't affect clicked state)
-        if (node.type === 'file') {
-          showFileDetails(node, false); // false = no commit highlighting (just preview)
-        } else {
-          showDirectoryDetails(node);
+        // Only show hover details if nothing is currently clicked/pinned
+        // When a file is clicked, it stays pinned until clicked again
+        if (!lastClickedFile && !lastClickedDir) {
+          // Show details based on node type (temporary preview, doesn't affect clicked state)
+          if (node.type === 'file') {
+            showFileDetails(node, false); // false = no commit highlighting (just preview)
+          } else {
+            showDirectoryDetails(node);
+          }
         }
       });
 
@@ -1908,9 +1921,18 @@ async function loadRepository(repoName: string) {
 
       // Set up interaction handlers
       currentVisualizer.setOnFileClick((file) => {
+        // Check if we're about to toggle OFF highlighting (clicking same file twice)
+        const wasHighlighted = currentHighlightedCommit === file.lastCommitHash;
+
         lastClickedFile = file;
         lastClickedDir = null;
         showFileDetails(file, true); // true = handle commit highlighting on click
+
+        // If we toggled OFF highlighting, clear the selection to restore hover mode
+        if (wasHighlighted && currentHighlightedCommit === null) {
+          lastClickedFile = null;
+          lastClickedDir = null;
+        }
       });
       currentVisualizer.setOnDirClick((dir) => {
         lastClickedDir = dir;
@@ -1927,11 +1949,15 @@ async function loadRepository(repoName: string) {
           return;
         }
 
-        // Show details based on node type (temporary preview, doesn't affect clicked state)
-        if (node.type === 'file') {
-          showFileDetails(node, false); // false = no commit highlighting (just preview)
-        } else {
-          showDirectoryDetails(node);
+        // Only show hover details if nothing is currently clicked/pinned
+        // When a file is clicked, it stays pinned until clicked again
+        if (!lastClickedFile && !lastClickedDir) {
+          // Show details based on node type (temporary preview, doesn't affect clicked state)
+          if (node.type === 'file') {
+            showFileDetails(node, false); // false = no commit highlighting (just preview)
+          } else {
+            showDirectoryDetails(node);
+          }
         }
       });
 

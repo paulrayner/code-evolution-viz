@@ -40,11 +40,28 @@ export class DeltaReplayController {
   private playbackInterval: number | null = null;
   private useSparseMode: boolean = false;
 
+  // Incremental state tracking for sequential access optimization
+  private lastGeneratedIndex: number = -1;
+  private lastGeneratedTree: DirectoryNode | null = null;
+  private incrementalBuilder: TreeBuilder | null = null;
+
   constructor(data: TimelineDataV2) {
     this.data = data;
     this.treeBuilder = new TreeBuilder();
     this.dynamicCache = new LRUCache(DYNAMIC_CACHE_SIZE);
     this.useSparseMode = data.commits.length > FULL_KEYFRAME_THRESHOLD;
+
+    // Debug: Check for problem file deletions in timeline data
+    const problemFiles = ['m4/acx_pthread.m4', 'CNAME', 'css/bootstrap.css', 'images/gource-git.jpg'];
+    let deletionCount = 0;
+    for (let i = 0; i < data.commits.length; i++) {
+      const deleted = data.commits[i].changes.filesDeleted.filter(p => problemFiles.includes(p));
+      if (deleted.length > 0) {
+        console.log(`🔍 Timeline data commit ${i} (${data.commits[i].hash.substring(0,7)}): filesDeleted includes:`, deleted);
+        deletionCount++;
+      }
+    }
+    console.log(`📋 Total commits with problem file deletions: ${deletionCount}`);
   }
 
   /**
@@ -79,6 +96,12 @@ export class DeltaReplayController {
 
       // Store keyframe (clone the tree)
       this.baseKeyframes.set(i, this.treeBuilder.clone());
+
+      // Debug: Log file count every 100 commits
+      if (i % 100 === 0 || i === this.data.commits.length - 1) {
+        const stats = this.treeBuilder.getStats();
+        console.log(`📊 Commit ${i + 1}: ${stats.totalFiles} files, ${stats.totalDirs} dirs`);
+      }
 
       // Report progress every 100 commits
       if (onProgress && (i % 100 === 0 || i === this.data.commits.length - 1)) {
@@ -139,6 +162,14 @@ export class DeltaReplayController {
   }
 
   /**
+   * Get threshold for incremental delta replay (adaptive based on playback speed)
+   * At high speeds (e.g. 100x), use larger threshold to batch multiple frames together
+   */
+  private getIncrementalThreshold(): number {
+    return Math.max(50, this.playbackSpeed * 5);
+  }
+
+  /**
    * Get tree at specific commit index
    * Uses adaptive strategy: return pre-generated keyframe or generate on-demand
    */
@@ -149,7 +180,9 @@ export class DeltaReplayController {
 
     // Check base keyframes first
     if (this.baseKeyframes.has(index)) {
-      return this.baseKeyframes.get(index)!;
+      const tree = this.baseKeyframes.get(index)!;
+      this.updateIncrementalState(index, tree);
+      return tree;
     }
 
     // Check dynamic cache
@@ -157,14 +190,54 @@ export class DeltaReplayController {
       return this.dynamicCache.get(index)!;
     }
 
-    // Need to generate on-demand
-    return this.generateTreeOnDemand(index);
+    // Decide strategy based on access pattern
+    const distance = index - this.lastGeneratedIndex;
+    const threshold = this.getIncrementalThreshold();
+
+    // Sequential forward access? Use incremental delta replay
+    if (distance > 0 && distance <= threshold && this.lastGeneratedTree) {
+      return this.generateIncrementally(index);
+    }
+
+    // Random/backward access? Use base keyframe strategy
+    return this.generateFromBaseKeyframe(index);
   }
 
   /**
-   * Generate tree on-demand by replaying deltas from nearest base keyframe
+   * Generate tree incrementally from last generated position (for sequential playback)
+   * Optimized for forward sequential access patterns
    */
-  private generateTreeOnDemand(targetIndex: number): DirectoryNode | null {
+  private generateIncrementally(targetIndex: number): DirectoryNode {
+    // Reuse existing builder or create new one from last generated state
+    if (!this.incrementalBuilder) {
+      this.incrementalBuilder = new TreeBuilder();
+      // Initialize with deep clone of last generated tree
+      this.incrementalBuilder.setTree(JSON.parse(JSON.stringify(this.lastGeneratedTree)));
+    }
+
+    // Apply ONLY new deltas since last position
+    for (let i = this.lastGeneratedIndex + 1; i <= targetIndex; i++) {
+      this.incrementalBuilder.applyDelta(this.data.commits[i]);
+    }
+
+    // IMPORTANT: Clone to prevent reference sharing with cached trees
+    // If we return getTree() directly, future mutations will corrupt the cache
+    const tree = this.incrementalBuilder.clone();
+
+    // Update tracking state (use same clone to avoid double-cloning)
+    this.lastGeneratedIndex = targetIndex;
+    this.lastGeneratedTree = tree;
+
+    // Cache the cloned tree (safe from future mutations)
+    this.dynamicCache.set(targetIndex, tree);
+
+    return tree;
+  }
+
+  /**
+   * Generate tree from nearest base keyframe (for random seeking/backward movement)
+   */
+  private generateFromBaseKeyframe(targetIndex: number): DirectoryNode | null {
     // Find nearest base keyframe before targetIndex
     let startIndex = -1;
     let startTree: DirectoryNode | null = null;
@@ -199,10 +272,24 @@ export class DeltaReplayController {
 
     const tree = builder.clone();
 
+    // Update incremental state for next access
+    this.lastGeneratedIndex = targetIndex;
+    this.lastGeneratedTree = tree;
+    this.incrementalBuilder = null; // Reset builder for non-sequential access
+
     // Cache the generated tree
     this.dynamicCache.set(targetIndex, tree);
 
     return tree;
+  }
+
+  /**
+   * Update incremental state tracking (called when accessing base keyframes)
+   */
+  private updateIncrementalState(index: number, tree: DirectoryNode): void {
+    this.lastGeneratedIndex = index;
+    this.lastGeneratedTree = tree;
+    this.incrementalBuilder = null; // Reset builder
   }
 
   /**
@@ -344,6 +431,11 @@ export class DeltaReplayController {
    */
   seekToCommit(index: number): void {
     if (index >= 0 && index < this.data.commits.length) {
+      // Large jump? Reset incremental state to avoid stale builder
+      if (Math.abs(index - this.currentIndex) > this.getIncrementalThreshold()) {
+        this.incrementalBuilder = null;
+      }
+
       this.currentIndex = index;
       this.emitCommitEvent();
     }

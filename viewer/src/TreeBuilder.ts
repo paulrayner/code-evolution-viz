@@ -21,6 +21,13 @@ export class TreeBuilder {
    * Apply a single commit's delta to the tree
    */
   applyDelta(commit: CommitSnapshot): DirectoryNode {
+    // Debug: Log filesDeleted if any of the "problem files" are being deleted
+    const problemFiles = ['m4/acx_pthread.m4', 'CNAME', 'css/bootstrap.css', 'images/gource-git.jpg'];
+    const deletingProblemFiles = commit.changes.filesDeleted.filter(p => problemFiles.includes(p));
+    if (deletingProblemFiles.length > 0) {
+      console.log(`🗑️ Commit ${commit.hash.substring(0,7)}: Deleting problem files:`, deletingProblemFiles);
+    }
+
     // IMPORTANT: Process deletes FIRST to handle rename scenarios correctly
     // If a file is renamed, git may show it as delete old + add new in same commit
     for (const path of commit.changes.filesDeleted) {
@@ -116,12 +123,21 @@ export class TreeBuilder {
 
     if (!parent || parent.type !== 'directory') {
       // Parent doesn't exist - file was already deleted or never added
+      console.warn(`🔍 DELETE FAILED (no parent): "${path}"`);
       return;
     }
 
     const fileName = parts[parts.length - 1];
+    const childIndex = parent.children.findIndex(c => c.name === fileName);
+
+    if (childIndex === -1) {
+      // File doesn't exist in tree - already deleted or never added
+      console.warn(`🔍 DELETE FAILED (file not found): "${path}"`);
+      return;
+    }
+
+    // Success - remove the file
     parent.children = parent.children.filter(c => c.name !== fileName);
-    // Note: Silently ignore if file doesn't exist - may have been deleted already
 
     // Prune empty directories upward
     this.pruneEmptyDirectories(parts.slice(0, -1));
