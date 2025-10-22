@@ -3,6 +3,7 @@ import { RepositorySnapshot, FileNode, DirectoryNode, TreeNode, TimelineData, Ti
 import { FILE_COLORS, DIRECTORY_COLOR } from './colorScheme';
 import { ColorMode, getLegendItems, getColorModeName, getColorForFile, assignAuthorColors, calculateLastModifiedIntervals, isUsingPercentileIntervals } from './colorModeManager';
 import { DeltaReplayController } from './DeltaReplayController';
+import { couplingLoader } from './couplingLoader';
 
 /**
  * Get list of available repositories (base names only, no -timeline variants)
@@ -1755,6 +1756,40 @@ function updateModeSwitcherVisibility(show: boolean) {
 }
 
 /**
+ * Update color mode dropdown to add/remove cluster option based on coupling data
+ * IMPORTANT: Controls must be completely hidden (not disabled) when unavailable
+ */
+function updateColorModeOptionsForCoupling(hasCouplingData: boolean) {
+  const colorModeSelector = document.getElementById('color-mode-selector') as HTMLSelectElement;
+  if (!colorModeSelector) return;
+
+  // Check if cluster option already exists
+  const existingClusterOption = Array.from(colorModeSelector.options).find(
+    opt => opt.value === 'cluster'
+  );
+
+  if (hasCouplingData && !existingClusterOption) {
+    // Add cluster option at the end (before the closing </select>)
+    const clusterOption = document.createElement('option');
+    clusterOption.value = 'cluster';
+    clusterOption.textContent = 'Bounded Contexts';
+    colorModeSelector.appendChild(clusterOption);
+    console.log('✓ Added "Bounded Contexts" color mode option');
+  } else if (!hasCouplingData && existingClusterOption) {
+    // Remove cluster option if coupling data unavailable
+    existingClusterOption.remove();
+
+    // If cluster mode was selected, switch to default (fileType)
+    if (colorModeSelector.value === 'cluster') {
+      colorModeSelector.value = 'fileType';
+      // Trigger change event to update visualization
+      colorModeSelector.dispatchEvent(new Event('change'));
+    }
+    console.log('ℹ️  Removed "Bounded Contexts" color mode (no coupling data)');
+  }
+}
+
+/**
  * Load and display a repository
  */
 async function loadRepository(repoName: string) {
@@ -1773,6 +1808,10 @@ async function loadRepository(repoName: string) {
     // Update GitHub link for this repo
     const baseRepoName = getBaseRepoName(repoName);
     updateRepoGitHubLink(baseRepoName);
+
+    // Try to load coupling data (optional - graceful degradation if unavailable)
+    const hasCouplingData = await couplingLoader.tryLoad(baseRepoName);
+    updateColorModeOptionsForCoupling(hasCouplingData);
 
     // Check if timeline data exists
     timelineAvailable = await checkTimelineExists(repoName);

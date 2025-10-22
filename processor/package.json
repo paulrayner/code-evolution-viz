@@ -8,12 +8,22 @@
     "start": "npm run build && node dist/analyze.js",
     "dev": "ts-node src/analyze.ts",
     "prototype-timeline": "ts-node src/prototype-timeline-sampler.ts",
-    "analyze:full-delta": "ts-node src/analyze.ts"
+    "analyze:full-delta": "ts-node src/analyze.ts",
+    "coupling": "ts-node src/coupling-cli.ts"
   },
-  "keywords": ["git", "cohesion", "temporal-coupling", "code-analysis", "ddd", "visualization"],
+  "keywords": [
+    "git",
+    "cohesion",
+    "temporal-coupling",
+    "code-analysis",
+    "ddd",
+    "visualization"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "graphology": "^0.25.4",
+    "graphology-communities-louvain": "^2.0.2",
     "simple-git": "^3.25.0"
   },
   "devDependencies": {
