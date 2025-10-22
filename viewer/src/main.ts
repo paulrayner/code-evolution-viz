@@ -307,7 +307,7 @@ function showFileDetails(file: FileNode, handleCommitHighlighting: boolean = fal
           detailsHtml += `
             <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
               <div style="font-size: 12px; font-weight: 600; color: #4a9eff; margin-bottom: 8px;">
-                📊 Bounded Context
+                📊 Coupling Cluster
               </div>
               <div style="font-size: 11px; color: #ccc; margin-bottom: 12px; padding-left: 12px;">
                 ${cluster.name} (${cluster.fileCount} files)
@@ -1846,9 +1846,9 @@ function updateColorModeOptionsForCoupling(hasCouplingData: boolean) {
     // Add cluster option at the end (before the closing </select>)
     const clusterOption = document.createElement('option');
     clusterOption.value = 'cluster';
-    clusterOption.textContent = 'Bounded Contexts';
+    clusterOption.textContent = 'Coupling Clusters';
     colorModeSelector.appendChild(clusterOption);
-    console.log('✓ Added "Bounded Contexts" color mode option');
+    console.log('✓ Added "Coupling Clusters" color mode option');
   } else if (!hasCouplingData && existingClusterOption) {
     // Remove cluster option if coupling data unavailable
     existingClusterOption.remove();
@@ -1859,7 +1859,7 @@ function updateColorModeOptionsForCoupling(hasCouplingData: boolean) {
       // Trigger change event to update visualization
       colorModeSelector.dispatchEvent(new Event('change'));
     }
-    console.log('ℹ️  Removed "Bounded Contexts" color mode (no coupling data)');
+    console.log('ℹ️  Removed "Coupling Clusters" color mode (no coupling data)');
   }
 }
 
