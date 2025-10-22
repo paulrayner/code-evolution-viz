@@ -280,6 +280,79 @@ function showFileDetails(file: FileNode, handleCommitHighlighting: boolean = fal
     currentHighlightedCommit = null;
   }
 
+  // Add coupling analysis section if in cluster mode and data is loaded
+  if (couplingLoader.isLoaded()) {
+    const currentColorMode = localStorage.getItem('colorMode') as ColorMode | null;
+
+    if (currentColorMode === 'cluster') {
+      const clusterId = couplingLoader.getClusterForFile(file.path);
+
+      if (clusterId !== null) {
+        const clusters = couplingLoader.getClusters();
+        const cluster = clusters.find(c => c.id === clusterId);
+
+        if (cluster) {
+          // Get coupling edges for this file
+          const allEdges = couplingLoader.getEdges(0.1); // Minimum 10% coupling
+          const fileEdges = allEdges.filter(edge =>
+            edge.fileA === file.path || edge.fileB === file.path
+          );
+
+          // Sort by coupling strength (descending)
+          fileEdges.sort((a, b) => b.coupling - a.coupling);
+
+          // Take top 5
+          const topEdges = fileEdges.slice(0, 5);
+
+          detailsHtml += `
+            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+              <div style="font-size: 12px; font-weight: 600; color: #4a9eff; margin-bottom: 8px;">
+                📊 Bounded Context
+              </div>
+              <div style="font-size: 11px; color: #ccc; margin-bottom: 12px; padding-left: 12px;">
+                ${cluster.name} (${cluster.fileCount} files)
+              </div>
+          `;
+
+          if (topEdges.length > 0) {
+            detailsHtml += `
+              <div style="font-size: 12px; font-weight: 600; color: #4a9eff; margin-bottom: 8px;">
+                🔗 Most Frequently Changes With
+              </div>
+              <div style="font-size: 11px;">
+            `;
+
+            for (const edge of topEdges) {
+              const otherFile = edge.fileA === file.path ? edge.fileB : edge.fileA;
+              const fileName = otherFile.split('/').pop() || otherFile;
+              const couplingPercent = Math.round(edge.coupling * 100);
+
+              detailsHtml += `
+                <div style="padding: 4px 0; color: #ccc; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: #ddd;">${fileName}</span>
+                    <span style="color: #888; font-size: 10px;">${edge.coChangeCount} co-changes</span>
+                  </div>
+                  <div style="font-size: 10px; color: #888; margin-top: 2px;">
+                    ${couplingPercent}% coupling strength
+                  </div>
+                </div>
+              `;
+            }
+
+            detailsHtml += `
+              </div>
+            `;
+          }
+
+          detailsHtml += `
+            </div>
+          `;
+        }
+      }
+    }
+  }
+
   contentEl.innerHTML = detailsHtml;
 
   panel.classList.add('visible');
@@ -962,6 +1035,7 @@ function buildPathIndex(tree: DirectoryNode): Map<string, FileNode> {
 let pathToFileIndex: Map<string, FileNode> = new Map();
 
 // Timeline V2 compatible color modes (only modes that work without lifetime analytics)
+// Note: 'cluster' mode is HEAD-only since clusters represent current architectural boundaries
 const TIMELINE_V2_COMPATIBLE_MODES: ColorMode[] = ['fileType', 'lastModified', 'author'];
 
 // Store original color mode when entering timeline mode
@@ -1809,10 +1883,6 @@ async function loadRepository(repoName: string) {
     const baseRepoName = getBaseRepoName(repoName);
     updateRepoGitHubLink(baseRepoName);
 
-    // Try to load coupling data (optional - graceful degradation if unavailable)
-    const hasCouplingData = await couplingLoader.tryLoad(baseRepoName);
-    updateColorModeOptionsForCoupling(hasCouplingData);
-
     // Check if timeline data exists
     timelineAvailable = await checkTimelineExists(repoName);
     console.log(`Timeline available for ${repoName}: ${timelineAvailable}`);
@@ -1876,6 +1946,10 @@ async function loadRepository(repoName: string) {
 
     // Detect format and extract snapshot
     let snapshot: RepositorySnapshot;
+
+    // Try to load coupling data based on actual loaded file (graceful degradation if unavailable)
+    const hasCouplingData = await couplingLoader.tryLoad(fileToLoad);
+    updateColorModeOptionsForCoupling(hasCouplingData);
 
     if ('format' in data && data.format === 'timeline-v2') {
       // Timeline V2: Full delta format - need to handle specially
