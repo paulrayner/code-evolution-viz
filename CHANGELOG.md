@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.4.1] - 2025-10-22
+
+- File details now show on hover for instant preview (no click required)
+- Clicking a file pins the details panel and shows commit siblings
+- Clicking the same file twice unpins and restores free hover mode
+- GitHub integration: clickable links to view files and directories on GitHub
+- Repository dropdown now shows owner/repo (e.g., "gource (acaudwell/Gource)")
+- Tag selector UI now hidden when not applicable (V1 timeline or repos without tags)
+- Incremental tree generation optimization for improved timeline performance
+- Enhanced debug logging for file deletion tracking
+
 ## [0.4.0] - 2025-10-21
 
 - GitHub Pages deployment configuration with automatic build and deploy
