@@ -68,7 +68,7 @@ codecohesion/
 │   └── output/        # Generated .json analysis files
 └── viewer/            # 3D visualization (TypeScript + Vite)
     ├── src/*.ts       # TypeScript source files (NEVER commit .js here!)
-    ├── public/data/   # Symlink to processor/output/
+    ├── public/data/   # JSON data files (NOT a symlink - copy files here manually)
     └── index.html     # Entry point with inline styles
 ```
 
@@ -98,17 +98,19 @@ npm run build    # Build for production (outputs to dist/)
 
 1. **Analyzing a repository:**
    - Run processor to generate `.json` file in `processor/output/`
-   - File is automatically available to viewer via symlink at `viewer/public/data/`
+   - **IMPORTANT:** Manually copy the generated file to `viewer/public/data/`
+   - Example: `cp processor/output/repo-timeline-full.json viewer/public/data/`
 
-2. **Making viewer changes:**
+2. **Adding new repository to viewer:**
+   - After copying the JSON file, update `viewer/public/data/repos.json`
+   - Add the filename (without `.json` extension) to the `repos` array
+   - V2 timeline files use `-timeline-full` suffix (e.g., `cbioportal-timeline-full`)
+   - The order in `repos.json` determines the dropdown order (V2 files should be listed first)
+
+3. **Making viewer changes:**
    - Edit TypeScript files in `viewer/src/*.ts`
    - Vite hot-reloads automatically
    - If changes don't appear, see "Common Dev Server Caching Issues" above
-
-3. **Testing with different repositories:**
-   - Analyze multiple repos to `processor/output/`
-   - Switch between them using dropdown in viewer UI
-   - `public/data/repos.json` lists available repositories
 
 ## Key Files
 
