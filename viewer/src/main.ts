@@ -2207,6 +2207,13 @@ async function main() {
         currentVisualizer.setColorMode(newMode);
       }
 
+      // Hide filter controls for cluster mode (filtering not supported)
+      if (newMode === 'cluster') {
+        hideFilterControls();
+      } else {
+        showFilterControls();
+      }
+
       // Update legend for new color mode (checkboxes will be all checked)
       if (newMode === 'fileType' && currentSnapshot) {
         populateLegend(currentSnapshot);
