@@ -296,6 +296,186 @@ Filter: Keep terms with TF-IDF > 0.5 → `["booking", "reservation"]` represent 
 
 ---
 
+### Level 3.5: Ubiquitous Language Extensions (Medium - DDD-Specific)
+
+**What:** Additional analyses focused on DDD's ubiquitous language principle
+
+**Rationale:**
+DDD emphasizes that bounded contexts should have consistent, unambiguous terminology. These extensions help validate and surface the ubiquitous language from code.
+
+**Additional Analyses:**
+
+**1. Domain Glossary Generation**
+```typescript
+// For each cluster (proposed bounded context):
+const glossary = extractDomainGlossary(cluster)
+
+// Output:
+{
+  "contextName": "Booking Context",
+  "terms": [
+    {
+      "term": "booking",
+      "frequency": 245,
+      "tfidf": 0.98,
+      "locations": ["BookingService.ts", "BookingController.ts", ...],
+      "relatedTerms": ["reservation", "appointment"]
+    }
+  ]
+}
+```
+
+**Output:** Markdown glossary document per bounded context
+```markdown
+# Booking Context - Domain Glossary
+
+## Core Terms
+- **Booking** (245 occurrences) - Primary domain entity
+- **Reservation** (187 occurrences) - Synonym for booking
+- **Appointment** (156 occurrences) - Scheduled booking
+
+## Related Terms
+- Schedule, TimeSlot, Availability
+```
+
+**2. Terminology Consistency Analysis**
+```typescript
+// Detect inconsistent naming patterns within a cluster
+const inconsistencies = findTerminologyInconsistencies(cluster)
+
+// Example findings:
+{
+  "potentialInconsistencies": [
+    {
+      "terms": ["Booking", "Reservation", "Appointment"],
+      "type": "synonyms",
+      "files": ["BookingService.ts", "ReservationController.ts"],
+      "suggestion": "Consider standardizing on one term"
+    },
+    {
+      "terms": ["User", "Customer", "Client"],
+      "type": "entity-naming",
+      "suggestion": "Same concept referred to by different names"
+    }
+  ]
+}
+```
+
+**Output Visualizations:**
+- **Synonym clusters** - Groups of terms that might mean the same thing
+- **Naming inconsistency heatmap** - Highlight files using different terms
+- **Standardization suggestions** - AI-generated recommendations
+
+**3. Cross-Context Terminology Conflicts**
+```typescript
+// Find terms used in multiple contexts with potentially different meanings
+const conflicts = findCrossContextTerms(allClusters)
+
+// Example:
+{
+  "term": "Order",
+  "contexts": [
+    {
+      "context": "Sales Context",
+      "usage": "CustomerOrder, PlaceOrder, OrderTotal",
+      "meaning": "A purchase request from customer"
+    },
+    {
+      "context": "Inventory Context",
+      "usage": "SupplierOrder, PurchaseOrder, OrderStock",
+      "meaning": "A purchase request to supplier"
+    }
+  ],
+  "conflict": "Same term, different meanings - bounded context violation"
+}
+```
+
+**Output Visualizations:**
+- **Shared term matrix** - Which terms appear in multiple contexts
+- **Semantic conflict warnings** - Terms with different meanings across contexts
+- **Context boundary recommendations** - Suggest renaming or refactoring
+
+**4. Domain Language Evolution Timeline**
+```typescript
+// Track how terminology changes over time
+const evolution = analyzeTerminologyEvolution(commits, term="Booking")
+
+// Output:
+{
+  "term": "Booking",
+  "timeline": [
+    {
+      "date": "2020-01-15",
+      "event": "First appearance",
+      "commit": "abc123",
+      "files": ["BookingService.ts"]
+    },
+    {
+      "date": "2021-03-22",
+      "event": "Renamed: Booking → Reservation",
+      "commit": "def456",
+      "files": ["BookingService.ts", "BookingController.ts"],
+      "scope": "Widespread rename (5 files)"
+    },
+    {
+      "date": "2022-06-10",
+      "event": "Reverted: Reservation → Booking",
+      "commit": "ghi789",
+      "reason": "Return to original terminology"
+    }
+  ]
+}
+```
+
+**Output Visualizations:**
+- **Term lifecycle graph** - Birth, renames, death of domain terms
+- **Terminology churn** - How often terms change over time
+- **Refactoring timeline** - Major vocabulary refactorings highlighted
+
+**5. Ubiquitous Language Validation Report**
+```typescript
+// Generate report on language consistency within bounded contexts
+const report = generateUbiquitousLanguageReport(cluster)
+
+// Metrics:
+{
+  "contextName": "Booking Context",
+  "languageConsistency": {
+    "score": 0.82, // 0-1, higher = more consistent
+    "distinctiveTerms": 23,
+    "sharedWithOtherContexts": 5,
+    "potentialSynonyms": 3,
+    "namingInconsistencies": 2
+  },
+  "recommendations": [
+    "Standardize 'Booking' vs 'Reservation' (used interchangeably)",
+    "Consider renaming 'User' to 'Customer' for clarity",
+    "Term 'Order' conflicts with Inventory context - consider prefix"
+  ]
+}
+```
+
+**Output:**
+- **PDF/HTML Report** - Comprehensive language analysis per context
+- **Health score** - How consistent is the ubiquitous language?
+- **Actionable recommendations** - Specific refactoring suggestions
+
+**Bounded Context Inference:**
+- ✅ **High language consistency** → Well-defined bounded context
+- ✅ **Distinctive terminology** → Clear domain model
+- ⚠️ **Term conflicts across contexts** → Poor isolation, needs refactoring
+- ⚠️ **High synonym usage** → Language inconsistency within context
+- 🚫 **Generic technical terms only** → Missing domain model
+
+**Complexity:** **Medium** ⭐⭐
+**Value:** **High** ⭐⭐⭐ - Core DDD principle, actionable insights
+
+**Libraries:**
+- JavaScript: `natural` (NLP), `compromise` (text analysis), `levenshtein` (similarity)
+- Python: `spaCy` (NLP), `gensim` (topic modeling)
+
+---
+
 ### Level 4: Connascence of Name Detection (High - Original Idea!)
 
 **What:** Detect when the same identifier is renamed across multiple files in one commit
