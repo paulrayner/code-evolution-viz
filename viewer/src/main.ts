@@ -1448,48 +1448,66 @@ function updateTimelineV2UI(index: number) {
  * Set up tag navigation (dropdown and markers)
  */
 function setupTagNavigation() {
-  if (!currentDeltaController) return;
+  const tagSelectorContainer = document.getElementById('tag-selector-container') as HTMLElement;
 
-  const metadata = currentDeltaController.getMetadata();
-  const tags = metadata.tags;
+  // V2 Timeline format (with DeltaReplayController)
+  if (currentDeltaController) {
+    const metadata = currentDeltaController.getMetadata();
+    const tags = metadata.tags;
 
-  if (tags.length === 0) {
-    console.log('No tags found in repository');
-    return;
-  }
-
-  console.log(`Setting up tag navigation: ${tags.length} tags found`);
-
-  // Populate tag dropdown
-  const tagSelector = document.getElementById('tag-selector') as HTMLSelectElement;
-  if (tagSelector) {
-    // Clear existing options (except the first "-- Select tag --")
-    tagSelector.innerHTML = '<option value="">-- Select tag --</option>';
-
-    // Add tags in reverse order (newest first, assuming tags are chronological)
-    for (let i = tags.length - 1; i >= 0; i--) {
-      const option = document.createElement('option');
-      option.value = tags[i];
-      option.textContent = tags[i];
-      tagSelector.appendChild(option);
+    if (tags.length === 0) {
+      console.log('No tags found in repository');
+      // Hide the tag selector UI when there are no tags
+      if (tagSelectorContainer) {
+        tagSelectorContainer.style.display = 'none';
+      }
+      return;
     }
 
-    // Handle tag selection
-    tagSelector.addEventListener('change', (e) => {
-      const target = e.target as HTMLSelectElement;
-      const selectedTag = target.value;
+    // Show the tag selector UI when tags exist
+    if (tagSelectorContainer) {
+      tagSelectorContainer.style.display = 'inline';
+    }
 
-      if (selectedTag && currentDeltaController) {
-        const success = currentDeltaController.seekToTag(selectedTag);
-        if (!success) {
-          console.warn(`Tag not found: ${selectedTag}`);
-        }
+    console.log(`Setting up tag navigation: ${tags.length} tags found`);
+
+    // Populate tag dropdown
+    const tagSelector = document.getElementById('tag-selector') as HTMLSelectElement;
+    if (tagSelector) {
+      // Clear existing options (except the first "-- Select tag --")
+      tagSelector.innerHTML = '<option value="">-- Select tag --</option>';
+
+      // Add tags in reverse order (newest first, assuming tags are chronological)
+      for (let i = tags.length - 1; i >= 0; i--) {
+        const option = document.createElement('option');
+        option.value = tags[i];
+        option.textContent = tags[i];
+        tagSelector.appendChild(option);
       }
-    });
-  }
 
-  // Render tag markers on timeline scrubber
-  renderTagMarkers();
+      // Handle tag selection
+      tagSelector.addEventListener('change', (e) => {
+        const target = e.target as HTMLSelectElement;
+        const selectedTag = target.value;
+
+        if (selectedTag && currentDeltaController) {
+          const success = currentDeltaController.seekToTag(selectedTag);
+          if (!success) {
+            console.warn(`Tag not found: ${selectedTag}`);
+          }
+        }
+      });
+    }
+
+    // Render tag markers on timeline scrubber
+    renderTagMarkers();
+  } else {
+    // V1 Timeline format (no DeltaReplayController) - V1 format doesn't support tags
+    console.log('Timeline V1 format: tags not supported');
+    if (tagSelectorContainer) {
+      tagSelectorContainer.style.display = 'none';
+    }
+  }
 }
 
 /**
@@ -1726,6 +1744,8 @@ async function loadRepository(repoName: string) {
         timelineControls.style.display = 'flex';
         // Set up timeline controls (only once per load)
         setupTimelineControls();
+        // Set up tag navigation (will hide UI for V1 since it doesn't support tags)
+        setupTagNavigation();
         // Enable Timeline V1 mode UI (limit color options, hide incompatible features)
         enableTimelineMode();
       } else {
