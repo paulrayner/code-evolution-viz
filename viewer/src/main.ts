@@ -115,6 +115,10 @@ function showFileDetails(file: FileNode) {
       })()
     : 'Unknown';
 
+  // Get GitHub link if available
+  const baseRepoName = getBaseRepoName(currentRepoBaseName);
+  const githubFileUrl = getGitHubFileUrl(baseRepoName, file.path);
+
   let detailsHtml = `
     <div class="info-row">
       <span class="label">Type</span>
@@ -124,6 +128,10 @@ function showFileDetails(file: FileNode) {
       <span class="label">Path</span>
       <span class="value">${file.path}</span>
     </div>
+    ${githubFileUrl ? `<div class="info-row">
+      <span class="label">View on GitHub</span>
+      <span class="value"><a href="${githubFileUrl}" target="_blank" style="color: #4a9eff; text-decoration: none;">🔗 Open file</a></span>
+    </div>` : ''}
     <div class="info-row">
       <span class="label">Lines of Code</span>
       <span class="value">${file.loc.toLocaleString()}</span>
@@ -335,6 +343,10 @@ function showDirectoryDetails(dir: DirectoryNode) {
 
   const authorStr = mostRecentAuthor || 'Unknown';
 
+  // Get GitHub link if available
+  const baseRepoName = getBaseRepoName(currentRepoBaseName);
+  const githubDirUrl = getGitHubDirUrl(baseRepoName, dir.path);
+
   contentEl.innerHTML = `
     <div class="info-row">
       <span class="label">Type</span>
@@ -344,6 +356,10 @@ function showDirectoryDetails(dir: DirectoryNode) {
       <span class="label">Path</span>
       <span class="value">${dir.path || '(root)'}</span>
     </div>
+    ${githubDirUrl ? `<div class="info-row">
+      <span class="label">View on GitHub</span>
+      <span class="value"><a href="${githubDirUrl}" target="_blank" style="color: #4a9eff; text-decoration: none;">🔗 Open folder</a></span>
+    </div>` : ''}
     <div class="info-row">
       <span class="label">Total LOC</span>
       <span class="value">${stats.totalLoc.toLocaleString()}</span>
@@ -791,6 +807,68 @@ let timelineIndex: number = 0;
 let timelinePlaying: boolean = false;
 let timelineIntervalId: number | null = null;
 let timelineSpeed: number = 1; // 1x speed
+
+// GitHub repository URL mapping
+const REPO_GITHUB_URLS: Record<string, { owner: string; repo: string; url: string }> = {
+  'gource': { owner: 'acaudwell', repo: 'Gource', url: 'https://github.com/acaudwell/Gource' },
+  'cbioportal': { owner: 'cBioPortal', repo: 'cbioportal', url: 'https://github.com/cBioPortal/cbioportal' },
+  'cbioportal-frontend': { owner: 'cBioPortal', repo: 'cbioportal-frontend', url: 'https://github.com/cBioPortal/cbioportal-frontend' },
+  'react': { owner: 'facebook', repo: 'react', url: 'https://github.com/facebook/react' },
+  'codecohesion': { owner: 'paulrayner', repo: 'codecohesion', url: 'https://github.com/paulrayner/codecohesion' }
+};
+
+/**
+ * Get base repo name (strip timeline suffixes)
+ */
+function getBaseRepoName(repoName: string): string {
+  return repoName.replace(/-timeline(-full)?$/, '');
+}
+
+/**
+ * Get GitHub info for a repo
+ */
+function getGitHubInfo(repoBaseName: string) {
+  return REPO_GITHUB_URLS[repoBaseName] || null;
+}
+
+/**
+ * Build GitHub file URL (HEAD only for now)
+ */
+function getGitHubFileUrl(repoBaseName: string, filePath: string): string | null {
+  const info = getGitHubInfo(repoBaseName);
+  if (!info) return null;
+  return `${info.url}/blob/HEAD/${filePath}`;
+}
+
+/**
+ * Build GitHub directory URL (HEAD only)
+ */
+function getGitHubDirUrl(repoBaseName: string, dirPath: string): string | null {
+  const info = getGitHubInfo(repoBaseName);
+  if (!info) return null;
+  // Root directory case
+  if (!dirPath || dirPath === '') return `${info.url}/tree/HEAD`;
+  return `${info.url}/tree/HEAD/${dirPath}`;
+}
+
+/**
+ * Update repo GitHub link element
+ */
+function updateRepoGitHubLink(repoBaseName: string): void {
+  const linkEl = document.getElementById('repo-github-link') as HTMLAnchorElement | null;
+  const info = getGitHubInfo(repoBaseName);
+  if (linkEl && info) {
+    linkEl.href = info.url;
+    const spanEl = linkEl.querySelector('span');
+    if (spanEl) {
+      spanEl.textContent = `${info.owner}/${info.repo}`;
+    }
+    linkEl.style.display = 'inline-flex';
+    linkEl.target = '_blank';
+  } else if (linkEl) {
+    linkEl.style.display = 'none';
+  }
+}
 
 /**
  * Build an index mapping commit hashes to files
@@ -1619,6 +1697,10 @@ async function loadRepository(repoName: string) {
     // Store current base repository name
     currentRepoBaseName = repoName;
 
+    // Update GitHub link for this repo
+    const baseRepoName = getBaseRepoName(repoName);
+    updateRepoGitHubLink(baseRepoName);
+
     // Check if timeline data exists
     timelineAvailable = await checkTimelineExists(repoName);
     console.log(`Timeline available for ${repoName}: ${timelineAvailable}`);
@@ -1839,7 +1921,16 @@ async function main() {
     repos.forEach(repo => {
       const option = document.createElement('option');
       option.value = repo;
-      option.textContent = repo;
+
+      // Add owner/repo to the display text if we have GitHub info
+      const baseRepoName = getBaseRepoName(repo);
+      const githubInfo = getGitHubInfo(baseRepoName);
+      if (githubInfo) {
+        option.textContent = `${repo} (${githubInfo.owner}/${githubInfo.repo})`;
+      } else {
+        option.textContent = repo;
+      }
+
       selector.appendChild(option);
     });
 
