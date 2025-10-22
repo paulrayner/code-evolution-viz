@@ -10,40 +10,41 @@ export interface ColorInfo {
 }
 
 /**
- * Palette of maximally distinct colors for author visualization
- * Ordered to maximize contrast between adjacent colors
- * Note: Starts with green to avoid red for primary author
+ * Convert HSL to RGB hex color
+ * @param h Hue (0-360 degrees)
+ * @param s Saturation (0-100 percent)
+ * @param l Lightness (0-100 percent)
+ * @returns Hex color string (e.g., "#ff6b6b")
  */
-const AUTHOR_COLORS = [
-  '#3cb44b', // Green (first to avoid red)
-  '#4363d8', // Blue
-  '#f58231', // Orange
-  '#911eb4', // Purple
-  '#42d4f4', // Cyan
-  '#ffe119', // Yellow
-  '#f032e6', // Magenta
-  '#bfef45', // Lime
-  '#469990', // Teal
-  '#e6194B', // Red (moved down from first)
-  '#aaffc3', // Mint
-  '#000075', // Navy
-  '#fabed4', // Pink
-  '#9A6324', // Brown
-  '#dcbeff', // Lavender
-  '#808000', // Olive
-  '#00ffff', // Aqua
-  '#a9a9a9', // Gray
-  '#800000', // Maroon
-  '#ffd8b1', // Apricot
-  '#e6beff', // Mauve
-  '#aa6e28', // Tan
-  '#fffac8', // Beige
-  '#ffffff', // White
-];
+function hslToHex(h: number, s: number, l: number): string {
+  s /= 100;
+  l /= 100;
+
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+  const m = l - c / 2;
+
+  let r = 0, g = 0, b = 0;
+
+  if (h >= 0 && h < 60) { r = c; g = x; b = 0; }
+  else if (h >= 60 && h < 120) { r = x; g = c; b = 0; }
+  else if (h >= 120 && h < 180) { r = 0; g = c; b = x; }
+  else if (h >= 180 && h < 240) { r = 0; g = x; b = c; }
+  else if (h >= 240 && h < 300) { r = x; g = 0; b = c; }
+  else if (h >= 300 && h < 360) { r = c; g = 0; b = x; }
+
+  const toHex = (n: number) => {
+    const hex = Math.round((n + m) * 255).toString(16);
+    return hex.padStart(2, '0');
+  };
+
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
 
 /**
  * Cache for author name to color index mapping
  * Used to ensure consistent colors across the application
+ * Colors are generated dynamically using HSL for unlimited authors
  */
 const authorColorCache = new Map<string, number>();
 let nextColorIndex = 0;
@@ -177,57 +178,60 @@ export function calculateLastModifiedIntervals(dates: string[]): void {
 /**
  * Pre-assign colors to authors based on their rank (by file count)
  * This ensures top contributors get the most distinct colors
+ * Uses HSL generation so supports unlimited authors
  */
 export function assignAuthorColors(authorsByRank: string[]): void {
   resetAuthorColors();
   for (const author of authorsByRank) {
     if (!authorColorCache.has(author)) {
-      authorColorCache.set(author, nextColorIndex % AUTHOR_COLORS.length);
+      authorColorCache.set(author, nextColorIndex);
       nextColorIndex++;
     }
   }
 }
 
 /**
- * Get color for a cluster (bounded context)
- * Uses 12 distinct colors that are maximally distinguishable
+ * Generate unique color for coupling cluster using HSL distribution
+ * Distributes colors evenly across hue spectrum for unlimited unique colors
+ * @param clusterId The cluster identifier (1-based from Louvain algorithm)
+ * @param totalClusters Total number of clusters (for even distribution)
+ * @returns RGB color value as number
  */
-function getClusterColor(clusterId: number): number {
-  const colors = [
-    0x4a9eff,  // Blue
-    0x50c878,  // Green
-    0xff6b6b,  // Red
-    0xffd700,  // Gold
-    0x9b59b6,  // Purple
-    0xff8c42,  // Orange
-    0x1abc9c,  // Teal
-    0xe84393,  // Pink
-    0x6c5ce7,  // Indigo
-    0xfdcb6e,  // Yellow
-    0x00b894,  // Cyan
-    0xd63031,  // Crimson
-  ];
-  return colors[clusterId % colors.length];
+function getClusterColor(clusterId: number, totalClusters: number): number {
+  // Distribute hues evenly across color spectrum (0-360 degrees)
+  // Subtract 1 from clusterId since clusters are 1-indexed
+  const hue = ((clusterId - 1) * 360) / totalClusters;
+
+  // Use vibrant saturation and medium lightness for visibility on dark background
+  const hex = hslToHex(hue, 75, 60);
+
+  // Convert hex string to number (remove # prefix)
+  return parseInt(hex.substring(1), 16);
 }
 
 /**
- * Generate a consistent color for an author name using a distinct color palette
- * Colors are assigned based on first-seen order (typically by contributor rank)
+ * Generate a consistent color for an author using HSL distribution
+ * Colors assigned based on first-seen order (typically by contributor rank)
+ * Uses golden ratio for maximum perceptual difference between consecutive authors
  */
 function getColorForAuthor(author: string | null): ColorInfo {
   if (!author) {
     return { hex: '#666666', name: 'Unknown' };
   }
 
-  // Get or assign color index
-  let index = authorColorCache.get(author);
-  if (index === undefined) {
-    index = nextColorIndex % AUTHOR_COLORS.length;
-    authorColorCache.set(author, index);
+  // Get or assign author index
+  if (!authorColorCache.has(author)) {
+    authorColorCache.set(author, nextColorIndex);
     nextColorIndex++;
   }
 
-  const hex = AUTHOR_COLORS[index];
+  const authorIndex = authorColorCache.get(author)!;
+
+  // Generate color using golden ratio for maximum distinction
+  // Golden ratio ensures consecutive authors get maximally different hues
+  const goldenRatio = 0.618033988749895;
+  const hue = (authorIndex * goldenRatio * 360) % 360;
+  const hex = hslToHex(hue, 70, 60);
 
   return { hex, name: author };
 }
@@ -411,8 +415,9 @@ export function getColorForFile(file: FileNode, mode: ColorMode): ColorInfo {
         return { hex: '#888888', name: 'Unclustered' };
       }
 
-      const cluster = couplingLoader.getClusters().find(c => c.id === clusterId);
-      const color = getClusterColor(clusterId);
+      const clusters = couplingLoader.getClusters();
+      const cluster = clusters.find(c => c.id === clusterId);
+      const color = getClusterColor(clusterId, clusters.length);
       return {
         hex: `#${color.toString(16).padStart(6, '0')}`,
         name: cluster?.name ?? `Cluster ${clusterId}`
@@ -571,7 +576,7 @@ export function getLegendItems(mode: ColorMode): ColorInfo[] {
       }
 
       return clusters.map(cluster => ({
-        hex: `#${getClusterColor(cluster.id).toString(16).padStart(6, '0')}`,
+        hex: `#${getClusterColor(cluster.id, clusters.length).toString(16).padStart(6, '0')}`,
         name: `${cluster.name} (${cluster.fileCount} files)`
       }));
     }
@@ -605,7 +610,7 @@ export function getColorModeName(mode: ColorMode): string {
     case 'recency':
       return 'Recency';
     case 'cluster':
-      return 'Bounded Contexts';
+      return 'Coupling Clusters';
     default:
       return 'Unknown';
   }
