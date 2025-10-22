@@ -68,11 +68,18 @@ async function main() {
     const analyzer = new CouplingAnalyzer();
     const coupling = analyzer.analyze(timeline, path.basename(timelineFile));
 
-    // Generate output filename
-    const outputFile = timelineFile.replace('.json', '-coupling.json');
+    // Generate output filename using base repository name
+    // Strip -timeline and -timeline-full suffixes to get base repo name
+    // Example: gource-timeline-full.json → gource-coupling.json
+    const baseFileName = path.basename(timelineFile, '.json');
+    const baseRepoName = baseFileName.replace(/-timeline(-full)?$/, '');
+    const outputDir = path.dirname(timelineFile);
+    const outputFile = path.join(outputDir, `${baseRepoName}-coupling.json`);
 
     // Write output
     console.log(`\n💾 Writing coupling graph...`);
+    console.log(`   Input:  ${path.basename(timelineFile)}`);
+    console.log(`   Output: ${path.basename(outputFile)}`);
     fs.writeFileSync(outputFile, JSON.stringify(coupling, null, 2));
 
     // Success summary
