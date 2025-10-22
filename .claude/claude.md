@@ -157,3 +157,17 @@ Use the following format for commit messages:
 
 - when planning features, organize steps/tasks based on slices of user value (i.e. user flows/use cases) rather than technical areas
 - Each slice should be independently testable and deliver user value
+
+## Changelog Maintenance
+
+When releasing a new version:
+1. Add new section at top: `## [X.Y.Z] - YYYY-MM-DD`
+2. List changes as flat bullet points (no category headers)
+3. Maintain ordering: Added items first, then Changed items, then Fixed items
+4. Update version in `viewer/package.json` and `processor/package.json`
+
+**Versioning (SemVer):**
+- Minor (0.x.0): Major new features (Timeline, Filtering, etc.)
+- Patch (0.x.y): Bug fixes and incremental enhancements
+
+Keep entries simple, user-facing, no technical jargon.
