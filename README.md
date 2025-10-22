@@ -21,6 +21,15 @@
 
 **Inspired by:** [Gource](https://gource.io) for evolution visualization, [CodeScene](https://codescene.io) for behavioral code analysis.
 
+---
+
+> **📘 DDD & Bounded Context Detection**
+> Want to see how CodeCohesion can detect bounded contexts and analyze domain language? Check out our comprehensive vision document: **[DDD-VISION.md](DDD-VISION.md)**
+>
+> Covers: Temporal coupling analysis • Ubiquitous language detection • Vocabulary clustering • Connascence of name • AST-based semantic analysis
+
+---
+
 ## 📋 Table of Contents
 
 - [Why Use This?](#-why-use-this)
@@ -30,6 +39,7 @@
 - [Project Structure](#-project-structure)
 - [Design Decisions](#-design-decisions)
 - [Roadmap](#️-roadmap)
+- [DDD Vision & Analysis Plans](DDD-VISION.md) 📘
 - [Development](#-development)
 - [Troubleshooting](#-troubleshooting)
 - [Contributing](#-contributing)
@@ -288,6 +298,8 @@ Rather than hard-coded time intervals, the Last Modified mode adapts:
 - Team ownership and knowledge distribution visualization
 - Architecture drift detection
 - Shareable reports and exports
+
+> **📘 For detailed DDD analysis plans** including bounded context detection, ubiquitous language analysis, and vocabulary clustering, see **[DDD-VISION.md](DDD-VISION.md)**
 
 ## 🔧 Technology Stack
 
