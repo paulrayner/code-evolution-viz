@@ -420,7 +420,8 @@ export function getColorForFile(file: FileNode, mode: ColorMode): ColorInfo {
       const color = getClusterColor(clusterId, clusters.length);
       return {
         hex: `#${color.toString(16).padStart(6, '0')}`,
-        name: cluster?.name ?? `Cluster ${clusterId}`
+        // Include file count to match legend display format
+        name: cluster ? `${cluster.name} (${cluster.fileCount} files)` : `Cluster ${clusterId}`
       };
     }
 
