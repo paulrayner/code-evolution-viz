@@ -961,6 +961,10 @@ async function loadTimelineV2(data: TimelineDataV2, repoName: string) {
 
     if (!currentVisualizer) {
       currentVisualizer = new TreeVisualizer(canvas);
+
+      // Pass coupling loader if available
+      currentVisualizer.setCouplingLoader(couplingLoader.isLoaded() ? couplingLoader : null);
+
       currentVisualizer.setOnFileClick((file) => {
         // Check if we're about to toggle OFF highlighting (clicking same file twice)
         const wasHighlighted = currentHighlightedCommit === file.lastCommitHash;
@@ -995,7 +999,11 @@ async function loadTimelineV2(data: TimelineDataV2, repoName: string) {
         if (!lastClickedFile && !lastClickedDir) {
           // Show details based on node type (temporary preview, doesn't affect clicked state)
           if (node.type === 'file') {
-            showFileDetails(node, false); // false = no commit highlighting (just preview)
+            // In cluster mode, don't show right panel - cluster card is shown in 3D
+            const currentColorMode = localStorage.getItem('colorMode') as ColorMode | null;
+            if (currentColorMode !== 'cluster') {
+              showFileDetails(node, false); // false = no commit highlighting (just preview)
+            }
           } else {
             showDirectoryDetails(node);
           }
@@ -1013,6 +1021,9 @@ async function loadTimelineV2(data: TimelineDataV2, repoName: string) {
       }
 
       currentVisualizer.start();
+    } else {
+      // Update coupling loader if visualizer already exists
+      currentVisualizer.setCouplingLoader(couplingLoader.isLoaded() ? couplingLoader : null);
     }
 
     // Load first tree
@@ -1694,6 +1705,9 @@ async function loadRepository(repoName: string) {
     if (!currentVisualizer) {
       currentVisualizer = new TreeVisualizer(canvas);
 
+      // Pass coupling loader if available
+      currentVisualizer.setCouplingLoader(couplingLoader.isLoaded() ? couplingLoader : null);
+
       // Set up interaction handlers
       currentVisualizer.setOnFileClick((file) => {
         // Check if we're about to toggle OFF highlighting (clicking same file twice)
@@ -1729,7 +1743,11 @@ async function loadRepository(repoName: string) {
         if (!lastClickedFile && !lastClickedDir) {
           // Show details based on node type (temporary preview, doesn't affect clicked state)
           if (node.type === 'file') {
-            showFileDetails(node, false); // false = no commit highlighting (just preview)
+            // In cluster mode, don't show right panel - cluster card is shown in 3D
+            const currentColorMode = localStorage.getItem('colorMode') as ColorMode | null;
+            if (currentColorMode !== 'cluster') {
+              showFileDetails(node, false); // false = no commit highlighting (just preview)
+            }
           } else {
             showDirectoryDetails(node);
           }
@@ -1756,6 +1774,9 @@ async function loadRepository(repoName: string) {
 
       // Start animation
       currentVisualizer.start();
+    } else {
+      // Update coupling loader if visualizer already exists
+      currentVisualizer.setCouplingLoader(couplingLoader.isLoaded() ? couplingLoader : null);
     }
 
     // Enable timeline mode if loading timeline data (shows all files for highlighting)
