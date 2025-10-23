@@ -1662,6 +1662,560 @@ processor/output/
 
 ---
 
+## MCP Server Integration
+
+### Vision: Analysis-as-a-Service for Coding Agents
+
+**Problem Statement:**
+Current coding agents (Claude Code, GitHub Copilot, Cursor, etc.) lack deep architectural context about the codebases they work with. They can read files and understand local patterns, but they cannot:
+- Understand the conceptual contours of the codebase
+- Identify bounded context boundaries
+- Recommend where new code should be placed based on coupling patterns
+- Suggest refactorings that align with the domain model
+- Validate naming choices against the ubiquitous language
+
+**Solution: CodeCohesion MCP Server**
+
+Expose the bounded context analysis output as a [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that coding agents can query to make better architectural decisions.
+
+### MCP Server Capabilities
+
+**1. Context Query Operations**
+
+```typescript
+// Query: "What bounded contexts exist in this codebase?"
+{
+  "method": "resources/list",
+  "result": [
+    {
+      "uri": "codecohesion://contexts",
+      "name": "Bounded Contexts",
+      "description": "Detected bounded contexts with files and vocabulary",
+      "mimeType": "application/json"
+    }
+  ]
+}
+
+// Response:
+{
+  "contexts": [
+    {
+      "id": 1,
+      "name": "Booking Context",
+      "fileCount": 45,
+      "vocabulary": ["booking", "reservation", "appointment", "schedule"],
+      "cohesion": 0.84,
+      "files": ["src/booking/BookingService.ts", ...]
+    },
+    {
+      "id": 2,
+      "name": "Payment Context",
+      "fileCount": 32,
+      "vocabulary": ["payment", "invoice", "transaction", "receipt"],
+      "cohesion": 0.76,
+      "files": ["src/payments/PaymentService.ts", ...]
+    }
+  ]
+}
+```
+
+**2. File Placement Recommendations**
+
+```typescript
+// Tool: suggest_file_placement
+// Query: "Where should I put a new ReservationCancellation feature?"
+
+{
+  "tool": "suggest_file_placement",
+  "arguments": {
+    "description": "Handle reservation cancellations with refund logic",
+    "suggestedName": "ReservationCancellation",
+    "keywords": ["reservation", "cancellation", "refund"]
+  }
+}
+
+// Response:
+{
+  "recommendations": [
+    {
+      "context": "Booking Context",
+      "confidence": 0.92,
+      "reasoning": "Strong vocabulary match: 'reservation' (TF-IDF: 0.87)",
+      "suggestedPath": "src/booking/",
+      "relatedFiles": [
+        "src/booking/ReservationService.ts",
+        "src/booking/BookingCancellation.ts"
+      ],
+      "couplingPrediction": {
+        "bookingService": 0.85,
+        "paymentService": 0.32
+      }
+    },
+    {
+      "context": "Payment Context",
+      "confidence": 0.45,
+      "reasoning": "Weak match: 'refund' appears but lower TF-IDF (0.43)",
+      "warning": "Cross-context coupling likely - consider if refund logic belongs here"
+    }
+  ]
+}
+```
+
+**3. Ubiquitous Language Validation**
+
+```typescript
+// Tool: validate_naming
+// Query: "Is 'CustomerReservation' a good name for this class?"
+
+{
+  "tool": "validate_naming",
+  "arguments": {
+    "proposedName": "CustomerReservation",
+    "context": "src/booking/",
+    "type": "class"
+  }
+}
+
+// Response:
+{
+  "validation": {
+    "isConsistent": false,
+    "issues": [
+      {
+        "type": "terminology_conflict",
+        "message": "This context uses 'Booking' (87 occurrences), not 'Reservation' (12 occurrences)",
+        "suggestion": "Consider 'CustomerBooking' for consistency"
+      },
+      {
+        "type": "synonym_detected",
+        "message": "'Reservation' and 'Booking' used interchangeably",
+        "files": ["BookingService.ts", "ReservationController.ts"],
+        "recommendation": "Standardize on one term across the context"
+      }
+    ],
+    "alternativeNames": [
+      {
+        "name": "CustomerBooking",
+        "confidence": 0.91,
+        "reasoning": "Aligns with dominant terminology in Booking Context"
+      },
+      {
+        "name": "BookingForCustomer",
+        "confidence": 0.73,
+        "reasoning": "Alternative pattern found in existing code"
+      }
+    ]
+  }
+}
+```
+
+**4. Coupling Impact Analysis**
+
+```typescript
+// Tool: analyze_coupling_impact
+// Query: "What will be impacted if I change PaymentService?"
+
+{
+  "tool": "analyze_coupling_impact",
+  "arguments": {
+    "filePath": "src/payments/PaymentService.ts"
+  }
+}
+
+// Response:
+{
+  "impact": {
+    "directCoupling": [
+      {
+        "file": "src/payments/PaymentController.ts",
+        "coupling": 0.89,
+        "type": ["temporal", "vocabulary", "connascence"],
+        "riskLevel": "high"
+      },
+      {
+        "file": "src/booking/BookingService.ts",
+        "coupling": 0.42,
+        "type": ["temporal"],
+        "riskLevel": "medium",
+        "warning": "Cross-context coupling - consider if this is intended"
+      }
+    ],
+    "contextBoundaryViolations": [
+      {
+        "file": "src/booking/BookingService.ts",
+        "context": "Booking Context",
+        "suggestion": "High coupling suggests shared concern - consider extracting to Shared Kernel or using domain events"
+      }
+    ],
+    "recommendation": "This file is central to Payment Context. Changes will impact 8 files within context (expected) and 3 files in Booking Context (potential architectural issue)."
+  }
+}
+```
+
+**5. Refactoring Suggestions**
+
+```typescript
+// Tool: suggest_refactorings
+// Query: "What refactorings would improve this codebase's architecture?"
+
+{
+  "tool": "suggest_refactorings",
+  "arguments": {
+    "scope": "all" // or specific context ID
+  }
+}
+
+// Response:
+{
+  "suggestions": [
+    {
+      "type": "extract_context",
+      "priority": "high",
+      "description": "Split 'Core Context' into separate bounded contexts",
+      "reasoning": "Low cohesion (0.42) suggests multiple concerns",
+      "proposedContexts": [
+        {
+          "name": "User Management Context",
+          "files": ["src/core/UserService.ts", "src/core/AuthService.ts"],
+          "vocabulary": ["user", "authentication", "authorization"]
+        },
+        {
+          "name": "Notification Context",
+          "files": ["src/core/EmailService.ts", "src/core/NotificationService.ts"],
+          "vocabulary": ["notification", "email", "alert"]
+        }
+      ]
+    },
+    {
+      "type": "move_file",
+      "priority": "medium",
+      "file": "src/booking/PaymentHelper.ts",
+      "from": "Booking Context",
+      "to": "Payment Context",
+      "reasoning": "Strong coupling to Payment Context (0.78) vs Booking Context (0.23)",
+      "impact": "Low - only 2 files in Booking Context reference this"
+    },
+    {
+      "type": "standardize_terminology",
+      "priority": "medium",
+      "context": "Booking Context",
+      "issue": "Inconsistent use of 'Booking' vs 'Reservation'",
+      "recommendation": "Standardize on 'Booking' (87 vs 12 occurrences)",
+      "affectedFiles": 7
+    }
+  ]
+}
+```
+
+**6. Architectural Guardrails**
+
+```typescript
+// Tool: validate_change
+// Query: "Should I add an import from PaymentService to InventoryService?"
+
+{
+  "tool": "validate_change",
+  "arguments": {
+    "type": "add_import",
+    "from": "src/inventory/InventoryService.ts",
+    "to": "src/payments/PaymentService.ts"
+  }
+}
+
+// Response:
+{
+  "allowed": false,
+  "severity": "error",
+  "reason": "Cross-context coupling violation",
+  "explanation": "Payment Context and Inventory Context have no existing coupling (0.0). This would introduce a new architectural dependency.",
+  "alternatives": [
+    {
+      "approach": "Domain Events",
+      "description": "Use event-driven communication instead of direct coupling",
+      "example": "InventoryService publishes 'StockReserved' event, PaymentService subscribes"
+    },
+    {
+      "approach": "Anti-Corruption Layer",
+      "description": "Introduce an adapter in Inventory Context that translates Payment concepts",
+      "example": "Create PaymentAdapter in Inventory Context to isolate dependency"
+    },
+    {
+      "approach": "Shared Kernel",
+      "description": "Extract shared payment primitives to a Shared Kernel context",
+      "example": "Move Money, Currency to shared/ and reference from both contexts"
+    }
+  ]
+}
+```
+
+### MCP Server Architecture
+
+**Implementation Overview:**
+
+```typescript
+// processor/src/mcp-server.ts
+
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { CouplingGraph, ClusterAssignments } from "./types.js";
+
+export class CodeCohesionMCPServer {
+  private server: Server;
+  private couplingData: CouplingGraph;
+  private clusters: ClusterAssignments;
+
+  constructor(couplingDataPath: string, clustersPath: string) {
+    this.couplingData = loadCouplingGraph(couplingDataPath);
+    this.clusters = loadClusters(clustersPath);
+
+    this.server = new Server(
+      {
+        name: "codecohesion",
+        version: "1.0.0",
+      },
+      {
+        capabilities: {
+          resources: {},
+          tools: {},
+        },
+      }
+    );
+
+    this.setupHandlers();
+  }
+
+  private setupHandlers() {
+    // Resource: List bounded contexts
+    this.server.setRequestHandler("resources/list", async () => ({
+      resources: [
+        {
+          uri: "codecohesion://contexts",
+          name: "Bounded Contexts",
+          description: "Detected bounded contexts with files and vocabulary",
+          mimeType: "application/json",
+        },
+      ],
+    }));
+
+    // Resource: Read context details
+    this.server.setRequestHandler("resources/read", async (request) => {
+      if (request.params.uri === "codecohesion://contexts") {
+        return {
+          contents: [
+            {
+              uri: "codecohesion://contexts",
+              mimeType: "application/json",
+              text: JSON.stringify(this.clusters.clusters, null, 2),
+            },
+          ],
+        };
+      }
+      throw new Error("Unknown resource");
+    });
+
+    // Tool: Suggest file placement
+    this.server.setRequestHandler("tools/call", async (request) => {
+      const { name, arguments: args } = request.params;
+
+      switch (name) {
+        case "suggest_file_placement":
+          return this.suggestFilePlacement(args);
+        case "validate_naming":
+          return this.validateNaming(args);
+        case "analyze_coupling_impact":
+          return this.analyzeCouplingImpact(args);
+        case "suggest_refactorings":
+          return this.suggestRefactorings(args);
+        case "validate_change":
+          return this.validateChange(args);
+        default:
+          throw new Error(`Unknown tool: ${name}`);
+      }
+    });
+
+    // Tool discovery
+    this.server.setRequestHandler("tools/list", async () => ({
+      tools: [
+        {
+          name: "suggest_file_placement",
+          description: "Recommend which bounded context a new feature should be placed in",
+          inputSchema: {
+            type: "object",
+            properties: {
+              description: { type: "string" },
+              suggestedName: { type: "string" },
+              keywords: { type: "array", items: { type: "string" } },
+            },
+            required: ["description"],
+          },
+        },
+        {
+          name: "validate_naming",
+          description: "Validate if a proposed name is consistent with the ubiquitous language",
+          inputSchema: {
+            type: "object",
+            properties: {
+              proposedName: { type: "string" },
+              context: { type: "string" },
+              type: { type: "string", enum: ["class", "method", "variable", "file"] },
+            },
+            required: ["proposedName"],
+          },
+        },
+        // ... other tools
+      ],
+    }));
+  }
+
+  private suggestFilePlacement(args: any) {
+    // Implementation using coupling data and vocabulary analysis
+    const { description, suggestedName, keywords } = args;
+
+    // Extract terms from description and suggestedName
+    const terms = extractTerms(description + " " + suggestedName);
+
+    // Calculate vocabulary similarity with each cluster
+    const recommendations = this.clusters.clusters.map(cluster => {
+      const vocabularySimilarity = calculateSimilarity(
+        terms,
+        cluster.vocabulary.distinctive
+      );
+
+      return {
+        context: cluster.name,
+        confidence: vocabularySimilarity,
+        reasoning: generateReasoning(terms, cluster),
+        suggestedPath: getSuggestedPath(cluster),
+        relatedFiles: getRelatedFiles(cluster, terms),
+      };
+    }).sort((a, b) => b.confidence - a.confidence);
+
+    return { recommendations };
+  }
+
+  private validateNaming(args: any) {
+    // Implementation using vocabulary consistency analysis
+    // ... (similar pattern)
+  }
+
+  async start() {
+    const transport = new StdioServerTransport();
+    await this.server.connect(transport);
+    console.error("CodeCohesion MCP server running on stdio");
+  }
+}
+
+// Start server
+const server = new CodeCohesionMCPServer(
+  process.argv[2], // coupling-graph.json path
+  process.argv[3]  // cluster-assignments.json path
+);
+
+server.start().catch(console.error);
+```
+
+### Integration with Coding Agents
+
+**Claude Code Integration:**
+
+```json
+// Claude Code config: ~/.config/claude-code/mcp.json
+{
+  "mcpServers": {
+    "codecohesion": {
+      "command": "node",
+      "args": [
+        "/path/to/codecohesion/processor/dist/mcp-server.js",
+        "/path/to/project/codecohesion-coupling.json",
+        "/path/to/project/codecohesion-clusters.json"
+      ]
+    }
+  }
+}
+```
+
+**Usage Example:**
+
+```
+User: "I need to add a feature for customers to cancel their bookings and get refunds"
+
+Claude Code (with MCP):
+1. Calls suggest_file_placement with description
+2. Receives recommendation: "Booking Context (92% confidence)"
+3. Calls validate_naming for "BookingCancellation"
+4. Receives: "Consistent with ubiquitous language"
+5. Creates src/booking/BookingCancellation.ts
+6. Calls validate_change to check coupling to PaymentService
+7. Receives warning about cross-context coupling
+8. Suggests: "Use domain events instead of direct dependency"
+
+Response: "I'll create the cancellation feature in the Booking Context at
+src/booking/BookingCancellation.ts. I notice this will need to trigger refunds,
+which couples to the Payment Context. I recommend using domain events
+(BookingCancelled event) instead of directly importing PaymentService to
+maintain bounded context isolation."
+```
+
+### Benefits for Developers
+
+**1. Context-Aware Code Placement**
+- Agents suggest the right location for new code based on coupling patterns
+- Reduces architectural drift by respecting bounded context boundaries
+
+**2. Terminology Consistency**
+- Agents validate naming against the ubiquitous language
+- Catch terminology conflicts early (e.g., "Order" meaning different things in different contexts)
+
+**3. Architectural Guardrails**
+- Agents warn about cross-context coupling violations
+- Suggest architectural patterns (events, ACL, shared kernel) instead of tight coupling
+
+**4. Refactoring Guidance**
+- Agents proactively suggest refactorings to improve cohesion
+- Identify files in the wrong context based on coupling analysis
+
+**5. Informed Design Decisions**
+- Agents understand which changes will have wide impact
+- Recommend splitting or merging contexts based on coupling evolution
+
+### MCP Server Deployment Options
+
+**Option 1: Per-Project Server**
+- Run analysis once, generate JSON files
+- Start MCP server pointing to project-specific analysis
+- Lightweight, no re-analysis needed
+
+**Option 2: Watch Mode Server**
+- MCP server watches git repository for changes
+- Incrementally updates coupling analysis
+- Always up-to-date, higher resource usage
+
+**Option 3: Cloud-Hosted Service**
+- Centralized MCP server for organization
+- Analyze all repositories, expose via MCP protocol
+- Team-wide architectural insights
+
+### Future Enhancements
+
+**1. Multi-Repository Context Maps**
+- Detect bounded contexts across microservices
+- MCP server provides cross-repo architectural guidance
+
+**2. AI-Powered Architecture Recommendations**
+- Use LLM to analyze coupling patterns + commit messages
+- Generate natural language architectural reports
+- Explain "why" certain coupling patterns exist
+
+**3. Team Collaboration**
+- Multiple developers' coding agents query same MCP server
+- Shared architectural decisions
+- Version control for context boundaries
+
+**4. CI/CD Integration**
+- MCP server validates architectural rules in pull requests
+- Fail builds that violate bounded context isolation
+- Generate architecture violation reports
+
 ## Conclusion
 
 This vision document outlines a comprehensive approach to bounded context detection using git history, semantic analysis, and visual exploration. The approach is:
@@ -1671,14 +2225,17 @@ This vision document outlines a comprehensive approach to bounded context detect
 **✅ Validated** - Grounded in academic research and commercial tools
 **✅ Novel** - Interactive 3D visualization is unique
 **✅ Valuable** - Solves real problems in DDD and microservices
+**✅ Agent-Ready** - MCP server integration empowers coding agents with architectural context
 
-The combination of temporal coupling, vocabulary analysis, and connascence of name detection provides multiple complementary signals for identifying bounded contexts. The interactive 3D visualization makes the analysis explorable and actionable.
+The combination of temporal coupling, vocabulary analysis, and connascence of name detection provides multiple complementary signals for identifying bounded contexts. The interactive 3D visualization makes the analysis explorable and actionable. The MCP server integration makes the insights available to coding agents, enabling them to make better architectural decisions in real-time.
 
 **Next Steps:**
 1. Review and refine this vision with stakeholders
 2. Prioritize phases based on value and complexity
 3. Spike Phase 1 (temporal coupling) to validate approach
-4. Iterate based on feedback from real-world usage
+4. Prototype MCP server with basic context query capabilities
+5. Test integration with Claude Code for architectural guidance
+6. Iterate based on feedback from real-world usage
 
 ---
 
