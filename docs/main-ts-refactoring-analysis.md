@@ -1,25 +1,14 @@
 # main.ts Refactoring Analysis
 
 **Date:** 2025-10-23
+**Status:** Phase 1 Complete ✅ | Phase 2 Next 📋
 **File:** `viewer/src/main.ts`
-**Purpose:** Identify opportunities to extract pure, testable functions from the main application orchestrator
-
----
-
-## Current Status (Updated 2025-10-23)
-
-**Phase 1: ✅ COMPLETE**
-- Extracted 8 pure functions to 4 lib modules
-- 49 tests passing (100% coverage on extracted functions)
-- Testing infrastructure (Vitest) set up
-- All functions verified as exact copies
-- Zero behavioral changes confirmed
 
 ---
 
 ## Next Steps (Priority Order)
 
-### Phase 2: HTML Builders (2-3 days) - NEXT UP
+### Phase 2: HTML Builders (2-3 days) - 📋 NEXT UP
 
 **Target functions for extraction:**
 
@@ -225,119 +214,11 @@ describe('loadRepository', () => {
 
 ---
 
-## Refactoring Safety Guidelines
+## Completed Work
 
-### Core Principles - CRITICAL - MUST BE FOLLOWED EXACTLY
+### Phase 1: Pure Function Extraction ✅ (Completed 2025-10-23)
 
-1. **ZERO Behavioral Changes to Production Code**
-   - All refactoring must be purely structural
-   - Extracted functions must be exact copies with zero logic changes
-   - Use copy-paste, not rewrite
-   - Production behavior MUST remain identical
-
-2. **Test New Code, Not Existing Code**
-   - Write tests ONLY for the newly extracted modules
-   - Do NOT add tests to existing main.ts functions
-   - Tests validate the extracted code works correctly
-   - Existing production code continues to use original functions until proven safe
-
-3. **Extract-and-Prove Pattern**
-   ```
-   Step 1: Copy function to new module (exact duplicate)
-   Step 2: Write comprehensive tests for new module
-   Step 3: Verify tests pass with 100% coverage
-   Step 4: ONLY THEN replace usage in main.ts
-   ```
-
-### Safe Refactoring Process
-
-#### Mandatory 4-Step Process (Follow EXACTLY)
-
-**Step 1: Extract**
-- Copy function to new module (exact duplicate, preserve everything)
-- Add only import statements and export keyword
-- DO NOT modify logic, variable names, or formatting
-
-**Step 2: Test**
-- Write comprehensive tests for new module
-- Achieve 100% coverage on extracted functions
-- Use descriptive test names
-
-**Step 3: Verify (CRITICAL - DO NOT SKIP)**
-- ✅ Run tests - all must pass
-- ✅ Run TypeScript compilation - no errors
-- ✅ Verify extracted functions match originals EXACTLY (compare side-by-side)
-
-**Step 4: Replace (ONLY after Step 3 passes)**
-- Add import statements to original file
-- Remove old function definitions
-- Keep all call sites unchanged
-- Run TypeScript compilation again
-- Manual smoke test in browser
-
-### What NOT to Do
-
-❌ **DO NOT:**
-- Replace usage in main file before running tests
-- Rewrite logic while extracting ("I'll make this cleaner...")
-- Add new features during refactoring
-- Change variable names for "clarity"
-- Optimize algorithms
-- Fix bugs (do that separately)
-- Change function signatures
-- Add error handling that wasn't there
-- Test existing main.ts functions directly
-- Skip verification steps
-
-✅ **DO:**
-- Copy-paste exactly
-- Preserve whitespace and formatting
-- Keep same variable names
-- Test the extracted version thoroughly
-- Document what you extracted and why
-- Manual QA after each extraction
-- Keep commits atomic and reversible
-
-### Safety Checklist
-Before modifying original file:
-- [ ] New module tests passing (100%)
-- [ ] TypeScript compiles without errors
-- [ ] Extracted functions are EXACT copies (verified)
-- [ ] Ready for Step 4 replacement
-
-### Verification Checklist
-
-Before each commit:
-- [ ] Extracted function is EXACT copy (use diff to verify)
-- [ ] New module has comprehensive test coverage
-- [ ] All tests passing
-- [ ] TypeScript compiles with no errors
-- [ ] Manual smoke test shows no behavior change
-- [ ] Git diff shows only structural changes
-- [ ] Commit message uses `tidy:` or `test:` prefix
-
-### Emergency Rollback
-
-If any issues discovered after extraction:
-
-```bash
-# Immediate rollback
-git revert HEAD
-
-# Or reset to before extraction
-git reset --hard <previous-commit>
-
-# Re-test with original code
-npm run dev
-```
-
----
-
-## Phase 1 Completion Details (Completed 2025-10-23)
-
-### ✅ Extracted Modules
-
-**Created structure:**
+**Extracted Modules:**
 ```
 viewer/src/lib/
 ├── tree-stats.ts (4 functions, 20 tests)
@@ -357,32 +238,25 @@ viewer/src/lib/
     └── getBaseRepoName
 ```
 
-**Testing:**
+**Achievements:**
 - Total: 49 tests passing
 - Coverage: 100% on all extracted functions
 - Framework: Vitest with vitest.config.ts
-
-**Verification:**
 - All extracted functions verified as EXACT copies
 - TypeScript compilation: ✅ No errors
 - Manual smoke test: ✅ Passed
 - Git diff: ✅ Only structural changes
+
+**Metrics:**
+- Lines removed from main.ts: ~166
+- Original file size: 3,024 lines
+- Current file size: ~2,858 lines
 
 **Commits:**
 - `d5bd88a` - Phase 1 refactoring (extracted functions + tests)
 - `9a3e842` - Added refactoring guidelines to CLAUDE.md
 - `4c39fbb` - Cleanup
 - `d6f654a` - Emphasized critical nature of guidelines
-
----
-
-## Original Analysis (For Reference)
-
-### File Statistics
-- **Total Lines:** 3,024
-- **Total Functions:** 57
-- **Module-level State Variables:** ~20+
-- **Primary Role:** Application orchestrator, DOM manipulation, event handling
 
 ### Completed Extractions from Original List
 
@@ -424,12 +298,19 @@ viewer/src/lib/
 
 ---
 
+## File Statistics (Original Analysis)
+
+- **Total Lines:** 3,024
+- **Total Functions:** 57
+- **Module-level State Variables:** ~20+
+- **Primary Role:** Application orchestrator, DOM manipulation, event handling
+
+---
+
 ## Notes
 
 - Analysis generated 2025-10-23 based on main.ts at commit `de48e0c`
 - Phase 1 completed 2025-10-23 at commit `d5bd88a`
-- File reduced from 3,024 lines to ~2,858 lines (-166 lines)
+- Refactoring safety guidelines moved to `.claude/claude.md`
 - Key principle: **Extract before abstract** - pull out pure logic first, then consider abstractions
 - Goal is not to eliminate all impurity, but to **isolate** it and make core logic testable
-- **CRITICAL:** All refactoring must be behavior-preserving - structural changes only
-- **Test the new, not the old** - write tests for extracted modules, not existing code
