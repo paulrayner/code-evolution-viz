@@ -1956,14 +1956,6 @@ async function loadRepository(repoName: string) {
     const hasCouplingData = await couplingLoader.tryLoad(fileToLoad);
     updateColorModeOptionsForCoupling(hasCouplingData);
 
-    // Hide/show filter controls based on current color mode
-    const activeColorMode = (localStorage.getItem('colorMode') as ColorMode) || 'fileType';
-    if (activeColorMode === 'cluster') {
-      hideFilterControls();
-    } else {
-      showFilterControls();
-    }
-
     if ('format' in data && data.format === 'timeline-v2') {
       // Timeline V2: Full delta format - need to handle specially
       console.log('🎬 Timeline V2 (Full Delta) format detected');
@@ -2218,13 +2210,6 @@ async function main() {
       if (currentVisualizer) {
         currentVisualizer.clearFilter();
         currentVisualizer.setColorMode(newMode);
-      }
-
-      // Hide filter controls for cluster mode (filtering not supported)
-      if (newMode === 'cluster') {
-        hideFilterControls();
-      } else {
-        showFilterControls();
       }
 
       // Update legend for new color mode (checkboxes will be all checked)
