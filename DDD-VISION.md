@@ -40,25 +40,25 @@ In Domain-Driven Design, a **bounded context** is:
 
 ### Industry Tools Using Similar Approaches
 
-**1. CodeScene (Commercial)**
+**1. [CodeScene](https://codescene.com) (Commercial)**
 - Uses **temporal coupling** to detect architectural decay
 - Tracks files that change together over time
 - Metrics: degree of coupling, average revisions, architectural boundaries
 - Helps identify software clones, hidden dependencies, unit test relevance
 - Quote: *"A Temporal Coupling analysis often gives us deep and unexpected insights into how well our designs stand the test of time."*
 
-**2. Mono2Micro (IBM Research)**
+**2. [Mono2Micro](https://www.ibm.com/products/mono2micro) (IBM Research)**
 - Decomposes monoliths to microservices using **logical coupling** from git history
 - Combines static analysis, runtime behavior, and version control data
 - Uses clustering algorithms to identify service boundaries
 - Proven effective on enterprise Java applications
 
-**3. Service Cutter (Academic)**
+**3. [Service Cutter](https://github.com/ServiceCutter/ServiceCutter) (Academic)**
 - Structured approach using 16 coupling criteria from literature
 - Applies clustering algorithms to weighted dependency graphs
 - Considers both static and evolutionary coupling
 
-**4. temporal-coupling (Open Source)**
+**4. [temporal-coupling](https://github.com/shepmaster/temporal-coupling) (Open Source)**
 - GitHub tool by shepmaster
 - Analyzes git repositories to find files commonly changed together
 - Outputs:
