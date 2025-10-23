@@ -119,6 +119,53 @@ npm run build    # Build for production (outputs to dist/)
 - `viewer/src/TreeVisualizer.ts` - Three.js 3D rendering engine
 - `processor/src/analyze.ts` - Git metadata collection and analysis
 
+## Refactoring Guidelines
+
+**CRITICAL: When refactoring code (see `docs/main-ts-refactoring-analysis.md` for full details):**
+
+### Core Principles
+1. **ZERO behavioral changes** - extracted functions must be EXACT copies (copy-paste, not rewrite)
+2. **Test new code, not existing code** - write tests only for extracted modules
+3. **Extract-and-prove pattern** - prove with tests BEFORE replacing usage
+
+### Mandatory Process (Follow EXACTLY)
+
+**Step 1: Extract**
+- Copy function to new module (exact duplicate, preserve everything)
+- Add only import statements and export keyword
+- DO NOT modify logic, variable names, or formatting
+
+**Step 2: Test**
+- Write comprehensive tests for new module
+- Achieve 100% coverage on extracted functions
+- Use descriptive test names
+
+**Step 3: Verify (CRITICAL - DO NOT SKIP)**
+- ✅ Run tests - all must pass
+- ✅ Run TypeScript compilation - no errors
+- ✅ Verify extracted functions match originals EXACTLY (compare side-by-side)
+
+**Step 4: Replace (ONLY after Step 3 passes)**
+- Add import statements to original file
+- Remove old function definitions
+- Keep all call sites unchanged
+- Run TypeScript compilation again
+- Manual smoke test in browser
+
+### What NOT to Do
+❌ Replace usage in main file before running tests
+❌ Rewrite logic while extracting
+❌ Change variable names or formatting
+❌ Remove old functions before tests pass
+❌ Extract multiple functions without testing each
+❌ Skip verification steps
+
+### Safety Checklist
+Before modifying original file:
+- [ ] New module tests passing (100%)
+- [ ] TypeScript compiles without errors
+- [ ] Extracted functions are EXACT copies (verified)
+- [ ] Ready for Step 4 replacement
 
 ### Git Commit Strategy
 
