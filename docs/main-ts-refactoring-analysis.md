@@ -1,14 +1,14 @@
 # main.ts Refactoring Analysis
 
 **Date:** 2025-10-23
-**Status:** Phase 1 Complete ✅ | Phase 2 Next 📋
+**Status:** Phase 1 Complete ✅ | Phase 2 Complete ✅ | Phase 3 Next 📋
 **File:** `viewer/src/main.ts`
 
 ---
 
 ## Next Steps (Priority Order)
 
-### Phase 2: HTML Builders (2-3 days) - 📋 NEXT UP
+### Phase 2: HTML Builders ✅ COMPLETE
 
 **Target functions for extraction:**
 
@@ -190,10 +190,15 @@ describe('loadRepository', () => {
 - Reusable utilities for future features
 - Testing infrastructure established
 
-### Upcoming (Phase 2-3)
-- 40-50% of main.ts logic testable without DOM
+### ✅ Achieved (Phase 2)
+- 3 HTML builder modules with 31 snapshot tests (100% coverage)
+- Reduced main.ts by ~284 lines of HTML generation logic
 - Snapshot tests catch UI regressions
-- Easier to modify HTML structure
+- HTML structure now easily modifiable and testable
+
+### Upcoming (Phase 3-4)
+- Business logic extraction (format detection, file loading, highlight logic)
+- DOM abstraction for full testability
 
 ### Long-term (Phase 4)
 - 70-80% test coverage overall
@@ -208,8 +213,8 @@ describe('loadRepository', () => {
 | Phase | Risk Level | Mitigation | Status |
 |-------|-----------|------------|--------|
 | Phase 1 | 🟢 Low | Pure functions, no breaking changes | ✅ COMPLETE |
-| Phase 2 | 🟡 Medium | Use snapshot tests, manual QA | 📋 NEXT |
-| Phase 3 | 🟡 Medium | Feature flags, incremental rollout | 📋 PLANNED |
+| Phase 2 | 🟡 Medium | Use snapshot tests, manual QA | ✅ COMPLETE |
+| Phase 3 | 🟡 Medium | Feature flags, incremental rollout | 📋 NEXT |
 | Phase 4 | 🔴 High | Lots of event handlers, need E2E tests | 📋 PLANNED |
 
 ---
@@ -291,6 +296,50 @@ viewer/src/lib/
 #### ✅ `getBaseRepoName` (Line 933) - EXTRACTED
 - **Status:** Moved to `lib/repo-utils.ts`
 - **Tests:** 8 test cases including edge cases
+
+---
+
+### Phase 2: HTML Builders ✅ (Completed 2025-10-23)
+
+**Extracted Modules:**
+```
+viewer/src/lib/html-builders/
+├── file-details.ts (1 function, 12 snapshot tests)
+│   └── buildFileDetailsHTML
+│
+├── directory-details.ts (1 function, 9 snapshot tests)
+│   └── buildDirectoryDetailsHTML
+│
+└── legend.ts (3 functions, 10 snapshot tests)
+    ├── buildDirectoryLegendItemHTML
+    ├── buildFileTypeLegendItemHTML
+    └── buildOtherLegendItemHTML
+```
+
+**Achievements:**
+- Total: 31 snapshot tests passing
+- Coverage: 100% on all HTML builder functions
+- All extracted functions verified as EXACT copies
+- TypeScript compilation: ✅ No errors
+- Manual smoke test: ✅ Passed (file details, directory details, legend)
+- Git diff: ✅ Only structural changes
+- Zero behavioral changes confirmed
+
+**Metrics:**
+- Lines removed from main.ts: ~284 (HTML generation logic)
+- Original file size (post Phase 1): ~2,858 lines
+- Current file size: ~2,574 lines
+- Total reduction from original: ~450 lines (15%)
+
+**Commits:**
+- `fe631a4` - Phase 2.1: Extract file details HTML builder
+- `620eac7` - Phase 2.2: Extract directory details HTML builder
+- `477f6a5` - Phase 2.3: Extract legend HTML builders
+
+**Refactored Functions:**
+- `showFileDetails` (Line ~86): Now uses `buildFileDetailsHTML`
+- `showDirectoryDetails` (Line ~223): Now uses `buildDirectoryDetailsHTML`
+- `populateLegend` (Line ~567): Now uses legend builder functions
 
 #### ❌ `countVisibleStats` (Line 577) - SKIPPED
 - **Reason:** NOT pure - depends on global state (`currentVisualizer`, `currentSnapshot`)
