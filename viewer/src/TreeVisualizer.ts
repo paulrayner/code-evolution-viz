@@ -5,6 +5,7 @@ import { DirectoryNode, FileNode, TreeNode } from './types';
 import { getColorForExtension, DIRECTORY_COLOR } from './colorScheme';
 import { ColorMode, getColorForFile } from './colorModeManager';
 import { FilterManager } from './filterManager';
+import { CouplingLoader } from './couplingLoader';
 
 interface LayoutNode {
   node: TreeNode;
@@ -44,6 +45,12 @@ export class TreeVisualizer {
   private timelineMode: 'off' | 'v1' | 'v2' = 'off'; // Timeline mode: v1=spotlight, v2=additive
   private filterManager: FilterManager = new FilterManager(); // Filter manager for HEAD view only
   private viewMode: 'navigate' | 'overview' = 'navigate'; // View mode: navigate=depth-limited, overview=show all
+
+  // Coupling cluster visualization
+  private couplingLoader: CouplingLoader | null = null;
+  private clusterCard: CSS2DObject | null = null; // Pre-created card element (reused, not recreated)
+  private highlightedClusterFiles: Set<string> = new Set();
+  private isMouseOverClusterCard: boolean = false; // Track if mouse is over the card
 
   // Ghost rendering for Timeline V2 deletions (isolated for future replacement)
   private ghostMeshes: Set<THREE.Mesh> = new Set();
@@ -103,6 +110,24 @@ export class TreeVisualizer {
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
 
+    // Pre-create cluster card (reused, not recreated on each hover)
+    const cardElement = document.createElement('div');
+    cardElement.className = 'cluster-details-card';
+
+    // Add mouse event listeners to track hover state
+    cardElement.addEventListener('mouseenter', () => {
+      this.isMouseOverClusterCard = true;
+    });
+    cardElement.addEventListener('mouseleave', () => {
+      this.isMouseOverClusterCard = false;
+      // Hide card when mouse leaves it
+      this.hideClusterCard();
+    });
+
+    this.clusterCard = new CSS2DObject(cardElement);
+    this.clusterCard.visible = false;
+    // Don't add to scene - will be attached to mesh on hover
+
     // Event listeners
     window.addEventListener('resize', this.onWindowResize.bind(this));
     canvas.addEventListener('click', this.onClick.bind(this));
@@ -128,6 +153,17 @@ export class TreeVisualizer {
    */
   setOnHover(callback: (node: TreeNode | null, event?: MouseEvent) => void) {
     this.onHover = callback;
+  }
+
+  /**
+   * Set coupling data loader for cluster visualization
+   */
+  setCouplingLoader(loader: CouplingLoader | null) {
+    console.log('[ClusterCard] setCouplingLoader called', {
+      hasLoader: !!loader,
+      isLoaded: loader?.isLoaded()
+    });
+    this.couplingLoader = loader;
   }
 
   /**
@@ -1150,6 +1186,14 @@ export class TreeVisualizer {
           if (dirNode) {
             this.highlightDescendants(layoutNode);
           }
+
+          // Show cluster card if hovering a file in cluster mode
+          if (fileNode && this.colorMode === 'cluster') {
+            this.showClusterCard(fileNode, mesh);
+          } else if (!this.isMouseOverClusterCard) {
+            // Only hide if mouse is not over the card
+            this.hideClusterCard();
+          }
         }
 
         // Trigger hover callback
@@ -1157,9 +1201,15 @@ export class TreeVisualizer {
           this.onHover(node, event);
         }
       }
-    } else if (this.onHover) {
-      // No hover
-      this.onHover(null);
+    } else {
+      // No hover - hide cluster card (unless mouse is over the card itself)
+      if (!this.isMouseOverClusterCard) {
+        this.hideClusterCard();
+      }
+
+      if (this.onHover) {
+        this.onHover(null);
+      }
     }
   }
 
@@ -1294,6 +1344,169 @@ export class TreeVisualizer {
    */
   start() {
     this.animate();
+  }
+
+  // ============================================================================
+  // CLUSTER VISUALIZATION (3D Floating Card + Highlighting)
+  // ============================================================================
+
+  /**
+   * Show cluster details card for a file (updates pre-created card, doesn't recreate)
+   */
+  showClusterCard(file: FileNode, mesh: THREE.Mesh) {
+    console.log('[ClusterCard] showClusterCard called', {
+      file: file.path,
+      hasLoader: !!this.couplingLoader,
+      isLoaded: this.couplingLoader?.isLoaded(),
+      colorMode: this.colorMode,
+      hasCard: !!this.clusterCard
+    });
+
+    if (!this.couplingLoader || !this.couplingLoader.isLoaded() || this.colorMode !== 'cluster' || !this.clusterCard) {
+      console.log('[ClusterCard] Early return - conditions not met');
+      return;
+    }
+
+    // Get cluster info
+    const clusterId = this.couplingLoader.getClusterForFile(file.path);
+    console.log('[ClusterCard] Cluster ID:', clusterId);
+    if (clusterId === null) return;
+
+    const clusters = this.couplingLoader.getClusters();
+    const cluster = clusters.find(c => c.id === clusterId);
+    if (!cluster) return;
+
+    // Get coupling edges for this file
+    const allEdges = this.couplingLoader.getEdges(0.1);
+    const fileEdges = allEdges.filter(
+      edge => edge.fileA === file.path || edge.fileB === file.path
+    );
+    fileEdges.sort((a, b) => b.coupling - a.coupling);
+    // Show all coupled files (removed limit, scrolling will handle long lists)
+
+    // Build HTML content
+    let cardHTML = `
+      <h4>📊 Coupling Cluster</h4>
+      <div class="cluster-name">${cluster.name} (${cluster.fileCount} files)</div>
+    `;
+
+    if (fileEdges.length > 0) {
+      cardHTML += '<div class="file-list">';
+      for (const edge of fileEdges) {
+        const otherFile = edge.fileA === file.path ? edge.fileB : edge.fileA;
+        const fileName = otherFile.split('/').pop() || otherFile;
+        const couplingPercent = Math.round(edge.coupling * 100);
+        cardHTML += `
+          <div class="file-item">
+            <span class="file-name" title="${otherFile}">${fileName}</span>
+            <span class="coupling-strength">${couplingPercent}%</span>
+          </div>
+        `;
+      }
+      cardHTML += '</div>';
+    }
+
+    // Update card content (reuse existing element, don't recreate)
+    this.clusterCard.element.innerHTML = cardHTML;
+
+    // Position card relative to mesh
+    // Left by 1.5x card width (~12 units), up by card height (~4 units)
+    this.clusterCard.position.set(-12, 6, 0);
+    this.clusterCard.visible = true;
+
+    // Attach to mesh (like directory labels)
+    mesh.add(this.clusterCard);
+
+    // Enable pointer events on CSS2DRenderer to allow scrolling
+    this.labelRenderer.domElement.style.pointerEvents = 'auto';
+
+    console.log('[ClusterCard] Card attached to mesh, visible:', this.clusterCard.visible);
+
+    // Highlight cluster members
+    this.highlightedClusterFiles = new Set(cluster.files);
+    this.highlightClusterMembers(file, fileEdges);
+  }
+
+  /**
+   * Hide cluster card
+   */
+  hideClusterCard() {
+    if (this.clusterCard) {
+      // Detach from mesh if attached
+      if (this.clusterCard.parent) {
+        this.clusterCard.parent.remove(this.clusterCard);
+      }
+      this.clusterCard.visible = false;
+
+      // Restore pointer-events: none on CSS2DRenderer to avoid blocking 3D interactions
+      this.labelRenderer.domElement.style.pointerEvents = 'none';
+    }
+    this.highlightedClusterFiles.clear();
+    this.clearClusterHighlighting();
+  }
+
+  /**
+   * Highlight all members of the current cluster
+   */
+  private highlightClusterMembers(focusFile: FileNode, topEdges: any[]) {
+    for (const [mesh, fileNode] of this.fileObjects.entries()) {
+      if (this.highlightedClusterFiles.has(fileNode.path)) {
+        const material = (mesh as THREE.Mesh).material as THREE.MeshPhongMaterial;
+        material.emissiveIntensity = fileNode.path === focusFile.path ? 1.2 : 0.8;
+        (mesh as THREE.Mesh).scale.set(1.2, 1.2, 1.2);
+      }
+    }
+
+    // Highlight edges to top coupled files
+    for (const edge of topEdges) {
+      const otherFile = edge.fileA === focusFile.path ? edge.fileB : edge.fileA;
+      for (const [mesh, fileNode] of this.fileObjects.entries()) {
+        if (fileNode.path === otherFile) {
+          for (const line of this.edges) {
+            const edgeInfo = this.edgeNodeMap.get(line);
+            if (edgeInfo &&
+                ((edgeInfo.child as FileNode).path === focusFile.path ||
+                 (edgeInfo.child as FileNode).path === otherFile)) {
+              const material = line.material as THREE.LineBasicMaterial;
+              material.color.setHex(0x4a9eff);
+              material.opacity = 0.8;
+              material.linewidth = 2;
+              line.visible = true;
+            }
+          }
+          break;
+        }
+      }
+    }
+  }
+
+  /**
+   * Clear cluster member highlighting
+   */
+  private clearClusterHighlighting() {
+    for (const [mesh, fileNode] of this.fileObjects.entries()) {
+      const material = (mesh as THREE.Mesh).material as THREE.MeshPhongMaterial;
+      material.emissiveIntensity = this.timelineMode !== 'off' ? 0.6 : 0.2;
+      (mesh as THREE.Mesh).scale.set(1, 1, 1);
+    }
+
+    for (const line of this.edges) {
+      const edgeInfo = this.edgeNodeMap.get(line);
+      if (!edgeInfo) continue;
+
+      const parentLayout = this.layoutNodes.find(ln => ln.node === edgeInfo.parent);
+      const childLayout = this.layoutNodes.find(ln => ln.node === edgeInfo.child);
+      const shouldBeHidden = !parentLayout || !childLayout ||
+                            this.isNodeHidden(parentLayout) ||
+                            this.isNodeHidden(childLayout);
+
+      const material = line.material as THREE.LineBasicMaterial;
+      material.color.setHex(0xaaaaaa);
+      material.opacity = shouldBeHidden ? 0.0 : 0.3;
+      material.linewidth = 1;
+      line.visible = !shouldBeHidden;
+      material.needsUpdate = true;
+    }
   }
 
   // ============================================================================
