@@ -9,6 +9,7 @@ import { buildCommitIndex, buildPathIndex } from './lib/tree-indexers';
 import { findFileInTree } from './lib/tree-utils';
 import { getBaseRepoName } from './lib/repo-utils';
 import { buildFileDetailsHTML } from './lib/html-builders/file-details';
+import { buildDirectoryDetailsHTML } from './lib/html-builders/directory-details';
 
 /**
  * Get list of available repositories (base names only, no -timeline variants)
@@ -231,12 +232,12 @@ function showDirectoryDetails(dir: DirectoryNode) {
 
   const fileCount = dir.children.filter(c => c.type === 'file').length;
   const dirCount = dir.children.filter(c => c.type === 'directory').length;
-  const stats = calculateDirectoryStats(dir);
+  const dirStats = calculateDirectoryStats(dir);
 
   // Find dominant file type
   let dominantExt = 'none';
   let maxCount = 0;
-  for (const [ext, count] of Object.entries(stats.filesByExt)) {
+  for (const [ext, count] of Object.entries(dirStats.filesByExt)) {
     if (count > maxCount) {
       maxCount = count;
       dominantExt = ext;
@@ -278,44 +279,24 @@ function showDirectoryDetails(dir: DirectoryNode) {
   const baseRepoName = getBaseRepoName(currentRepoBaseName);
   const githubDirUrl = getGitHubDirUrl(baseRepoName, dir.path);
 
-  contentEl.innerHTML = `
-    <div class="info-row">
-      <span class="label">Type</span>
-      <span class="value">Directory</span>
-    </div>
-    <div class="info-row">
-      <span class="label">Path</span>
-      <span class="value">${dir.path || '(root)'}</span>
-    </div>
-    ${githubDirUrl ? `<div class="info-row">
-      <span class="label">View on GitHub</span>
-      <span class="value"><a href="${githubDirUrl}" target="_blank" style="color: #4a9eff; text-decoration: none;">🔗 Open folder</a></span>
-    </div>` : ''}
-    <div class="info-row">
-      <span class="label">Total LOC</span>
-      <span class="value">${stats.totalLoc.toLocaleString()}</span>
-    </div>
-    <div class="info-row">
-      <span class="label">Files</span>
-      <span class="value">${fileCount}</span>
-    </div>
-    <div class="info-row">
-      <span class="label">Subdirectories</span>
-      <span class="value">${dirCount}</span>
-    </div>
-    <div class="info-row">
-      <span class="label">Dominant Type</span>
-      <span class="value">${dominantName}</span>
-    </div>
-    <div class="info-row">
-      <span class="label">Last Modified</span>
-      <span class="value">${lastModifiedStr}</span>
-    </div>
-    <div class="info-row">
-      <span class="label">Last Author</span>
-      <span class="value">${authorStr}</span>
-    </div>
-  `;
+  // Build HTML using pure function
+  const detailsHtml = buildDirectoryDetailsHTML({
+    dir,
+    stats: {
+      totalLoc: dirStats.totalLoc,
+      fileCount,
+      dirCount,
+      dominantExt,
+      dominantName,
+    },
+    lastModified: {
+      date: lastModifiedStr,
+      author: authorStr,
+    },
+    githubDirUrl,
+  });
+
+  contentEl.innerHTML = detailsHtml;
 
   panel.classList.add('visible');
 }

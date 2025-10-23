@@ -1,0 +1,355 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`buildDirectoryDetailsHTML > should handle special characters in path and name 1`] = `
+"
+    <div class="info-row">
+      <span class="label">Type</span>
+      <span class="value">Directory</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Path</span>
+      <span class="value">/special-chars/foo_bar</span>
+    </div>
+    <div class="info-row">
+      <span class="label">View on GitHub</span>
+      <span class="value"><a href="https://github.com/test/repo/tree/main/special-chars/foo_bar" target="_blank" style="color: #4a9eff; text-decoration: none;">🔗 Open folder</a></span>
+    </div>
+    <div class="info-row">
+      <span class="label">Total LOC</span>
+      <span class="value">300</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Files</span>
+      <span class="value">5</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Subdirectories</span>
+      <span class="value">1</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Dominant Type</span>
+      <span class="value">Python</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Last Modified</span>
+      <span class="value">Oct 10, 2025</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Last Author</span>
+      <span class="value">O'Brien</span>
+    </div>
+  "
+`;
+
+exports[`buildDirectoryDetailsHTML > should render complete directory details with all data present 1`] = `
+"
+    <div class="info-row">
+      <span class="label">Type</span>
+      <span class="value">Directory</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Path</span>
+      <span class="value">/src/components</span>
+    </div>
+    <div class="info-row">
+      <span class="label">View on GitHub</span>
+      <span class="value"><a href="https://github.com/test/repo/tree/main/src/components" target="_blank" style="color: #4a9eff; text-decoration: none;">🔗 Open folder</a></span>
+    </div>
+    <div class="info-row">
+      <span class="label">Total LOC</span>
+      <span class="value">5,420</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Files</span>
+      <span class="value">15</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Subdirectories</span>
+      <span class="value">3</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Dominant Type</span>
+      <span class="value">TypeScript React</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Last Modified</span>
+      <span class="value">Oct 20, 2025</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Last Author</span>
+      <span class="value">Jane Smith</span>
+    </div>
+  "
+`;
+
+exports[`buildDirectoryDetailsHTML > should render directory details without GitHub URL 1`] = `
+"
+    <div class="info-row">
+      <span class="label">Type</span>
+      <span class="value">Directory</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Path</span>
+      <span class="value">/lib</span>
+    </div>
+    
+    <div class="info-row">
+      <span class="label">Total LOC</span>
+      <span class="value">2,100</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Files</span>
+      <span class="value">8</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Subdirectories</span>
+      <span class="value">2</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Dominant Type</span>
+      <span class="value">TypeScript</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Last Modified</span>
+      <span class="value">Sep 15, 2025</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Last Author</span>
+      <span class="value">Bob Johnson</span>
+    </div>
+  "
+`;
+
+exports[`buildDirectoryDetailsHTML > should render directory with large LOC count formatted correctly 1`] = `
+"
+    <div class="info-row">
+      <span class="label">Type</span>
+      <span class="value">Directory</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Path</span>
+      <span class="value">/src/large</span>
+    </div>
+    
+    <div class="info-row">
+      <span class="label">Total LOC</span>
+      <span class="value">1,234,567</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Files</span>
+      <span class="value">250</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Subdirectories</span>
+      <span class="value">15</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Dominant Type</span>
+      <span class="value">JavaScript</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Last Modified</span>
+      <span class="value">Oct 1, 2025</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Last Author</span>
+      <span class="value">Dev Team</span>
+    </div>
+  "
+`;
+
+exports[`buildDirectoryDetailsHTML > should render directory with only subdirectories 1`] = `
+"
+    <div class="info-row">
+      <span class="label">Type</span>
+      <span class="value">Directory</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Path</span>
+      <span class="value">/modules</span>
+    </div>
+    
+    <div class="info-row">
+      <span class="label">Total LOC</span>
+      <span class="value">8,000</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Files</span>
+      <span class="value">0</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Subdirectories</span>
+      <span class="value">5</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Dominant Type</span>
+      <span class="value">TypeScript</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Last Modified</span>
+      <span class="value">Oct 18, 2025</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Last Author</span>
+      <span class="value">Module Team</span>
+    </div>
+  "
+`;
+
+exports[`buildDirectoryDetailsHTML > should render directory with single file and no subdirectories 1`] = `
+"
+    <div class="info-row">
+      <span class="label">Type</span>
+      <span class="value">Directory</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Path</span>
+      <span class="value">/config</span>
+    </div>
+    <div class="info-row">
+      <span class="label">View on GitHub</span>
+      <span class="value"><a href="https://github.com/test/repo/tree/main/config" target="_blank" style="color: #4a9eff; text-decoration: none;">🔗 Open folder</a></span>
+    </div>
+    <div class="info-row">
+      <span class="label">Total LOC</span>
+      <span class="value">50</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Files</span>
+      <span class="value">1</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Subdirectories</span>
+      <span class="value">0</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Dominant Type</span>
+      <span class="value">JSON</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Last Modified</span>
+      <span class="value">Aug 10, 2025</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Last Author</span>
+      <span class="value">Config Bot</span>
+    </div>
+  "
+`;
+
+exports[`buildDirectoryDetailsHTML > should render directory with unknown dominant type 1`] = `
+"
+    <div class="info-row">
+      <span class="label">Type</span>
+      <span class="value">Directory</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Path</span>
+      <span class="value">/misc</span>
+    </div>
+    
+    <div class="info-row">
+      <span class="label">Total LOC</span>
+      <span class="value">500</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Files</span>
+      <span class="value">10</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Subdirectories</span>
+      <span class="value">1</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Dominant Type</span>
+      <span class="value">xyz</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Last Modified</span>
+      <span class="value">Jul 5, 2025</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Last Author</span>
+      <span class="value">Unknown</span>
+    </div>
+  "
+`;
+
+exports[`buildDirectoryDetailsHTML > should render empty directory details 1`] = `
+"
+    <div class="info-row">
+      <span class="label">Type</span>
+      <span class="value">Directory</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Path</span>
+      <span class="value">/empty</span>
+    </div>
+    
+    <div class="info-row">
+      <span class="label">Total LOC</span>
+      <span class="value">0</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Files</span>
+      <span class="value">0</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Subdirectories</span>
+      <span class="value">0</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Dominant Type</span>
+      <span class="value">none</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Last Modified</span>
+      <span class="value">Unknown</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Last Author</span>
+      <span class="value">Unknown</span>
+    </div>
+  "
+`;
+
+exports[`buildDirectoryDetailsHTML > should render root directory details 1`] = `
+"
+    <div class="info-row">
+      <span class="label">Type</span>
+      <span class="value">Directory</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Path</span>
+      <span class="value">(root)</span>
+    </div>
+    <div class="info-row">
+      <span class="label">View on GitHub</span>
+      <span class="value"><a href="https://github.com/test/repo" target="_blank" style="color: #4a9eff; text-decoration: none;">🔗 Open folder</a></span>
+    </div>
+    <div class="info-row">
+      <span class="label">Total LOC</span>
+      <span class="value">15,000</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Files</span>
+      <span class="value">50</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Subdirectories</span>
+      <span class="value">10</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Dominant Type</span>
+      <span class="value">TypeScript</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Last Modified</span>
+      <span class="value">Oct 22, 2025</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Last Author</span>
+      <span class="value">Alice Dev</span>
+    </div>
+  "
+`;
