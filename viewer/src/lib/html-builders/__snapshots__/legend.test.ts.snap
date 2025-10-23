@@ -1,0 +1,79 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`buildDirectoryLegendItemHTML > should handle different directory color 1`] = `
+"
+    <div class="legend-cube" style="background: #ff0000;"></div>
+    <span class="legend-label">Folder</span>
+  "
+`;
+
+exports[`buildDirectoryLegendItemHTML > should render directory legend item HTML 1`] = `
+"
+    <div class="legend-cube" style="background: #8b8b8b;"></div>
+    <span class="legend-label">Directory</span>
+  "
+`;
+
+exports[`buildFileTypeLegendItemHTML > should handle special characters in file type name 1`] = `
+"
+      <input type="checkbox" class="legend-checkbox" data-category="TypeScript React" checked>
+      <div class="legend-color" style="background: #3178c6;"></div>
+      <span class="legend-label">TypeScript React (28)</span>
+    "
+`;
+
+exports[`buildFileTypeLegendItemHTML > should render JavaScript file type legend item 1`] = `
+"
+      <input type="checkbox" class="legend-checkbox" data-category="JavaScript" checked>
+      <div class="legend-color" style="background: #f7df1e;"></div>
+      <span class="legend-label">JavaScript (15)</span>
+    "
+`;
+
+exports[`buildFileTypeLegendItemHTML > should render TypeScript file type legend item 1`] = `
+"
+      <input type="checkbox" class="legend-checkbox" data-category="TypeScript" checked>
+      <div class="legend-color" style="background: #3178c6;"></div>
+      <span class="legend-label">TypeScript (42)</span>
+    "
+`;
+
+exports[`buildFileTypeLegendItemHTML > should render file type with large count 1`] = `
+"
+      <input type="checkbox" class="legend-checkbox" data-category="Java" checked>
+      <div class="legend-color" style="background: #b07219;"></div>
+      <span class="legend-label">Java (1234)</span>
+    "
+`;
+
+exports[`buildFileTypeLegendItemHTML > should render file type with single file 1`] = `
+"
+      <input type="checkbox" class="legend-checkbox" data-category="Python" checked>
+      <div class="legend-color" style="background: #3572a5;"></div>
+      <span class="legend-label">Python (1)</span>
+    "
+`;
+
+exports[`buildOtherLegendItemHTML > should render Other legend item with count 1`] = `
+"
+      <input type="checkbox" class="legend-checkbox" data-category="Other" checked>
+      <div class="legend-color" style="background: #aaa;"></div>
+      <span class="legend-label">Other (5)</span>
+    "
+`;
+
+exports[`buildOtherLegendItemHTML > should render Other legend item with large count 1`] = `
+"
+      <input type="checkbox" class="legend-checkbox" data-category="Other" checked>
+      <div class="legend-color" style="background: #aaa;"></div>
+      <span class="legend-label">Other (127)</span>
+    "
+`;
+
+exports[`buildOtherLegendItemHTML > should render Other legend item with single file 1`] = `
+"
+      <input type="checkbox" class="legend-checkbox" data-category="Other" checked>
+      <div class="legend-color" style="background: #aaa;"></div>
+      <span class="legend-label">Other (1)</span>
+    "
+`;

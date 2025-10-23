@@ -10,6 +10,7 @@ import { findFileInTree } from './lib/tree-utils';
 import { getBaseRepoName } from './lib/repo-utils';
 import { buildFileDetailsHTML } from './lib/html-builders/file-details';
 import { buildDirectoryDetailsHTML } from './lib/html-builders/directory-details';
+import { buildDirectoryLegendItemHTML, buildFileTypeLegendItemHTML, buildOtherLegendItemHTML } from './lib/html-builders/legend';
 
 /**
  * Get list of available repositories (base names only, no -timeline variants)
@@ -586,10 +587,7 @@ function populateLegend(snapshot: RepositorySnapshot) {
   // Add directory entry first (no checkbox - directories always visible)
   const dirItem = document.createElement('div');
   dirItem.className = 'legend-item';
-  dirItem.innerHTML = `
-    <div class="legend-cube" style="background: ${DIRECTORY_COLOR.hex};"></div>
-    <span class="legend-label">${DIRECTORY_COLOR.name}</span>
-  `;
+  dirItem.innerHTML = buildDirectoryLegendItemHTML(DIRECTORY_COLOR);
   legendContent.appendChild(dirItem);
 
   // Add present extensions with checkboxes for filtering
@@ -598,11 +596,11 @@ function populateLegend(snapshot: RepositorySnapshot) {
     const count = snapshot.stats.filesByExtension[ext];
     const item = document.createElement('label');
     item.className = 'legend-item';
-    item.innerHTML = `
-      <input type="checkbox" class="legend-checkbox" data-category="${info.name}" checked>
-      <div class="legend-color" style="background: ${info.hex};"></div>
-      <span class="legend-label">${info.name} (${count})</span>
-    `;
+    item.innerHTML = buildFileTypeLegendItemHTML({
+      name: info.name,
+      hex: info.hex,
+      count,
+    });
     legendContent.appendChild(item);
 
     // Add change event listener
@@ -620,11 +618,7 @@ function populateLegend(snapshot: RepositorySnapshot) {
   if (unknownCount > 0) {
     const item = document.createElement('label');
     item.className = 'legend-item';
-    item.innerHTML = `
-      <input type="checkbox" class="legend-checkbox" data-category="Other" checked>
-      <div class="legend-color" style="background: #aaa;"></div>
-      <span class="legend-label">Other (${unknownCount})</span>
-    `;
+    item.innerHTML = buildOtherLegendItemHTML(unknownCount);
     legendContent.appendChild(item);
 
     // Add change event listener
