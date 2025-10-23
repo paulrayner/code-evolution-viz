@@ -1851,10 +1851,13 @@ function updateColorModeOptionsForCoupling(hasCouplingData: boolean) {
     console.log('✓ Added "Coupling Clusters" color mode option');
   } else if (!hasCouplingData && existingClusterOption) {
     // Remove cluster option if coupling data unavailable
+    // Check if cluster mode was selected BEFORE removing the option
+    const wasClusterMode = colorModeSelector.value === 'cluster' || localStorage.getItem('colorMode') === 'cluster';
+
     existingClusterOption.remove();
 
     // If cluster mode was selected, switch to default (fileType)
-    if (colorModeSelector.value === 'cluster') {
+    if (wasClusterMode) {
       colorModeSelector.value = 'fileType';
       // Update localStorage synchronously to avoid race conditions
       localStorage.setItem('colorMode', 'fileType');
