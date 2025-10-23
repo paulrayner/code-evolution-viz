@@ -121,8 +121,6 @@ npm run build    # Build for production (outputs to dist/)
 
 ## Refactoring Guidelines
 
-**CRITICAL: When refactoring code (see `docs/main-ts-refactoring-analysis.md` for full details):**
-
 ### Core Principles
 1. **ZERO behavioral changes** - extracted functions must be EXACT copies (copy-paste, not rewrite)
 2. **Test new code, not existing code** - write tests only for extracted modules
