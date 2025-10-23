@@ -70,7 +70,13 @@
       "Bash(npx tsc:*)",
       "Bash(open http://localhost:3000/codecohesion/)",
       "Bash(git mv:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(git restore:*)",
+      "Bash(npm test)",
+      "Bash(./node_modules/.bin/tsc:*)",
+      "Bash(open http://localhost:3001/codecohesion/)",
+      "Bash(npm test:*)",
+      "Bash(npx vitest run:*)"
     ]
   }
 }
