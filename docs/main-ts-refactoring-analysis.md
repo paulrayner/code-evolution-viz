@@ -1,7 +1,7 @@
 # main.ts Refactoring Analysis
 
 **Date:** 2025-10-23
-**Status:** Phase 1 Complete ✅ | Phase 2 Complete ✅ | Phase 3 Next 📋
+**Status:** Phase 1 Complete ✅ | Phase 2 Complete ✅ | Phase 3.1 Complete ✅ | Phase 3.2 Next 📋
 **File:** `viewer/src/main.ts`
 
 ---
@@ -56,29 +56,40 @@ export function buildLegendHTML(items: LegendItem[]): string
 
 ---
 
-### Phase 3: Business Logic (3-5 days)
+### Phase 3.1: Data Loading Logic ✅ COMPLETE
 
-**Target: Extract decision logic from mega-functions**
+**Target: Extract decision logic from `loadRepository`**
 
-1. **`loadRepository` (Line 1874)** - Extract decision logic
-   - Keep as orchestrator, but extract:
+Extracted 3 pure functions to `lib/data-loader.ts`:
 
 ```typescript
-// Pure: Determine which file to load
+// Pure: Determine which files to try loading
 export function determineFileToLoad(
   repoName: string,
   mode: 'head' | 'timeline',
   timelineAvailable: boolean
-): { fileName: string; fallbackToHead: boolean }
+): { files: string[]; fallbackToHead: boolean }
 
 // Pure: Detect data format
 export function detectDataFormat(data: any): 'timeline-v2' | 'timeline-v1' | 'static'
 
 // Pure: Extract snapshot from various formats
-export function extractSnapshot(data: any, format: DataFormat): RepositorySnapshot
+export function extractSnapshot(
+  data: RepositorySnapshot | TimelineData | TimelineDataV2,
+  format: DataFormat
+): RepositorySnapshot | null
 ```
 
-2. **Highlight toggle logic** - Extract from `showFileDetails`
+**Status:** ✅ Complete (2025-10-23)
+- 18 unit tests, 100% coverage
+- Reduced `loadRepository` by ~40 lines
+- All 98 tests passing
+
+---
+
+### Phase 3.2: Highlight Toggle Logic (Next)
+
+**Target: Extract from `showFileDetails`**
 
 ```typescript
 // Pure: Determine highlight action
@@ -344,6 +355,40 @@ viewer/src/lib/html-builders/
 #### ❌ `countVisibleStats` (Line 577) - SKIPPED
 - **Reason:** NOT pure - depends on global state (`currentVisualizer`, `currentSnapshot`)
 - **Action:** Leave in main.ts for now, revisit in Phase 3 or 4
+
+---
+
+### Phase 3.1: Data Loading Logic ✅ (Completed 2025-10-23)
+
+**Extracted Module:**
+```
+viewer/src/lib/
+└── data-loader.ts (3 functions, 18 tests)
+    ├── determineFileToLoad
+    ├── detectDataFormat
+    └── extractSnapshot
+```
+
+**Achievements:**
+- Total: 18 unit tests passing
+- Coverage: 100% on all data loading functions
+- All extracted functions verified as EXACT copies of original logic
+- TypeScript compilation: ✅ No errors
+- Manual smoke test: ✅ Passed (repository loads correctly)
+- Git diff: ✅ Only structural changes
+- Zero behavioral changes confirmed
+
+**Metrics:**
+- Lines removed from main.ts: ~40 (decision logic)
+- Original file size (post Phase 2): ~2,574 lines
+- Current file size: ~2,534 lines
+- Total reduction from original: ~490 lines (16%)
+
+**Commits:**
+- `80a38fd` - Phase 3.1: Extract loadRepository decision logic
+
+**Refactored Function:**
+- `loadRepository` (Line ~1540): Now uses `determineFileToLoad`, `detectDataFormat`, `extractSnapshot`
 
 ---
 
