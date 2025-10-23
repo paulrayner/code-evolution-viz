@@ -4,6 +4,10 @@ import { FILE_COLORS, DIRECTORY_COLOR } from './colorScheme';
 import { ColorMode, getLegendItems, getColorModeName, getColorForFile, assignAuthorColors, calculateLastModifiedIntervals, isUsingPercentileIntervals } from './colorModeManager';
 import { DeltaReplayController } from './DeltaReplayController';
 import { couplingLoader } from './couplingLoader';
+import { calculateDirectoryStats, calculateMaxDepth, countDirectories, collectModificationDates } from './lib/tree-stats';
+import { buildCommitIndex, buildPathIndex } from './lib/tree-indexers';
+import { findFileInTree } from './lib/tree-utils';
+import { getBaseRepoName } from './lib/repo-utils';
 
 /**
  * Get list of available repositories (base names only, no -timeline variants)
@@ -368,31 +372,6 @@ function showFileDetails(file: FileNode, handleCommitHighlighting: boolean = fal
 }
 
 /**
- * Calculate directory statistics (total LOC, file types)
- */
-function calculateDirectoryStats(dir: DirectoryNode): { totalLoc: number; filesByExt: Record<string, number> } {
-  const stats = { totalLoc: 0, filesByExt: {} as Record<string, number> };
-
-  const processNode = (node: TreeNode) => {
-    if (node.type === 'file') {
-      stats.totalLoc += node.loc;
-      const ext = node.extension;
-      stats.filesByExt[ext] = (stats.filesByExt[ext] || 0) + 1;
-    } else {
-      for (const child of node.children) {
-        processNode(child);
-      }
-    }
-  };
-
-  for (const child of dir.children) {
-    processNode(child);
-  }
-
-  return stats;
-}
-
-/**
  * Show directory details panel
  */
 function showDirectoryDetails(dir: DirectoryNode) {
@@ -546,32 +525,6 @@ function showTooltip(node: TreeNode | null, event?: MouseEvent) {
 }
 
 /**
- * Calculate max tree depth
- */
-function calculateMaxDepth(node: TreeNode, depth: number = 0): number {
-  if (node.type === 'file') return depth;
-
-  let maxDepth = depth;
-  for (const child of node.children) {
-    maxDepth = Math.max(maxDepth, calculateMaxDepth(child, depth + 1));
-  }
-  return maxDepth;
-}
-
-/**
- * Count directories in tree
- */
-function countDirectories(node: TreeNode): number {
-  if (node.type === 'file') return 0;
-
-  let count = 1; // This directory
-  for (const child of node.children) {
-    count += countDirectories(child);
-  }
-  return count;
-}
-
-/**
  * Count visible files and LOC (respecting current filters)
  */
 function countVisibleStats(tree: TreeNode): { files: number; loc: number } {
@@ -709,31 +662,6 @@ function updateStatsDisplay(snapshot: RepositorySnapshot) {
     langBreakdown.appendChild(bar);
   }
 
-}
-
-/**
- * Find a file node by path in a tree
- * @param tree - The root directory node to search
- * @param targetPath - The file path to find
- * @returns The FileNode if found, null otherwise
- */
-function findFileInTree(tree: any, targetPath: string): any | null {
-  const traverse = (node: any): any | null => {
-    if (node.type === 'file') {
-      if (node.path === targetPath) {
-        return node;
-      }
-      return null;
-    } else if (node.type === 'directory' && node.children) {
-      for (const child of node.children) {
-        const result = traverse(child);
-        if (result) return result;
-      }
-    }
-    return null;
-  };
-
-  return traverse(tree);
 }
 
 /**
@@ -928,13 +856,6 @@ const REPO_GITHUB_URLS: Record<string, { owner: string; repo: string; url: strin
 };
 
 /**
- * Get base repo name (strip timeline suffixes)
- */
-function getBaseRepoName(repoName: string): string {
-  return repoName.replace(/-timeline(-full)?$/, '');
-}
-
-/**
  * Get GitHub info for a repo
  */
 function getGitHubInfo(repoBaseName: string) {
@@ -978,58 +899,6 @@ function updateRepoGitHubLink(repoBaseName: string): void {
   } else if (linkEl) {
     linkEl.style.display = 'none';
   }
-}
-
-/**
- * Build an index mapping commit hashes to files
- * This allows quick lookup of all files changed in the same commit
- */
-function buildCommitIndex(tree: DirectoryNode): Map<string, FileNode[]> {
-  const index = new Map<string, FileNode[]>();
-
-  const processNode = (node: TreeNode) => {
-    if (node.type === 'file') {
-      if (node.lastCommitHash) {
-        const files = index.get(node.lastCommitHash) || [];
-        files.push(node);
-        index.set(node.lastCommitHash, files);
-      }
-    } else {
-      for (const child of node.children) {
-        processNode(child);
-      }
-    }
-  };
-
-  for (const child of tree.children) {
-    processNode(child);
-  }
-
-  return index;
-}
-
-/**
- * Build an index mapping file paths to FileNode objects
- * This allows quick lookup of files by path for timeline highlighting
- */
-function buildPathIndex(tree: DirectoryNode): Map<string, FileNode> {
-  const index = new Map<string, FileNode>();
-
-  const processNode = (node: TreeNode) => {
-    if (node.type === 'file') {
-      index.set(node.path, node);
-    } else {
-      for (const child of node.children) {
-        processNode(child);
-      }
-    }
-  };
-
-  for (const child of tree.children) {
-    processNode(child);
-  }
-
-  return index;
 }
 
 let pathToFileIndex: Map<string, FileNode> = new Map();
@@ -1173,32 +1042,6 @@ function disableTimelineMode() {
       savedColorModeBeforeTimeline = null;
     }
   }
-}
-
-/**
- * Collect all lastModified dates from the tree
- * Used to calculate percentile-based color intervals
- */
-function collectModificationDates(tree: DirectoryNode): string[] {
-  const dates: string[] = [];
-
-  const processNode = (node: TreeNode) => {
-    if (node.type === 'file') {
-      if (node.lastModified) {
-        dates.push(node.lastModified);
-      }
-    } else {
-      for (const child of node.children) {
-        processNode(child);
-      }
-    }
-  };
-
-  for (const child of tree.children) {
-    processNode(child);
-  }
-
-  return dates;
 }
 
 /**
