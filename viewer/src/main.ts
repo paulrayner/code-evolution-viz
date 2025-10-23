@@ -1856,6 +1856,8 @@ function updateColorModeOptionsForCoupling(hasCouplingData: boolean) {
     // If cluster mode was selected, switch to default (fileType)
     if (colorModeSelector.value === 'cluster') {
       colorModeSelector.value = 'fileType';
+      // Update localStorage synchronously to avoid race conditions
+      localStorage.setItem('colorMode', 'fileType');
       // Trigger change event to update visualization
       colorModeSelector.dispatchEvent(new Event('change'));
     }
