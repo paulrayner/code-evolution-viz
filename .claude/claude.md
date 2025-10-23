@@ -121,7 +121,7 @@ npm run build    # Build for production (outputs to dist/)
 
 ## Refactoring Guidelines
 
-### Core Principles
+### Core Principles - CRITICAL - MUST BE FOLLOWED EXACTLY
 1. **ZERO behavioral changes** - extracted functions must be EXACT copies (copy-paste, not rewrite)
 2. **Test new code, not existing code** - write tests only for extracted modules
 3. **Extract-and-prove pattern** - prove with tests BEFORE replacing usage
