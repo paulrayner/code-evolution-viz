@@ -1951,6 +1951,14 @@ async function loadRepository(repoName: string) {
     const hasCouplingData = await couplingLoader.tryLoad(fileToLoad);
     updateColorModeOptionsForCoupling(hasCouplingData);
 
+    // Hide/show filter controls based on current color mode
+    const activeColorMode = (localStorage.getItem('colorMode') as ColorMode) || 'fileType';
+    if (activeColorMode === 'cluster') {
+      hideFilterControls();
+    } else {
+      showFilterControls();
+    }
+
     if ('format' in data && data.format === 'timeline-v2') {
       // Timeline V2: Full delta format - need to handle specially
       console.log('🎬 Timeline V2 (Full Delta) format detected');
