@@ -55,7 +55,22 @@
       "Bash(npx ts-node:*)",
       "Bash(git remote set-url:*)",
       "Bash(open https://paulrayner.github.io/codecohesion/)",
-      "Bash(open \"http://thepaulrayner.com/codecohesion/\")"
+      "Bash(open \"http://thepaulrayner.com/codecohesion/\")",
+      "Bash(while read f)",
+      "Bash(do echo \"=== $f ===\")",
+      "Bash(done)",
+      "Bash(xargs:*)",
+      "Bash(git rev-list:*)",
+      "Bash(git ls-tree:*)",
+      "Bash(for f in \"CNAME\" \"css/bootstrap.css\" \"m4/acx_pthread.m4\" \"images/gource-git.jpg\")",
+      "Bash(do if [ -f \"$f\" ])",
+      "Bash(then echo \"EXISTS: $f\")",
+      "Bash(else echo \"MISSING: $f\")",
+      "Bash(git remote get-url:*)",
+      "Bash(npx tsc:*)",
+      "Bash(open http://localhost:3000/codecohesion/)",
+      "Bash(git mv:*)",
+      "Bash(npm install:*)"
     ]
   }
 }
