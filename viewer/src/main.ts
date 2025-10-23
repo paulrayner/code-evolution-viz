@@ -11,6 +11,7 @@ import { getBaseRepoName } from './lib/repo-utils';
 import { buildFileDetailsHTML } from './lib/html-builders/file-details';
 import { buildDirectoryDetailsHTML } from './lib/html-builders/directory-details';
 import { buildDirectoryLegendItemHTML, buildFileTypeLegendItemHTML, buildOtherLegendItemHTML } from './lib/html-builders/legend';
+import { determineFileToLoad, detectDataFormat, extractSnapshot } from './lib/data-loader';
 
 /**
  * Get list of available repositories (base names only, no -timeline variants)
@@ -1566,38 +1567,26 @@ async function loadRepository(repoName: string) {
     let data: any;
     let fileToLoad = repoName;
 
-    if (mode === 'timeline' && timelineAvailable) {
-      // Try loading timeline files in order: -timeline-full, then -timeline
+    const { files, fallbackToHead } = determineFileToLoad(repoName, mode, timelineAvailable);
+
+    if (files.length > 1) {
+      // Timeline mode: try files in order
       let loaded = false;
 
-      // Try -timeline-full first
-      try {
-        console.log(`Trying to load: ${repoName}-timeline-full.json`);
-        const testData = await loadData(`${repoName}-timeline-full`);
-        // If we got here without error, the file exists and is valid JSON
-        data = testData;
-        fileToLoad = `${repoName}-timeline-full`;
-        loaded = true;
-        console.log(`Successfully loaded: ${fileToLoad}.json`);
-      } catch (e) {
-        console.log(`Could not load -timeline-full: ${e}`);
-      }
-
-      // If -timeline-full failed, try -timeline
-      if (!loaded) {
+      for (const fileName of files) {
         try {
-          console.log(`Trying to load: ${repoName}-timeline.json`);
-          const testData = await loadData(`${repoName}-timeline`);
+          console.log(`Trying to load: ${fileName}.json`);
+          const testData = await loadData(fileName);
           data = testData;
-          fileToLoad = `${repoName}-timeline`;
+          fileToLoad = fileName;
           loaded = true;
           console.log(`Successfully loaded: ${fileToLoad}.json`);
+          break;
         } catch (e) {
-          console.log(`Could not load -timeline: ${e}`);
+          console.log(`Could not load ${fileName}: ${e}`);
         }
       }
 
-      // If neither timeline file worked, fall back to HEAD
       if (!loaded) {
         console.warn(`No timeline file could be loaded for ${repoName}, falling back to HEAD mode`);
         setSelectedMode('head');
@@ -1605,11 +1594,12 @@ async function loadRepository(repoName: string) {
         data = await loadData(fileToLoad);
       }
     } else {
-      console.log(`Loading HEAD mode: ${fileToLoad}`);
-      // If user selected timeline but it's not available, switch back to HEAD
-      if (mode === 'timeline') {
+      // HEAD mode (single file)
+      console.log(`Loading HEAD mode: ${files[0]}`);
+      if (fallbackToHead) {
         setSelectedMode('head');
       }
+      fileToLoad = files[0];
       data = await loadData(fileToLoad);
     }
 
@@ -1620,24 +1610,27 @@ async function loadRepository(repoName: string) {
     const hasCouplingData = await couplingLoader.tryLoad(fileToLoad);
     updateColorModeOptionsForCoupling(hasCouplingData);
 
-    if ('format' in data && data.format === 'timeline-v2') {
+    const format = detectDataFormat(data);
+    const extractedSnapshot = extractSnapshot(data, format);
+
+    if (format === 'timeline-v2') {
       // Timeline V2: Full delta format - need to handle specially
       console.log('🎬 Timeline V2 (Full Delta) format detected');
       await loadTimelineV2(data as TimelineDataV2, fileToLoad);
       return; // Early return - V2 uses different loading path
-    } else if ('format' in data && data.format === 'timeline-v1') {
+    } else if (format === 'timeline-v1') {
       // Timeline V1: Sampled format
       console.log('Timeline V1 format detected');
       currentTimelineData = data;
       currentDeltaController = null;
-      snapshot = data.headSnapshot;
+      snapshot = extractedSnapshot!;
       console.log(`Timeline data: ${data.timeline.totalCommits} total commits, ${data.timeline.baseSampling.actualCount} sampled`);
     } else {
       // Static snapshot format
       console.log('Static snapshot format detected');
       currentTimelineData = null;
       currentDeltaController = null;
-      snapshot = data as RepositorySnapshot;
+      snapshot = extractedSnapshot!;
     }
 
     currentSnapshot = snapshot;
