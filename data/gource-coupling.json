@@ -1,0 +1,2880 @@
+{
+  "format": "coupling-v1",
+  "repositoryPath": "/Users/paul/Documents/Gource",
+  "sourceTimeline": "gource-timeline-full.json",
+  "analysis": {
+    "totalCommits": 988,
+    "filesAnalyzed": 237,
+    "couplingEdges": 415,
+    "generatedAt": "2025-10-22T21:46:46.660Z"
+  },
+  "edges": [
+    {
+      "fileA": "m4/ax_check_gl.m4",
+      "fileB": "m4/ax_check_glu.m4",
+      "coChangeCount": 4,
+      "coupling": 1
+    },
+    {
+      "fileA": "m4/ax_check_gl.m4",
+      "fileB": "m4/ax_check_glut.m4",
+      "coChangeCount": 4,
+      "coupling": 1
+    },
+    {
+      "fileA": "m4/ax_check_glu.m4",
+      "fileB": "m4/ax_check_glut.m4",
+      "coChangeCount": 4,
+      "coupling": 1
+    },
+    {
+      "fileA": "data/fonts/FreeSans.ttf",
+      "fileB": "data/fonts/README",
+      "coChangeCount": 2,
+      "coupling": 1
+    },
+    {
+      "fileA": "src/gitraw.cpp",
+      "fileB": "src/gitraw.h",
+      "coChangeCount": 2,
+      "coupling": 1
+    },
+    {
+      "fileA": "src/gource_demo.cpp",
+      "fileB": "src/gource_demo.h",
+      "coChangeCount": 3,
+      "coupling": 1
+    },
+    {
+      "fileA": "src/caption.cpp",
+      "fileB": "src/caption.h",
+      "coChangeCount": 3,
+      "coupling": 1
+    },
+    {
+      "fileA": "src/tinyxml/tinystr.cpp",
+      "fileB": "src/tinyxml/tinyxml.cpp",
+      "coChangeCount": 2,
+      "coupling": 1
+    },
+    {
+      "fileA": "src/tinyxml/tinystr.h",
+      "fileB": "src/tinyxml/tinyxml.h",
+      "coChangeCount": 3,
+      "coupling": 1
+    },
+    {
+      "fileA": "src/tinyxml/tinystr.h",
+      "fileB": "src/tinyxml/tinyxmlerror.cpp",
+      "coChangeCount": 3,
+      "coupling": 1
+    },
+    {
+      "fileA": "src/tinyxml/tinystr.h",
+      "fileB": "src/tinyxml/tinyxmlparser.cpp",
+      "coChangeCount": 3,
+      "coupling": 1
+    },
+    {
+      "fileA": "src/tinyxml/tinyxml.h",
+      "fileB": "src/tinyxml/tinyxmlerror.cpp",
+      "coChangeCount": 3,
+      "coupling": 1
+    },
+    {
+      "fileA": "src/tinyxml/tinyxml.h",
+      "fileB": "src/tinyxml/tinyxmlparser.cpp",
+      "coChangeCount": 3,
+      "coupling": 1
+    },
+    {
+      "fileA": "src/tinyxml/tinyxmlerror.cpp",
+      "fileB": "src/tinyxml/tinyxmlparser.cpp",
+      "coChangeCount": 3,
+      "coupling": 1
+    },
+    {
+      "fileA": "src/formats/apache.cpp",
+      "fileB": "src/formats/apache.h",
+      "coChangeCount": 2,
+      "coupling": 1
+    },
+    {
+      "fileA": "src/formats/bzr.h",
+      "fileB": "src/formats/cvs-exp.cpp",
+      "coChangeCount": 2,
+      "coupling": 1
+    },
+    {
+      "fileA": "src/formats/bzr.h",
+      "fileB": "src/formats/cvs-exp.h",
+      "coChangeCount": 2,
+      "coupling": 1
+    },
+    {
+      "fileA": "src/formats/bzr.h",
+      "fileB": "src/formats/cvs2cl.cpp",
+      "coChangeCount": 2,
+      "coupling": 1
+    },
+    {
+      "fileA": "src/formats/bzr.h",
+      "fileB": "src/formats/cvs2cl.h",
+      "coChangeCount": 2,
+      "coupling": 1
+    },
+    {
+      "fileA": "src/formats/bzr.h",
+      "fileB": "src/formats/hg.h",
+      "coChangeCount": 2,
+      "coupling": 1
+    },
+    {
+      "fileA": "src/formats/bzr.h",
+      "fileB": "src/formats/svn.h",
+      "coChangeCount": 2,
+      "coupling": 1
+    },
+    {
+      "fileA": "src/formats/cvs-exp.cpp",
+      "fileB": "src/formats/cvs-exp.h",
+      "coChangeCount": 2,
+      "coupling": 1
+    },
+    {
+      "fileA": "src/formats/cvs-exp.cpp",
+      "fileB": "src/formats/cvs2cl.cpp",
+      "coChangeCount": 2,
+      "coupling": 1
+    },
+    {
+      "fileA": "src/formats/cvs-exp.cpp",
+      "fileB": "src/formats/cvs2cl.h",
+      "coChangeCount": 2,
+      "coupling": 1
+    },
+    {
+      "fileA": "src/formats/cvs-exp.cpp",
+      "fileB": "src/formats/hg.h",
+      "coChangeCount": 2,
+      "coupling": 1
+    },
+    {
+      "fileA": "src/formats/cvs-exp.cpp",
+      "fileB": "src/formats/svn.h",
+      "coChangeCount": 2,
+      "coupling": 1
+    },
+    {
+      "fileA": "src/formats/cvs-exp.h",
+      "fileB": "src/formats/cvs2cl.cpp",
+      "coChangeCount": 2,
+      "coupling": 1
+    },
+    {
+      "fileA": "src/formats/cvs-exp.h",
+      "fileB": "src/formats/cvs2cl.h",
+      "coChangeCount": 2,
+      "coupling": 1
+    },
+    {
+      "fileA": "src/formats/cvs-exp.h",
+      "fileB": "src/formats/hg.h",
+      "coChangeCount": 2,
+      "coupling": 1
+    },
+    {
+      "fileA": "src/formats/cvs-exp.h",
+      "fileB": "src/formats/svn.h",
+      "coChangeCount": 2,
+      "coupling": 1
+    },
+    {
+      "fileA": "src/formats/cvs2cl.cpp",
+      "fileB": "src/formats/cvs2cl.h",
+      "coChangeCount": 2,
+      "coupling": 1
+    },
+    {
+      "fileA": "src/formats/cvs2cl.cpp",
+      "fileB": "src/formats/hg.h",
+      "coChangeCount": 2,
+      "coupling": 1
+    },
+    {
+      "fileA": "src/formats/cvs2cl.cpp",
+      "fileB": "src/formats/svn.h",
+      "coChangeCount": 2,
+      "coupling": 1
+    },
+    {
+      "fileA": "src/formats/cvs2cl.h",
+      "fileB": "src/formats/hg.h",
+      "coChangeCount": 2,
+      "coupling": 1
+    },
+    {
+      "fileA": "src/formats/cvs2cl.h",
+      "fileB": "src/formats/svn.h",
+      "coChangeCount": 2,
+      "coupling": 1
+    },
+    {
+      "fileA": "src/formats/hg.h",
+      "fileB": "src/formats/svn.h",
+      "coChangeCount": 2,
+      "coupling": 1
+    },
+    {
+      "fileA": "m4/ax_boost_filesystem.m4",
+      "fileB": "m4/ax_boost_system.m4",
+      "coChangeCount": 5,
+      "coupling": 1
+    },
+    {
+      "fileA": "css/bootstrap.css",
+      "fileB": "css/bootstrap.min.css",
+      "coChangeCount": 3,
+      "coupling": 1
+    },
+    {
+      "fileA": "src/test/datetime_tests.cpp",
+      "fileB": "src/test/main.cpp",
+      "coChangeCount": 2,
+      "coupling": 1
+    },
+    {
+      "fileA": "src/zoomcamera.cpp",
+      "fileB": "src/zoomcamera.h",
+      "coChangeCount": 7,
+      "coupling": 0.875
+    },
+    {
+      "fileA": "src/core/conffile.cpp",
+      "fileB": "src/core/conffile.h",
+      "coChangeCount": 6,
+      "coupling": 0.857
+    },
+    {
+      "fileA": "src/bloom.cpp",
+      "fileB": "src/bloom.h",
+      "coChangeCount": 5,
+      "coupling": 0.833
+    },
+    {
+      "fileA": "src/spline.cpp",
+      "fileB": "src/spline.h",
+      "coChangeCount": 7,
+      "coupling": 0.778
+    },
+    {
+      "fileA": "src/core/regex.cpp",
+      "fileB": "src/core/regex.h",
+      "coChangeCount": 3,
+      "coupling": 0.75
+    },
+    {
+      "fileA": "src/textbox.cpp",
+      "fileB": "src/textbox.h",
+      "coChangeCount": 3,
+      "coupling": 0.75
+    },
+    {
+      "fileA": "src/ppm.cpp",
+      "fileB": "src/ppm.h",
+      "coChangeCount": 11,
+      "coupling": 0.733
+    },
+    {
+      "fileA": "src/action.cpp",
+      "fileB": "src/action.h",
+      "coChangeCount": 11,
+      "coupling": 0.688
+    },
+    {
+      "fileA": "src/core/extensions.h",
+      "fileB": "src/core/texture.h",
+      "coChangeCount": 4,
+      "coupling": 0.667
+    },
+    {
+      "fileA": "src/slider.cpp",
+      "fileB": "src/slider.h",
+      "coChangeCount": 6,
+      "coupling": 0.667
+    },
+    {
+      "fileA": "src/ffmpeg.cpp",
+      "fileB": "src/ffmpeg.h",
+      "coChangeCount": 4,
+      "coupling": 0.667
+    },
+    {
+      "fileA": "src/tinyxml/tinystr.cpp",
+      "fileB": "src/tinyxml/tinystr.h",
+      "coChangeCount": 2,
+      "coupling": 0.667
+    },
+    {
+      "fileA": "src/tinyxml/tinystr.cpp",
+      "fileB": "src/tinyxml/tinyxml.h",
+      "coChangeCount": 2,
+      "coupling": 0.667
+    },
+    {
+      "fileA": "src/tinyxml/tinystr.cpp",
+      "fileB": "src/tinyxml/tinyxmlerror.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.667
+    },
+    {
+      "fileA": "src/tinyxml/tinystr.cpp",
+      "fileB": "src/tinyxml/tinyxmlparser.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.667
+    },
+    {
+      "fileA": "src/tinyxml/tinystr.h",
+      "fileB": "src/tinyxml/tinyxml.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.667
+    },
+    {
+      "fileA": "src/tinyxml/tinyxml.cpp",
+      "fileB": "src/tinyxml/tinyxml.h",
+      "coChangeCount": 2,
+      "coupling": 0.667
+    },
+    {
+      "fileA": "src/tinyxml/tinyxml.cpp",
+      "fileB": "src/tinyxml/tinyxmlerror.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.667
+    },
+    {
+      "fileA": "src/tinyxml/tinyxml.cpp",
+      "fileB": "src/tinyxml/tinyxmlparser.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.667
+    },
+    {
+      "fileA": "src/cvs2cl.cpp",
+      "fileB": "src/cvs2cl.h",
+      "coChangeCount": 2,
+      "coupling": 0.667
+    },
+    {
+      "fileA": "m4/ax_boost_base.m4",
+      "fileB": "m4/ax_boost_filesystem.m4",
+      "coChangeCount": 4,
+      "coupling": 0.667
+    },
+    {
+      "fileA": "m4/ax_boost_base.m4",
+      "fileB": "m4/ax_boost_system.m4",
+      "coChangeCount": 4,
+      "coupling": 0.667
+    },
+    {
+      "fileA": "README",
+      "fileB": "data/gource.1",
+      "coChangeCount": 103,
+      "coupling": 0.656
+    },
+    {
+      "fileA": "src/core/seeklog.cpp",
+      "fileB": "src/core/seeklog.h",
+      "coChangeCount": 7,
+      "coupling": 0.636
+    },
+    {
+      "fileA": "src/pawn.cpp",
+      "fileB": "src/pawn.h",
+      "coChangeCount": 14,
+      "coupling": 0.636
+    },
+    {
+      "fileA": "src/custom.cpp",
+      "fileB": "src/custom.h",
+      "coChangeCount": 5,
+      "coupling": 0.625
+    },
+    {
+      "fileA": "src/core/settings.cpp",
+      "fileB": "src/core/settings.h",
+      "coChangeCount": 5,
+      "coupling": 0.625
+    },
+    {
+      "fileA": "src/file.cpp",
+      "fileB": "src/file.h",
+      "coChangeCount": 25,
+      "coupling": 0.581
+    },
+    {
+      "fileA": "src/formats/bzr.cpp",
+      "fileB": "src/formats/svn.cpp",
+      "coChangeCount": 4,
+      "coupling": 0.571
+    },
+    {
+      "fileA": "src/core/display.cpp",
+      "fileB": "src/core/display.h",
+      "coChangeCount": 6,
+      "coupling": 0.545
+    },
+    {
+      "fileA": "src/dirnode.cpp",
+      "fileB": "src/dirnode.h",
+      "coChangeCount": 34,
+      "coupling": 0.523
+    },
+    {
+      "fileA": "src/commitlog.cpp",
+      "fileB": "src/commitlog.h",
+      "coChangeCount": 12,
+      "coupling": 0.522
+    },
+    {
+      "fileA": "m4/ax_check_gl.m4",
+      "fileB": "m4/ax_pthread.m4",
+      "coChangeCount": 2,
+      "coupling": 0.5
+    },
+    {
+      "fileA": "m4/ax_check_glu.m4",
+      "fileB": "m4/ax_pthread.m4",
+      "coChangeCount": 2,
+      "coupling": 0.5
+    },
+    {
+      "fileA": "m4/ax_check_glut.m4",
+      "fileB": "m4/ax_pthread.m4",
+      "coChangeCount": 2,
+      "coupling": 0.5
+    },
+    {
+      "fileA": "src/core/extensions.h",
+      "fileB": "src/core/sdlapp.h",
+      "coChangeCount": 4,
+      "coupling": 0.5
+    },
+    {
+      "fileA": "src/core/fxfont.cpp",
+      "fileB": "src/core/regex.h",
+      "coChangeCount": 2,
+      "coupling": 0.5
+    },
+    {
+      "fileA": "data/beam.png",
+      "fileB": "data/file.png",
+      "coChangeCount": 2,
+      "coupling": 0.5
+    },
+    {
+      "fileA": "data/file.png",
+      "fileB": "data/user.png",
+      "coChangeCount": 2,
+      "coupling": 0.5
+    },
+    {
+      "fileA": "debian/control",
+      "fileB": "debian/copyright",
+      "coChangeCount": 2,
+      "coupling": 0.5
+    },
+    {
+      "fileA": "src/key.h",
+      "fileB": "src/textbox.h",
+      "coChangeCount": 2,
+      "coupling": 0.5
+    },
+    {
+      "fileA": "data/shaders/text.frag",
+      "fileB": "data/shaders/text.vert",
+      "coChangeCount": 2,
+      "coupling": 0.5
+    },
+    {
+      "fileA": "src/formats/bzr.h",
+      "fileB": "src/formats/git.h",
+      "coChangeCount": 2,
+      "coupling": 0.5
+    },
+    {
+      "fileA": "src/formats/cvs-exp.cpp",
+      "fileB": "src/formats/git.h",
+      "coChangeCount": 2,
+      "coupling": 0.5
+    },
+    {
+      "fileA": "src/formats/cvs-exp.h",
+      "fileB": "src/formats/git.h",
+      "coChangeCount": 2,
+      "coupling": 0.5
+    },
+    {
+      "fileA": "src/formats/cvs2cl.cpp",
+      "fileB": "src/formats/git.h",
+      "coChangeCount": 2,
+      "coupling": 0.5
+    },
+    {
+      "fileA": "src/formats/cvs2cl.h",
+      "fileB": "src/formats/git.h",
+      "coChangeCount": 2,
+      "coupling": 0.5
+    },
+    {
+      "fileA": "src/formats/git.h",
+      "fileB": "src/formats/hg.h",
+      "coChangeCount": 2,
+      "coupling": 0.5
+    },
+    {
+      "fileA": "src/formats/git.h",
+      "fileB": "src/formats/svn.h",
+      "coChangeCount": 2,
+      "coupling": 0.5
+    },
+    {
+      "fileA": "src/user.cpp",
+      "fileB": "src/user.h",
+      "coChangeCount": 17,
+      "coupling": 0.472
+    },
+    {
+      "fileA": "src/formats/commitlog.cpp",
+      "fileB": "src/formats/commitlog.h",
+      "coChangeCount": 9,
+      "coupling": 0.45
+    },
+    {
+      "fileA": "src/formats/bzr.cpp",
+      "fileB": "src/formats/hg.cpp",
+      "coChangeCount": 4,
+      "coupling": 0.444
+    },
+    {
+      "fileA": "src/hg.cpp",
+      "fileB": "src/hg.h",
+      "coChangeCount": 3,
+      "coupling": 0.429
+    },
+    {
+      "fileA": "aclocal.m4",
+      "fileB": "src/core/extensions.h",
+      "coChangeCount": 2,
+      "coupling": 0.4
+    },
+    {
+      "fileA": "aclocal.m4",
+      "fileB": "src/core/fxfont.h",
+      "coChangeCount": 2,
+      "coupling": 0.4
+    },
+    {
+      "fileA": "src/core/fxfont.cpp",
+      "fileB": "src/core/fxfont.h",
+      "coChangeCount": 2,
+      "coupling": 0.4
+    },
+    {
+      "fileA": "src/core/fxfont.cpp",
+      "fileB": "src/core/logger.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.4
+    },
+    {
+      "fileA": "src/core/fxfont.cpp",
+      "fileB": "src/core/regex.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.4
+    },
+    {
+      "fileA": "src/core/fxfont.h",
+      "fileB": "src/core/regex.h",
+      "coChangeCount": 2,
+      "coupling": 0.4
+    },
+    {
+      "fileA": "src/core/logger.cpp",
+      "fileB": "src/core/regex.h",
+      "coChangeCount": 2,
+      "coupling": 0.4
+    },
+    {
+      "fileA": "src/core/resource.h",
+      "fileB": "src/core/texture.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.4
+    },
+    {
+      "fileA": "src/core/sdlapp.h",
+      "fileB": "src/core/texture.h",
+      "coChangeCount": 4,
+      "coupling": 0.4
+    },
+    {
+      "fileA": "src/custom.h",
+      "fileB": "src/cvs-exp.h",
+      "coChangeCount": 2,
+      "coupling": 0.4
+    },
+    {
+      "fileA": "src/gource.cpp",
+      "fileB": "src/gource.h",
+      "coChangeCount": 98,
+      "coupling": 0.4
+    },
+    {
+      "fileA": "src/key.h",
+      "fileB": "src/textbox.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.4
+    },
+    {
+      "fileA": "src/formats/bzr.cpp",
+      "fileB": "src/formats/bzr.h",
+      "coChangeCount": 2,
+      "coupling": 0.4
+    },
+    {
+      "fileA": "src/formats/bzr.cpp",
+      "fileB": "src/formats/cvs-exp.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.4
+    },
+    {
+      "fileA": "src/formats/bzr.cpp",
+      "fileB": "src/formats/cvs-exp.h",
+      "coChangeCount": 2,
+      "coupling": 0.4
+    },
+    {
+      "fileA": "src/formats/bzr.cpp",
+      "fileB": "src/formats/cvs2cl.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.4
+    },
+    {
+      "fileA": "src/formats/bzr.cpp",
+      "fileB": "src/formats/cvs2cl.h",
+      "coChangeCount": 2,
+      "coupling": 0.4
+    },
+    {
+      "fileA": "src/formats/bzr.cpp",
+      "fileB": "src/formats/hg.h",
+      "coChangeCount": 2,
+      "coupling": 0.4
+    },
+    {
+      "fileA": "src/formats/bzr.cpp",
+      "fileB": "src/formats/svn.h",
+      "coChangeCount": 2,
+      "coupling": 0.4
+    },
+    {
+      "fileA": "src/formats/hg.cpp",
+      "fileB": "src/formats/svn.cpp",
+      "coChangeCount": 4,
+      "coupling": 0.4
+    },
+    {
+      "fileA": "src/gource_settings.cpp",
+      "fileB": "src/gource_settings.h",
+      "coChangeCount": 60,
+      "coupling": 0.377
+    },
+    {
+      "fileA": "src/core/texture.cpp",
+      "fileB": "src/core/texture.h",
+      "coChangeCount": 3,
+      "coupling": 0.375
+    },
+    {
+      "fileA": "src/custom.h",
+      "fileB": "src/slider.h",
+      "coChangeCount": 3,
+      "coupling": 0.375
+    },
+    {
+      "fileA": "src/gource_shell.cpp",
+      "fileB": "src/gource_shell.h",
+      "coChangeCount": 10,
+      "coupling": 0.37
+    },
+    {
+      "fileA": "src/Makefile.in",
+      "fileB": "src/core/Makefile.in",
+      "coChangeCount": 4,
+      "coupling": 0.364
+    },
+    {
+      "fileA": "src/core/sdlapp.cpp",
+      "fileB": "src/core/sdlapp.h",
+      "coChangeCount": 4,
+      "coupling": 0.364
+    },
+    {
+      "fileA": "src/pawn.h",
+      "fileB": "src/user.h",
+      "coChangeCount": 9,
+      "coupling": 0.346
+    },
+    {
+      "fileA": "src/core/extensions.h",
+      "fileB": "src/core/fxfont.h",
+      "coChangeCount": 2,
+      "coupling": 0.333
+    },
+    {
+      "fileA": "src/core/fxfont.h",
+      "fileB": "src/core/logger.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.333
+    },
+    {
+      "fileA": "src/core/fxfont.h",
+      "fileB": "src/core/regex.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.333
+    },
+    {
+      "fileA": "src/core/logger.cpp",
+      "fileB": "src/core/regex.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.333
+    },
+    {
+      "fileA": "src/core/resource.h",
+      "fileB": "src/core/texture.h",
+      "coChangeCount": 2,
+      "coupling": 0.333
+    },
+    {
+      "fileA": "src/cvs-exp.h",
+      "fileB": "src/git.h",
+      "coChangeCount": 2,
+      "coupling": 0.333
+    },
+    {
+      "fileA": "src/cvs-exp.h",
+      "fileB": "src/slider.h",
+      "coChangeCount": 2,
+      "coupling": 0.333
+    },
+    {
+      "fileA": "src/apache.cpp",
+      "fileB": "src/apache.h",
+      "coChangeCount": 2,
+      "coupling": 0.333
+    },
+    {
+      "fileA": "src/formats/bzr.h",
+      "fileB": "src/formats/svn.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.333
+    },
+    {
+      "fileA": "src/formats/cvs-exp.cpp",
+      "fileB": "src/formats/svn.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.333
+    },
+    {
+      "fileA": "src/formats/cvs-exp.h",
+      "fileB": "src/formats/svn.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.333
+    },
+    {
+      "fileA": "src/formats/cvs2cl.cpp",
+      "fileB": "src/formats/svn.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.333
+    },
+    {
+      "fileA": "src/formats/cvs2cl.h",
+      "fileB": "src/formats/svn.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.333
+    },
+    {
+      "fileA": "src/formats/git.h",
+      "fileB": "src/formats/gitraw.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.333
+    },
+    {
+      "fileA": "src/formats/hg.h",
+      "fileB": "src/formats/svn.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.333
+    },
+    {
+      "fileA": "src/formats/svn.cpp",
+      "fileB": "src/formats/svn.h",
+      "coChangeCount": 2,
+      "coupling": 0.333
+    },
+    {
+      "fileA": "src/key.cpp",
+      "fileB": "src/key.h",
+      "coChangeCount": 3,
+      "coupling": 0.3
+    },
+    {
+      "fileA": "src/file.cpp",
+      "fileB": "src/user.cpp",
+      "coChangeCount": 17,
+      "coupling": 0.288
+    },
+    {
+      "fileA": "aclocal.m4",
+      "fileB": "src/core/texture.h",
+      "coChangeCount": 2,
+      "coupling": 0.286
+    },
+    {
+      "fileA": "src/core/display.h",
+      "fileB": "src/core/fxfont.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.286
+    },
+    {
+      "fileA": "src/core/display.h",
+      "fileB": "src/core/regex.h",
+      "coChangeCount": 2,
+      "coupling": 0.286
+    },
+    {
+      "fileA": "src/cvs-exp.cpp",
+      "fileB": "src/cvs-exp.h",
+      "coChangeCount": 2,
+      "coupling": 0.286
+    },
+    {
+      "fileA": "src/vbo.cpp",
+      "fileB": "src/vbo.h",
+      "coChangeCount": 2,
+      "coupling": 0.286
+    },
+    {
+      "fileA": "src/formats/bzr.cpp",
+      "fileB": "src/formats/git.h",
+      "coChangeCount": 2,
+      "coupling": 0.286
+    },
+    {
+      "fileA": "src/formats/custom.cpp",
+      "fileB": "src/test/datetime_tests.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.286
+    },
+    {
+      "fileA": "src/formats/custom.cpp",
+      "fileB": "src/test/main.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.286
+    },
+    {
+      "fileA": "src/formats/git.cpp",
+      "fileB": "src/formats/git.h",
+      "coChangeCount": 4,
+      "coupling": 0.286
+    },
+    {
+      "fileA": "src/pawn.cpp",
+      "fileB": "src/user.h",
+      "coChangeCount": 8,
+      "coupling": 0.276
+    },
+    {
+      "fileA": "src/custom.cpp",
+      "fileB": "src/slider.h",
+      "coChangeCount": 3,
+      "coupling": 0.273
+    },
+    {
+      "fileA": "src/custom.h",
+      "fileB": "src/slider.cpp",
+      "coChangeCount": 3,
+      "coupling": 0.273
+    },
+    {
+      "fileA": "src/formats/commitlog.h",
+      "fileB": "src/formats/git.h",
+      "coChangeCount": 3,
+      "coupling": 0.273
+    },
+    {
+      "fileA": "src/formats/bzr.cpp",
+      "fileB": "src/formats/git.cpp",
+      "coChangeCount": 4,
+      "coupling": 0.267
+    },
+    {
+      "fileA": "src/action.h",
+      "fileB": "src/file.h",
+      "coChangeCount": 8,
+      "coupling": 0.258
+    },
+    {
+      "fileA": "Makefile.in",
+      "fileB": "src/core/Makefile.in",
+      "coChangeCount": 2,
+      "coupling": 0.25
+    },
+    {
+      "fileA": "src/commitlog.cpp",
+      "fileB": "src/custom.h",
+      "coChangeCount": 5,
+      "coupling": 0.25
+    },
+    {
+      "fileA": "src/commitlog.h",
+      "fileB": "src/custom.h",
+      "coChangeCount": 4,
+      "coupling": 0.25
+    },
+    {
+      "fileA": "src/core/display.h",
+      "fileB": "src/core/fxfont.h",
+      "coChangeCount": 2,
+      "coupling": 0.25
+    },
+    {
+      "fileA": "src/core/display.h",
+      "fileB": "src/core/logger.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.25
+    },
+    {
+      "fileA": "src/core/display.h",
+      "fileB": "src/core/regex.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.25
+    },
+    {
+      "fileA": "src/core/fxfont.h",
+      "fileB": "src/core/texture.h",
+      "coChangeCount": 2,
+      "coupling": 0.25
+    },
+    {
+      "fileA": "src/custom.cpp",
+      "fileB": "src/cvs-exp.h",
+      "coChangeCount": 2,
+      "coupling": 0.25
+    },
+    {
+      "fileA": "dev/bin/build_tar.pl",
+      "fileB": "dev/bin/build_win32.pl",
+      "coChangeCount": 10,
+      "coupling": 0.25
+    },
+    {
+      "fileA": "src/bzr.cpp",
+      "fileB": "src/bzr.h",
+      "coChangeCount": 2,
+      "coupling": 0.25
+    },
+    {
+      "fileA": "src/formats/bzr.h",
+      "fileB": "src/formats/hg.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.25
+    },
+    {
+      "fileA": "src/formats/cvs-exp.cpp",
+      "fileB": "src/formats/hg.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.25
+    },
+    {
+      "fileA": "src/formats/cvs-exp.h",
+      "fileB": "src/formats/hg.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.25
+    },
+    {
+      "fileA": "src/formats/cvs2cl.cpp",
+      "fileB": "src/formats/hg.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.25
+    },
+    {
+      "fileA": "src/formats/cvs2cl.h",
+      "fileB": "src/formats/hg.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.25
+    },
+    {
+      "fileA": "src/formats/git.cpp",
+      "fileB": "src/formats/svn.cpp",
+      "coChangeCount": 4,
+      "coupling": 0.25
+    },
+    {
+      "fileA": "src/formats/git.h",
+      "fileB": "src/formats/svn.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.25
+    },
+    {
+      "fileA": "src/formats/hg.cpp",
+      "fileB": "src/formats/hg.h",
+      "coChangeCount": 2,
+      "coupling": 0.25
+    },
+    {
+      "fileA": "src/formats/hg.cpp",
+      "fileB": "src/formats/svn.h",
+      "coChangeCount": 2,
+      "coupling": 0.25
+    },
+    {
+      "fileA": "data/gource.1",
+      "fileB": "src/gource_settings.cpp",
+      "coChangeCount": 48,
+      "coupling": 0.242
+    },
+    {
+      "fileA": "ChangeLog",
+      "fileB": "src/gource_settings.h",
+      "coChangeCount": 55,
+      "coupling": 0.236
+    },
+    {
+      "fileA": "src/action.cpp",
+      "fileB": "src/file.h",
+      "coChangeCount": 8,
+      "coupling": 0.235
+    },
+    {
+      "fileA": "src/pawn.cpp",
+      "fileB": "src/user.cpp",
+      "coChangeCount": 10,
+      "coupling": 0.227
+    },
+    {
+      "fileA": "configure.ac",
+      "fileB": "src/gource_settings.h",
+      "coChangeCount": 33,
+      "coupling": 0.223
+    },
+    {
+      "fileA": "aclocal.m4",
+      "fileB": "src/core/sdlapp.h",
+      "coChangeCount": 2,
+      "coupling": 0.222
+    },
+    {
+      "fileA": "src/custom.h",
+      "fileB": "src/git.h",
+      "coChangeCount": 2,
+      "coupling": 0.222
+    },
+    {
+      "fileA": "src/cvs-exp.h",
+      "fileB": "src/slider.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.222
+    },
+    {
+      "fileA": "src/file.h",
+      "fileB": "src/pawn.h",
+      "coChangeCount": 8,
+      "coupling": 0.222
+    },
+    {
+      "fileA": "src/git.cpp",
+      "fileB": "src/git.h",
+      "coChangeCount": 6,
+      "coupling": 0.222
+    },
+    {
+      "fileA": "src/core/conffile.h",
+      "fileB": "src/core/settings.h",
+      "coChangeCount": 2,
+      "coupling": 0.222
+    },
+    {
+      "fileA": "src/formats/git.cpp",
+      "fileB": "src/formats/hg.cpp",
+      "coChangeCount": 4,
+      "coupling": 0.222
+    },
+    {
+      "fileA": "README",
+      "fileB": "src/gource_settings.cpp",
+      "coChangeCount": 48,
+      "coupling": 0.22
+    },
+    {
+      "fileA": "src/commitlog.cpp",
+      "fileB": "src/custom.cpp",
+      "coChangeCount": 5,
+      "coupling": 0.217
+    },
+    {
+      "fileA": "src/file.h",
+      "fileB": "src/user.h",
+      "coChangeCount": 8,
+      "coupling": 0.216
+    },
+    {
+      "fileA": "src/custom.cpp",
+      "fileB": "src/slider.cpp",
+      "coChangeCount": 3,
+      "coupling": 0.214
+    },
+    {
+      "fileA": "src/commitlog.h",
+      "fileB": "src/custom.cpp",
+      "coChangeCount": 4,
+      "coupling": 0.211
+    },
+    {
+      "fileA": "src/pawn.h",
+      "fileB": "src/user.cpp",
+      "coChangeCount": 9,
+      "coupling": 0.209
+    },
+    {
+      "fileA": "ChangeLog",
+      "fileB": "configure.ac",
+      "coChangeCount": 49,
+      "coupling": 0.209
+    },
+    {
+      "fileA": "src/file.cpp",
+      "fileB": "src/pawn.h",
+      "coChangeCount": 10,
+      "coupling": 0.208
+    },
+    {
+      "fileA": "css/site.css",
+      "fileB": "index.html",
+      "coChangeCount": 8,
+      "coupling": 0.205
+    },
+    {
+      "fileA": "src/action.cpp",
+      "fileB": "src/spline.cpp",
+      "coChangeCount": 4,
+      "coupling": 0.2
+    },
+    {
+      "fileA": "src/action.h",
+      "fileB": "src/user.h",
+      "coChangeCount": 5,
+      "coupling": 0.2
+    },
+    {
+      "fileA": "src/commitlog.h",
+      "fileB": "src/git.cpp",
+      "coChangeCount": 7,
+      "coupling": 0.2
+    },
+    {
+      "fileA": "src/core/fxfont.h",
+      "fileB": "src/core/sdlapp.h",
+      "coChangeCount": 2,
+      "coupling": 0.2
+    },
+    {
+      "fileA": "src/custom.h",
+      "fileB": "src/cvs-exp.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.2
+    },
+    {
+      "fileA": "src/custom.h",
+      "fileB": "src/spline.h",
+      "coChangeCount": 2,
+      "coupling": 0.2
+    },
+    {
+      "fileA": "src/custom.h",
+      "fileB": "src/zoomcamera.h",
+      "coChangeCount": 2,
+      "coupling": 0.2
+    },
+    {
+      "fileA": "src/git.h",
+      "fileB": "src/slider.h",
+      "coChangeCount": 2,
+      "coupling": 0.2
+    },
+    {
+      "fileA": "src/core/conffile.cpp",
+      "fileB": "src/core/settings.h",
+      "coChangeCount": 2,
+      "coupling": 0.2
+    },
+    {
+      "fileA": "src/svn.cpp",
+      "fileB": "src/svn.h",
+      "coChangeCount": 2,
+      "coupling": 0.2
+    },
+    {
+      "fileA": "src/formats/bzr.h",
+      "fileB": "src/logmill.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.2
+    },
+    {
+      "fileA": "src/formats/cvs-exp.cpp",
+      "fileB": "src/logmill.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.2
+    },
+    {
+      "fileA": "src/formats/cvs-exp.h",
+      "fileB": "src/logmill.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.2
+    },
+    {
+      "fileA": "src/formats/cvs2cl.cpp",
+      "fileB": "src/logmill.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.2
+    },
+    {
+      "fileA": "src/formats/cvs2cl.h",
+      "fileB": "src/logmill.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.2
+    },
+    {
+      "fileA": "src/formats/git.cpp",
+      "fileB": "src/formats/gitraw.cpp",
+      "coChangeCount": 3,
+      "coupling": 0.2
+    },
+    {
+      "fileA": "src/formats/git.h",
+      "fileB": "src/formats/hg.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.2
+    },
+    {
+      "fileA": "src/formats/hg.h",
+      "fileB": "src/logmill.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.2
+    },
+    {
+      "fileA": "src/formats/svn.h",
+      "fileB": "src/logmill.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.2
+    },
+    {
+      "fileA": "src/logmill.cpp",
+      "fileB": "src/logmill.h",
+      "coChangeCount": 2,
+      "coupling": 0.2
+    },
+    {
+      "fileA": "configure",
+      "fileB": "configure.ac",
+      "coChangeCount": 17,
+      "coupling": 0.189
+    },
+    {
+      "fileA": "src/action.h",
+      "fileB": "src/spline.h",
+      "coChangeCount": 3,
+      "coupling": 0.188
+    },
+    {
+      "fileA": "src/gource.h",
+      "fileB": "src/main.cpp",
+      "coChangeCount": 31,
+      "coupling": 0.187
+    },
+    {
+      "fileA": "src/dirnode.cpp",
+      "fileB": "src/file.h",
+      "coChangeCount": 14,
+      "coupling": 0.184
+    },
+    {
+      "fileA": "ChangeLog",
+      "fileB": "data/gource.1",
+      "coChangeCount": 49,
+      "coupling": 0.184
+    },
+    {
+      "fileA": "aclocal.m4",
+      "fileB": "src/Makefile.in",
+      "coChangeCount": 2,
+      "coupling": 0.182
+    },
+    {
+      "fileA": "src/core/display.h",
+      "fileB": "src/core/sdlapp.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.182
+    },
+    {
+      "fileA": "src/custom.h",
+      "fileB": "src/zoomcamera.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.182
+    },
+    {
+      "fileA": "src/cvs-exp.cpp",
+      "fileB": "src/git.h",
+      "coChangeCount": 2,
+      "coupling": 0.182
+    },
+    {
+      "fileA": "src/cvs-exp.cpp",
+      "fileB": "src/slider.h",
+      "coChangeCount": 2,
+      "coupling": 0.182
+    },
+    {
+      "fileA": "src/dirnode.cpp",
+      "fileB": "src/file.cpp",
+      "coChangeCount": 16,
+      "coupling": 0.182
+    },
+    {
+      "fileA": "src/git.h",
+      "fileB": "src/zoomcamera.h",
+      "coChangeCount": 2,
+      "coupling": 0.182
+    },
+    {
+      "fileA": "src/slider.h",
+      "fileB": "src/spline.h",
+      "coChangeCount": 2,
+      "coupling": 0.182
+    },
+    {
+      "fileA": "src/slider.h",
+      "fileB": "src/zoomcamera.h",
+      "coChangeCount": 2,
+      "coupling": 0.182
+    },
+    {
+      "fileA": "src/apache.cpp",
+      "fileB": "src/cvs-exp.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.182
+    },
+    {
+      "fileA": "src/key.cpp",
+      "fileB": "src/textbox.h",
+      "coChangeCount": 2,
+      "coupling": 0.182
+    },
+    {
+      "fileA": "src/file.cpp",
+      "fileB": "src/user.h",
+      "coChangeCount": 9,
+      "coupling": 0.18
+    },
+    {
+      "fileA": "src/action.cpp",
+      "fileB": "src/user.h",
+      "coChangeCount": 5,
+      "coupling": 0.179
+    },
+    {
+      "fileA": "src/action.h",
+      "fileB": "src/file.cpp",
+      "coChangeCount": 8,
+      "coupling": 0.178
+    },
+    {
+      "fileA": "src/dirnode.h",
+      "fileB": "src/pawn.h",
+      "coChangeCount": 8,
+      "coupling": 0.178
+    },
+    {
+      "fileA": "src/file.cpp",
+      "fileB": "src/pawn.cpp",
+      "coChangeCount": 9,
+      "coupling": 0.176
+    },
+    {
+      "fileA": "ChangeLog",
+      "fileB": "src/gource.cpp",
+      "coChangeCount": 64,
+      "coupling": 0.176
+    },
+    {
+      "fileA": "src/commitlog.cpp",
+      "fileB": "src/git.cpp",
+      "coChangeCount": 7,
+      "coupling": 0.175
+    },
+    {
+      "fileA": "src/dirnode.h",
+      "fileB": "src/user.h",
+      "coChangeCount": 8,
+      "coupling": 0.174
+    },
+    {
+      "fileA": "src/file.h",
+      "fileB": "src/user.cpp",
+      "coChangeCount": 9,
+      "coupling": 0.17
+    },
+    {
+      "fileA": "src/Makefile.in",
+      "fileB": "src/core/extensions.h",
+      "coChangeCount": 2,
+      "coupling": 0.167
+    },
+    {
+      "fileA": "src/action.cpp",
+      "fileB": "src/file.cpp",
+      "coChangeCount": 8,
+      "coupling": 0.167
+    },
+    {
+      "fileA": "src/action.h",
+      "fileB": "src/spline.cpp",
+      "coChangeCount": 3,
+      "coupling": 0.167
+    },
+    {
+      "fileA": "src/commitlog.h",
+      "fileB": "src/git.h",
+      "coChangeCount": 3,
+      "coupling": 0.167
+    },
+    {
+      "fileA": "src/commitlog.h",
+      "fileB": "src/slider.h",
+      "coChangeCount": 3,
+      "coupling": 0.167
+    },
+    {
+      "fileA": "src/core/display.cpp",
+      "fileB": "src/core/fxfont.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.167
+    },
+    {
+      "fileA": "src/core/display.cpp",
+      "fileB": "src/core/regex.h",
+      "coChangeCount": 2,
+      "coupling": 0.167
+    },
+    {
+      "fileA": "src/core/display.h",
+      "fileB": "src/core/sdlapp.h",
+      "coChangeCount": 2,
+      "coupling": 0.167
+    },
+    {
+      "fileA": "src/custom.cpp",
+      "fileB": "src/git.h",
+      "coChangeCount": 2,
+      "coupling": 0.167
+    },
+    {
+      "fileA": "src/custom.h",
+      "fileB": "src/spline.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.167
+    },
+    {
+      "fileA": "src/dirnode.h",
+      "fileB": "src/file.h",
+      "coChangeCount": 9,
+      "coupling": 0.167
+    },
+    {
+      "fileA": "src/git.h",
+      "fileB": "src/zoomcamera.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.167
+    },
+    {
+      "fileA": "src/pawn.cpp",
+      "fileB": "src/slider.cpp",
+      "coChangeCount": 4,
+      "coupling": 0.167
+    },
+    {
+      "fileA": "src/slider.h",
+      "fileB": "src/zoomcamera.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.167
+    },
+    {
+      "fileA": "src/spline.h",
+      "fileB": "src/zoomcamera.h",
+      "coChangeCount": 2,
+      "coupling": 0.167
+    },
+    {
+      "fileA": "src/core/conffile.h",
+      "fileB": "src/core/settings.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.167
+    },
+    {
+      "fileA": "src/key.cpp",
+      "fileB": "src/textbox.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.167
+    },
+    {
+      "fileA": "src/formats/commitlog.h",
+      "fileB": "src/formats/gitraw.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.167
+    },
+    {
+      "fileA": "src/formats/git.h",
+      "fileB": "src/logmill.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.167
+    },
+    {
+      "fileA": "css/bootstrap.css",
+      "fileB": "css/site.css",
+      "coChangeCount": 3,
+      "coupling": 0.167
+    },
+    {
+      "fileA": "css/bootstrap.min.css",
+      "fileB": "css/site.css",
+      "coChangeCount": 3,
+      "coupling": 0.167
+    },
+    {
+      "fileA": "README",
+      "fileB": "src/gource.cpp",
+      "coChangeCount": 53,
+      "coupling": 0.166
+    },
+    {
+      "fileA": "src/gource.cpp",
+      "fileB": "src/main.cpp",
+      "coChangeCount": 45,
+      "coupling": 0.164
+    },
+    {
+      "fileA": "src/action.cpp",
+      "fileB": "src/user.cpp",
+      "coChangeCount": 7,
+      "coupling": 0.163
+    },
+    {
+      "fileA": "ChangeLog",
+      "fileB": "README",
+      "coChangeCount": 47,
+      "coupling": 0.163
+    },
+    {
+      "fileA": "src/dirnode.h",
+      "fileB": "src/spline.h",
+      "coChangeCount": 6,
+      "coupling": 0.162
+    },
+    {
+      "fileA": "configure",
+      "fileB": "src/Makefile.in",
+      "coChangeCount": 4,
+      "coupling": 0.16
+    },
+    {
+      "fileA": "aclocal.m4",
+      "fileB": "configure",
+      "coChangeCount": 3,
+      "coupling": 0.158
+    },
+    {
+      "fileA": "src/action.cpp",
+      "fileB": "src/spline.h",
+      "coChangeCount": 3,
+      "coupling": 0.158
+    },
+    {
+      "fileA": "src/action.h",
+      "fileB": "src/formats/commitlog.h",
+      "coChangeCount": 3,
+      "coupling": 0.158
+    },
+    {
+      "fileA": "src/custom.h",
+      "fileB": "src/pawn.h",
+      "coChangeCount": 3,
+      "coupling": 0.158
+    },
+    {
+      "fileA": "src/core/display.cpp",
+      "fileB": "src/core/fxfont.h",
+      "coChangeCount": 2,
+      "coupling": 0.154
+    },
+    {
+      "fileA": "src/core/display.cpp",
+      "fileB": "src/core/logger.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.154
+    },
+    {
+      "fileA": "src/core/display.cpp",
+      "fileB": "src/core/regex.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.154
+    },
+    {
+      "fileA": "src/core/sdlapp.h",
+      "fileB": "src/core/seeklog.h",
+      "coChangeCount": 2,
+      "coupling": 0.154
+    },
+    {
+      "fileA": "src/custom.cpp",
+      "fileB": "src/cvs-exp.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.154
+    },
+    {
+      "fileA": "src/custom.cpp",
+      "fileB": "src/spline.h",
+      "coChangeCount": 2,
+      "coupling": 0.154
+    },
+    {
+      "fileA": "src/custom.cpp",
+      "fileB": "src/zoomcamera.h",
+      "coChangeCount": 2,
+      "coupling": 0.154
+    },
+    {
+      "fileA": "src/dirnode.h",
+      "fileB": "src/spline.cpp",
+      "coChangeCount": 6,
+      "coupling": 0.154
+    },
+    {
+      "fileA": "src/git.h",
+      "fileB": "src/slider.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.154
+    },
+    {
+      "fileA": "src/slider.h",
+      "fileB": "src/spline.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.154
+    },
+    {
+      "fileA": "src/spline.h",
+      "fileB": "src/zoomcamera.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.154
+    },
+    {
+      "fileA": "data/gource.1",
+      "fileB": "src/gource.cpp",
+      "coChangeCount": 47,
+      "coupling": 0.154
+    },
+    {
+      "fileA": "src/bzr.cpp",
+      "fileB": "src/hg.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.154
+    },
+    {
+      "fileA": "src/core/conffile.cpp",
+      "fileB": "src/core/settings.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.154
+    },
+    {
+      "fileA": "src/formats/bzr.cpp",
+      "fileB": "src/logmill.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.154
+    },
+    {
+      "fileA": "data/gource.1",
+      "fileB": "src/gource_settings.h",
+      "coChangeCount": 28,
+      "coupling": 0.151
+    },
+    {
+      "fileA": "src/custom.h",
+      "fileB": "src/user.h",
+      "coChangeCount": 3,
+      "coupling": 0.15
+    },
+    {
+      "fileA": "src/file.h",
+      "fileB": "src/pawn.cpp",
+      "coChangeCount": 6,
+      "coupling": 0.15
+    },
+    {
+      "fileA": "src/pawn.h",
+      "fileB": "src/slider.h",
+      "coChangeCount": 3,
+      "coupling": 0.15
+    },
+    {
+      "fileA": "src/formats/commitlog.cpp",
+      "fileB": "src/formats/git.h",
+      "coChangeCount": 3,
+      "coupling": 0.15
+    },
+    {
+      "fileA": "src/dirnode.h",
+      "fileB": "src/file.cpp",
+      "coChangeCount": 10,
+      "coupling": 0.149
+    },
+    {
+      "fileA": "src/action.h",
+      "fileB": "src/user.cpp",
+      "coChangeCount": 6,
+      "coupling": 0.146
+    },
+    {
+      "fileA": "src/gource.cpp",
+      "fileB": "src/gource_settings.h",
+      "coChangeCount": 41,
+      "coupling": 0.144
+    },
+    {
+      "fileA": "data/gource.1",
+      "fileB": "src/main.cpp",
+      "coChangeCount": 26,
+      "coupling": 0.144
+    },
+    {
+      "fileA": "Makefile.in",
+      "fileB": "src/core/display.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.143
+    },
+    {
+      "fileA": "src/Makefile.in",
+      "fileB": "src/core/texture.h",
+      "coChangeCount": 2,
+      "coupling": 0.143
+    },
+    {
+      "fileA": "src/commitlog.h",
+      "fileB": "src/slider.cpp",
+      "coChangeCount": 3,
+      "coupling": 0.143
+    },
+    {
+      "fileA": "src/core/Makefile.in",
+      "fileB": "src/core/display.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.143
+    },
+    {
+      "fileA": "src/custom.cpp",
+      "fileB": "src/zoomcamera.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.143
+    },
+    {
+      "fileA": "src/custom.h",
+      "fileB": "src/pawn.cpp",
+      "coChangeCount": 3,
+      "coupling": 0.143
+    },
+    {
+      "fileA": "src/cvs-exp.cpp",
+      "fileB": "src/slider.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.143
+    },
+    {
+      "fileA": "src/git.h",
+      "fileB": "src/user.h",
+      "coChangeCount": 3,
+      "coupling": 0.143
+    },
+    {
+      "fileA": "src/gource.cpp",
+      "fileB": "src/gource_settings.cpp",
+      "coChangeCount": 45,
+      "coupling": 0.143
+    },
+    {
+      "fileA": "src/pawn.h",
+      "fileB": "src/spline.h",
+      "coChangeCount": 3,
+      "coupling": 0.143
+    },
+    {
+      "fileA": "src/slider.cpp",
+      "fileB": "src/spline.h",
+      "coChangeCount": 2,
+      "coupling": 0.143
+    },
+    {
+      "fileA": "src/slider.cpp",
+      "fileB": "src/zoomcamera.h",
+      "coChangeCount": 2,
+      "coupling": 0.143
+    },
+    {
+      "fileA": "src/slider.h",
+      "fileB": "src/user.h",
+      "coChangeCount": 3,
+      "coupling": 0.143
+    },
+    {
+      "fileA": "src/spline.cpp",
+      "fileB": "src/zoomcamera.h",
+      "coChangeCount": 2,
+      "coupling": 0.143
+    },
+    {
+      "fileA": "src/formats/bzr.h",
+      "fileB": "src/formats/git.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.143
+    },
+    {
+      "fileA": "src/formats/commitlog.h",
+      "fileB": "src/formats/git.cpp",
+      "coChangeCount": 3,
+      "coupling": 0.143
+    },
+    {
+      "fileA": "src/formats/cvs-exp.cpp",
+      "fileB": "src/formats/git.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.143
+    },
+    {
+      "fileA": "src/formats/cvs-exp.h",
+      "fileB": "src/formats/git.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.143
+    },
+    {
+      "fileA": "src/formats/cvs2cl.cpp",
+      "fileB": "src/formats/git.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.143
+    },
+    {
+      "fileA": "src/formats/cvs2cl.h",
+      "fileB": "src/formats/git.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.143
+    },
+    {
+      "fileA": "src/formats/git.cpp",
+      "fileB": "src/formats/hg.h",
+      "coChangeCount": 2,
+      "coupling": 0.143
+    },
+    {
+      "fileA": "src/formats/git.cpp",
+      "fileB": "src/formats/svn.h",
+      "coChangeCount": 2,
+      "coupling": 0.143
+    },
+    {
+      "fileA": "src/formats/git.cpp",
+      "fileB": "src/logmill.cpp",
+      "coChangeCount": 3,
+      "coupling": 0.143
+    },
+    {
+      "fileA": "src/formats/svn.cpp",
+      "fileB": "src/logmill.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.143
+    },
+    {
+      "fileA": "README",
+      "fileB": "src/gource_settings.h",
+      "coChangeCount": 29,
+      "coupling": 0.142
+    },
+    {
+      "fileA": "ChangeLog",
+      "fileB": "src/gource_settings.cpp",
+      "coChangeCount": 40,
+      "coupling": 0.142
+    },
+    {
+      "fileA": "README",
+      "fileB": "src/main.cpp",
+      "coChangeCount": 28,
+      "coupling": 0.141
+    },
+    {
+      "fileA": "ChangeLog",
+      "fileB": "src/core",
+      "coChangeCount": 39,
+      "coupling": 0.141
+    },
+    {
+      "fileA": "INSTALL",
+      "fileB": "configure.ac",
+      "coChangeCount": 15,
+      "coupling": 0.14
+    },
+    {
+      "fileA": "ChangeLog",
+      "fileB": "src/gource.h",
+      "coChangeCount": 37,
+      "coupling": 0.138
+    },
+    {
+      "fileA": "configure",
+      "fileB": "src/ffmpeg.cpp",
+      "coChangeCount": 3,
+      "coupling": 0.136
+    },
+    {
+      "fileA": "src/custom.cpp",
+      "fileB": "src/pawn.h",
+      "coChangeCount": 3,
+      "coupling": 0.136
+    },
+    {
+      "fileA": "src/pawn.cpp",
+      "fileB": "src/slider.h",
+      "coChangeCount": 3,
+      "coupling": 0.136
+    },
+    {
+      "fileA": "src/spline.h",
+      "fileB": "src/user.h",
+      "coChangeCount": 3,
+      "coupling": 0.136
+    },
+    {
+      "fileA": "src/user.h",
+      "fileB": "src/zoomcamera.h",
+      "coChangeCount": 3,
+      "coupling": 0.136
+    },
+    {
+      "fileA": "src/file.cpp",
+      "fileB": "src/gource.h",
+      "coChangeCount": 18,
+      "coupling": 0.135
+    },
+    {
+      "fileA": "src/dirnode.cpp",
+      "fileB": "src/gource.cpp",
+      "coChangeCount": 35,
+      "coupling": 0.134
+    },
+    {
+      "fileA": "src/action.h",
+      "fileB": "src/custom.h",
+      "coChangeCount": 2,
+      "coupling": 0.133
+    },
+    {
+      "fileA": "src/commitlog.h",
+      "fileB": "src/cvs-exp.h",
+      "coChangeCount": 2,
+      "coupling": 0.133
+    },
+    {
+      "fileA": "src/core/display.cpp",
+      "fileB": "src/slider.h",
+      "coChangeCount": 2,
+      "coupling": 0.133
+    },
+    {
+      "fileA": "src/custom.cpp",
+      "fileB": "src/spline.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.133
+    },
+    {
+      "fileA": "src/slider.cpp",
+      "fileB": "src/zoomcamera.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.133
+    },
+    {
+      "fileA": "src/spline.cpp",
+      "fileB": "src/zoomcamera.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.133
+    },
+    {
+      "fileA": "debian/changelog",
+      "fileB": "debian/control",
+      "coChangeCount": 2,
+      "coupling": 0.133
+    },
+    {
+      "fileA": "debian/changelog",
+      "fileB": "debian/copyright",
+      "coChangeCount": 2,
+      "coupling": 0.133
+    },
+    {
+      "fileA": "src/commitlog.cpp",
+      "fileB": "src/git.h",
+      "coChangeCount": 3,
+      "coupling": 0.13
+    },
+    {
+      "fileA": "src/commitlog.cpp",
+      "fileB": "src/slider.h",
+      "coChangeCount": 3,
+      "coupling": 0.13
+    },
+    {
+      "fileA": "src/custom.cpp",
+      "fileB": "src/user.h",
+      "coChangeCount": 3,
+      "coupling": 0.13
+    },
+    {
+      "fileA": "src/pawn.h",
+      "fileB": "src/slider.cpp",
+      "coChangeCount": 3,
+      "coupling": 0.13
+    },
+    {
+      "fileA": "src/pawn.h",
+      "fileB": "src/spline.cpp",
+      "coChangeCount": 3,
+      "coupling": 0.13
+    },
+    {
+      "fileA": "src/user.h",
+      "fileB": "src/zoomcamera.cpp",
+      "coChangeCount": 3,
+      "coupling": 0.13
+    },
+    {
+      "fileA": "src/slider.cpp",
+      "fileB": "src/user.cpp",
+      "coChangeCount": 5,
+      "coupling": 0.128
+    },
+    {
+      "fileA": "src/dirnode.cpp",
+      "fileB": "src/pawn.h",
+      "coChangeCount": 9,
+      "coupling": 0.127
+    },
+    {
+      "fileA": "src/dirnode.h",
+      "fileB": "src/user.cpp",
+      "coChangeCount": 8,
+      "coupling": 0.127
+    },
+    {
+      "fileA": "src/gource_settings.cpp",
+      "fileB": "src/main.cpp",
+      "coChangeCount": 24,
+      "coupling": 0.127
+    },
+    {
+      "fileA": "src/dirnode.cpp",
+      "fileB": "src/user.cpp",
+      "coChangeCount": 11,
+      "coupling": 0.126
+    },
+    {
+      "fileA": "src/Makefile.in",
+      "fileB": "src/core/sdlapp.h",
+      "coChangeCount": 2,
+      "coupling": 0.125
+    },
+    {
+      "fileA": "src/action.h",
+      "fileB": "src/commitlog.h",
+      "coChangeCount": 3,
+      "coupling": 0.125
+    },
+    {
+      "fileA": "src/action.h",
+      "fileB": "src/slider.h",
+      "coChangeCount": 2,
+      "coupling": 0.125
+    },
+    {
+      "fileA": "src/core/display.cpp",
+      "fileB": "src/core/sdlapp.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.125
+    },
+    {
+      "fileA": "src/custom.cpp",
+      "fileB": "src/pawn.cpp",
+      "coChangeCount": 3,
+      "coupling": 0.125
+    },
+    {
+      "fileA": "src/dirnode.cpp",
+      "fileB": "src/spline.cpp",
+      "coChangeCount": 8,
+      "coupling": 0.125
+    },
+    {
+      "fileA": "src/slider.cpp",
+      "fileB": "src/spline.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.125
+    },
+    {
+      "fileA": "src/slider.cpp",
+      "fileB": "src/user.h",
+      "coChangeCount": 3,
+      "coupling": 0.125
+    },
+    {
+      "fileA": "src/spline.cpp",
+      "fileB": "src/user.h",
+      "coChangeCount": 3,
+      "coupling": 0.125
+    },
+    {
+      "fileA": "src/formats/commitlog.h",
+      "fileB": "src/formats/hg.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.125
+    },
+    {
+      "fileA": "src/formats/hg.cpp",
+      "fileB": "src/logmill.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.125
+    },
+    {
+      "fileA": "src/gource.h",
+      "fileB": "src/user.cpp",
+      "coChangeCount": 16,
+      "coupling": 0.124
+    },
+    {
+      "fileA": "src/dirnode.h",
+      "fileB": "src/gource.h",
+      "coChangeCount": 16,
+      "coupling": 0.123
+    },
+    {
+      "fileA": "src/action.h",
+      "fileB": "src/zoomcamera.h",
+      "coChangeCount": 2,
+      "coupling": 0.118
+    },
+    {
+      "fileA": "src/core/display.cpp",
+      "fileB": "src/core/sdlapp.h",
+      "coChangeCount": 2,
+      "coupling": 0.118
+    },
+    {
+      "fileA": "src/core/sdlapp.h",
+      "fileB": "src/core/seeklog.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.118
+    },
+    {
+      "fileA": "src/cvs-exp.h",
+      "fileB": "src/pawn.h",
+      "coChangeCount": 2,
+      "coupling": 0.118
+    },
+    {
+      "fileA": "src/key.cpp",
+      "fileB": "src/slider.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.118
+    },
+    {
+      "fileA": "src/dirnode.cpp",
+      "fileB": "src/gource.h",
+      "coChangeCount": 18,
+      "coupling": 0.116
+    },
+    {
+      "fileA": "src/action.h",
+      "fileB": "src/pawn.h",
+      "coChangeCount": 3,
+      "coupling": 0.115
+    },
+    {
+      "fileA": "src/commitlog.cpp",
+      "fileB": "src/slider.cpp",
+      "coChangeCount": 3,
+      "coupling": 0.115
+    },
+    {
+      "fileA": "src/core",
+      "fileB": "src/gource_settings.h",
+      "coChangeCount": 22,
+      "coupling": 0.115
+    },
+    {
+      "fileA": "src/formats/commitlog.cpp",
+      "fileB": "src/logmill.cpp",
+      "coChangeCount": 3,
+      "coupling": 0.115
+    },
+    {
+      "fileA": "src/file.h",
+      "fileB": "src/gource.h",
+      "coChangeCount": 14,
+      "coupling": 0.114
+    },
+    {
+      "fileA": "src/gource.cpp",
+      "fileB": "src/user.cpp",
+      "coChangeCount": 27,
+      "coupling": 0.112
+    },
+    {
+      "fileA": "README",
+      "fileB": "src/gource.h",
+      "coChangeCount": 25,
+      "coupling": 0.111
+    },
+    {
+      "fileA": "src/action.cpp",
+      "fileB": "src/commitlog.h",
+      "coChangeCount": 3,
+      "coupling": 0.111
+    },
+    {
+      "fileA": "src/action.cpp",
+      "fileB": "src/custom.h",
+      "coChangeCount": 2,
+      "coupling": 0.111
+    },
+    {
+      "fileA": "src/action.h",
+      "fileB": "src/custom.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.111
+    },
+    {
+      "fileA": "src/action.h",
+      "fileB": "src/zoomcamera.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.111
+    },
+    {
+      "fileA": "src/core/display.cpp",
+      "fileB": "src/slider.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.111
+    },
+    {
+      "fileA": "src/cvs-exp.h",
+      "fileB": "src/user.h",
+      "coChangeCount": 2,
+      "coupling": 0.111
+    },
+    {
+      "fileA": "src/dirnode.cpp",
+      "fileB": "src/spline.h",
+      "coChangeCount": 7,
+      "coupling": 0.111
+    },
+    {
+      "fileA": "src/gource_shell.h",
+      "fileB": "src/logmill.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.111
+    },
+    {
+      "fileA": "src/formats/commitlog.h",
+      "fileB": "src/logmill.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.111
+    },
+    {
+      "fileA": "src/dirnode.cpp",
+      "fileB": "src/user.h",
+      "coChangeCount": 8,
+      "coupling": 0.11
+    },
+    {
+      "fileA": "src/file.cpp",
+      "fileB": "src/gource.cpp",
+      "coChangeCount": 27,
+      "coupling": 0.109
+    },
+    {
+      "fileA": "src/action.h",
+      "fileB": "src/pawn.cpp",
+      "coChangeCount": 3,
+      "coupling": 0.107
+    },
+    {
+      "fileA": "src/commitlog.cpp",
+      "fileB": "src/core/seeklog.cpp",
+      "coChangeCount": 3,
+      "coupling": 0.107
+    },
+    {
+      "fileA": "src/core",
+      "fileB": "src/main.cpp",
+      "coChangeCount": 20,
+      "coupling": 0.106
+    },
+    {
+      "fileA": ".gitignore",
+      "fileB": "gource.pro",
+      "coChangeCount": 2,
+      "coupling": 0.105
+    },
+    {
+      "fileA": "INSTALL",
+      "fileB": "Makefile.am",
+      "coChangeCount": 8,
+      "coupling": 0.105
+    },
+    {
+      "fileA": "src/action.cpp",
+      "fileB": "src/slider.h",
+      "coChangeCount": 2,
+      "coupling": 0.105
+    },
+    {
+      "fileA": "src/action.h",
+      "fileB": "src/slider.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.105
+    },
+    {
+      "fileA": "src/cvs-exp.h",
+      "fileB": "src/pawn.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.105
+    },
+    {
+      "fileA": "src/textbox.h",
+      "fileB": "src/user.h",
+      "coChangeCount": 2,
+      "coupling": 0.105
+    },
+    {
+      "fileA": ".gitignore",
+      "fileB": "dev/bin/build_tar.pl",
+      "coChangeCount": 4,
+      "coupling": 0.103
+    },
+    {
+      "fileA": "src/action.cpp",
+      "fileB": "src/pawn.h",
+      "coChangeCount": 3,
+      "coupling": 0.103
+    },
+    {
+      "fileA": "src/action.h",
+      "fileB": "src/commitlog.cpp",
+      "coChangeCount": 3,
+      "coupling": 0.103
+    },
+    {
+      "fileA": "src/commitlog.h",
+      "fileB": "src/pawn.h",
+      "coChangeCount": 3,
+      "coupling": 0.103
+    },
+    {
+      "fileA": "src/gource.h",
+      "fileB": "src/user.h",
+      "coChangeCount": 12,
+      "coupling": 0.103
+    },
+    {
+      "fileA": "src/gource.h",
+      "fileB": "src/gource_settings.h",
+      "coChangeCount": 19,
+      "coupling": 0.103
+    },
+    {
+      "fileA": "Makefile.am",
+      "fileB": "src/gource.h",
+      "coChangeCount": 15,
+      "coupling": 0.103
+    },
+    {
+      "fileA": "src/dirnode.h",
+      "fileB": "src/gource.cpp",
+      "coChangeCount": 25,
+      "coupling": 0.102
+    },
+    {
+      "fileA": "src/action.cpp",
+      "fileB": "src/zoomcamera.h",
+      "coChangeCount": 2,
+      "coupling": 0.1
+    },
+    {
+      "fileA": "src/commitlog.cpp",
+      "fileB": "src/cvs-exp.h",
+      "coChangeCount": 2,
+      "coupling": 0.1
+    },
+    {
+      "fileA": "src/commitlog.h",
+      "fileB": "src/cvs-exp.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.1
+    },
+    {
+      "fileA": "src/commitlog.h",
+      "fileB": "src/spline.h",
+      "coChangeCount": 2,
+      "coupling": 0.1
+    },
+    {
+      "fileA": "src/commitlog.h",
+      "fileB": "src/user.h",
+      "coChangeCount": 3,
+      "coupling": 0.1
+    },
+    {
+      "fileA": "src/commitlog.h",
+      "fileB": "src/zoomcamera.h",
+      "coChangeCount": 2,
+      "coupling": 0.1
+    },
+    {
+      "fileA": "src/commitlog.h",
+      "fileB": "src/hg.cpp",
+      "coChangeCount": 2,
+      "coupling": 0.1
+    },
+    {
+      "fileA": "src/dirnode.h",
+      "fileB": "src/pawn.cpp",
+      "coChangeCount": 5,
+      "coupling": 0.1
+    },
+    {
+      "fileA": "src/pawn.cpp",
+      "fileB": "src/textbox.h",
+      "coChangeCount": 2,
+      "coupling": 0.1
+    },
+    {
+      "fileA": "src/spline.cpp",
+      "fileB": "src/user.cpp",
+      "coChangeCount": 4,
+      "coupling": 0.1
+    },
+    {
+      "fileA": "Makefile.am",
+      "fileB": "src/gource_settings.h",
+      "coChangeCount": 13,
+      "coupling": 0.1
+    },
+    {
+      "fileA": "src/textbox.cpp",
+      "fileB": "src/user.h",
+      "coChangeCount": 2,
+      "coupling": 0.1
+    },
+    {
+      "fileA": "src/formats/commitlog.cpp",
+      "fileB": "src/formats/git.cpp",
+      "coChangeCount": 3,
+      "coupling": 0.1
+    }
+  ],
+  "clusters": [
+    {
+      "id": 1,
+      "name": "Cluster 1",
+      "files": [
+        "src/action.cpp",
+        "src/action.h",
+        "src/commitlog.cpp",
+        "src/commitlog.h",
+        "src/custom.cpp",
+        "src/custom.h",
+        "src/cvs-exp.cpp",
+        "src/cvs-exp.h",
+        "src/dirnode.cpp",
+        "src/dirnode.h",
+        "src/file.cpp",
+        "src/file.h",
+        "src/git.cpp",
+        "src/git.h",
+        "src/pawn.cpp",
+        "src/pawn.h",
+        "src/slider.cpp",
+        "src/slider.h",
+        "src/spline.cpp",
+        "src/spline.h",
+        "src/user.cpp",
+        "src/user.h",
+        "src/zoomcamera.cpp",
+        "src/zoomcamera.h"
+      ],
+      "fileCount": 24,
+      "avgInternalCoupling": 0.198
+    },
+    {
+      "id": 2,
+      "name": "Cluster 2",
+      "files": [
+        "Makefile.in",
+        "aclocal.m4",
+        "configure",
+        "src/Makefile.in",
+        "src/core/Makefile.in",
+        "src/core/display.cpp",
+        "src/core/display.h",
+        "src/core/extensions.h",
+        "src/core/fxfont.cpp",
+        "src/core/fxfont.h",
+        "src/core/logger.cpp",
+        "src/core/regex.cpp",
+        "src/core/regex.h",
+        "src/core/resource.h",
+        "src/core/sdlapp.cpp",
+        "src/core/sdlapp.h",
+        "src/core/seeklog.cpp",
+        "src/core/seeklog.h",
+        "src/core/texture.cpp",
+        "src/core/texture.h"
+      ],
+      "fileCount": 20,
+      "avgInternalCoupling": 0.296
+    },
+    {
+      "id": 3,
+      "name": "Cluster 3",
+      "files": [
+        "src/formats/bzr.cpp",
+        "src/formats/bzr.h",
+        "src/formats/commitlog.cpp",
+        "src/formats/commitlog.h",
+        "src/formats/cvs-exp.cpp",
+        "src/formats/cvs-exp.h",
+        "src/formats/cvs2cl.cpp",
+        "src/formats/cvs2cl.h",
+        "src/formats/git.cpp",
+        "src/formats/git.h",
+        "src/formats/gitraw.cpp",
+        "src/formats/hg.cpp",
+        "src/formats/hg.h",
+        "src/formats/svn.cpp",
+        "src/formats/svn.h",
+        "src/logmill.cpp",
+        "src/logmill.h"
+      ],
+      "fileCount": 17,
+      "avgInternalCoupling": 0.445
+    },
+    {
+      "id": 4,
+      "name": "Cluster 4",
+      "files": [
+        "INSTALL",
+        "README",
+        "configure.ac",
+        "src/gource.cpp",
+        "src/gource.h",
+        "src/main.cpp",
+        "data/gource.1",
+        "ChangeLog",
+        "Makefile.am",
+        "src/gource_settings.cpp",
+        "src/gource_settings.h",
+        "src/core"
+      ],
+      "fileCount": 12,
+      "avgInternalCoupling": 0.183
+    },
+    {
+      "id": 5,
+      "name": "Cluster 5",
+      "files": [
+        "src/tinyxml/tinystr.cpp",
+        "src/tinyxml/tinystr.h",
+        "src/tinyxml/tinyxml.cpp",
+        "src/tinyxml/tinyxml.h",
+        "src/tinyxml/tinyxmlerror.cpp",
+        "src/tinyxml/tinyxmlparser.cpp"
+      ],
+      "fileCount": 6,
+      "avgInternalCoupling": 0.822
+    },
+    {
+      "id": 6,
+      "name": "Cluster 6",
+      "files": [
+        ".gitignore",
+        "dev/bin/build_tar.pl",
+        "dev/bin/build_win32.pl",
+        "gource.pro"
+      ],
+      "fileCount": 4,
+      "avgInternalCoupling": 0.153
+    },
+    {
+      "id": 7,
+      "name": "Cluster 7",
+      "files": [
+        "m4/ax_check_gl.m4",
+        "m4/ax_check_glu.m4",
+        "m4/ax_check_glut.m4",
+        "m4/ax_pthread.m4"
+      ],
+      "fileCount": 4,
+      "avgInternalCoupling": 0.75
+    },
+    {
+      "id": 8,
+      "name": "Cluster 8",
+      "files": [
+        "src/hg.cpp",
+        "src/hg.h",
+        "src/bzr.cpp",
+        "src/bzr.h"
+      ],
+      "fileCount": 4,
+      "avgInternalCoupling": 0.278
+    },
+    {
+      "id": 9,
+      "name": "Cluster 9",
+      "files": [
+        "src/core/conffile.cpp",
+        "src/core/conffile.h",
+        "src/core/settings.cpp",
+        "src/core/settings.h"
+      ],
+      "fileCount": 4,
+      "avgInternalCoupling": 0.371
+    },
+    {
+      "id": 10,
+      "name": "Cluster 10",
+      "files": [
+        "src/textbox.cpp",
+        "src/textbox.h",
+        "src/key.cpp",
+        "src/key.h"
+      ],
+      "fileCount": 4,
+      "avgInternalCoupling": 0.383
+    },
+    {
+      "id": 11,
+      "name": "Cluster 11",
+      "files": [
+        "css/bootstrap.css",
+        "css/bootstrap.min.css",
+        "css/site.css",
+        "index.html"
+      ],
+      "fileCount": 4,
+      "avgInternalCoupling": 0.385
+    },
+    {
+      "id": 12,
+      "name": "Cluster 12",
+      "files": [
+        "data/beam.png",
+        "data/file.png",
+        "data/user.png"
+      ],
+      "fileCount": 3,
+      "avgInternalCoupling": 0.5
+    },
+    {
+      "id": 13,
+      "name": "Cluster 13",
+      "files": [
+        "debian/changelog",
+        "debian/control",
+        "debian/copyright"
+      ],
+      "fileCount": 3,
+      "avgInternalCoupling": 0.255
+    },
+    {
+      "id": 14,
+      "name": "Cluster 14",
+      "files": [
+        "src/formats/custom.cpp",
+        "src/test/datetime_tests.cpp",
+        "src/test/main.cpp"
+      ],
+      "fileCount": 3,
+      "avgInternalCoupling": 0.524
+    },
+    {
+      "id": 15,
+      "name": "Cluster 15",
+      "files": [
+        "m4/ax_boost_base.m4",
+        "m4/ax_boost_filesystem.m4",
+        "m4/ax_boost_system.m4"
+      ],
+      "fileCount": 3,
+      "avgInternalCoupling": 0.778
+    },
+    {
+      "id": 16,
+      "name": "Cluster 16",
+      "files": [
+        "data/fonts/FreeSans.ttf",
+        "data/fonts/README"
+      ],
+      "fileCount": 2,
+      "avgInternalCoupling": 1
+    },
+    {
+      "id": 17,
+      "name": "Cluster 17",
+      "files": [
+        "src/gitraw.cpp",
+        "src/gitraw.h"
+      ],
+      "fileCount": 2,
+      "avgInternalCoupling": 1
+    },
+    {
+      "id": 18,
+      "name": "Cluster 18",
+      "files": [
+        "src/apache.cpp",
+        "src/apache.h"
+      ],
+      "fileCount": 2,
+      "avgInternalCoupling": 0.333
+    },
+    {
+      "id": 19,
+      "name": "Cluster 19",
+      "files": [
+        "src/ffmpeg.cpp",
+        "src/ffmpeg.h"
+      ],
+      "fileCount": 2,
+      "avgInternalCoupling": 0.667
+    },
+    {
+      "id": 20,
+      "name": "Cluster 20",
+      "files": [
+        "src/ppm.cpp",
+        "src/ppm.h"
+      ],
+      "fileCount": 2,
+      "avgInternalCoupling": 0.733
+    },
+    {
+      "id": 21,
+      "name": "Cluster 21",
+      "files": [
+        "src/gource_demo.cpp",
+        "src/gource_demo.h"
+      ],
+      "fileCount": 2,
+      "avgInternalCoupling": 1
+    },
+    {
+      "id": 22,
+      "name": "Cluster 22",
+      "files": [
+        "src/gource_shell.cpp",
+        "src/gource_shell.h"
+      ],
+      "fileCount": 2,
+      "avgInternalCoupling": 0.37
+    },
+    {
+      "id": 23,
+      "name": "Cluster 23",
+      "files": [
+        "src/caption.cpp",
+        "src/caption.h"
+      ],
+      "fileCount": 2,
+      "avgInternalCoupling": 1
+    },
+    {
+      "id": 24,
+      "name": "Cluster 24",
+      "files": [
+        "src/svn.cpp",
+        "src/svn.h"
+      ],
+      "fileCount": 2,
+      "avgInternalCoupling": 0.2
+    },
+    {
+      "id": 25,
+      "name": "Cluster 25",
+      "files": [
+        "src/cvs2cl.cpp",
+        "src/cvs2cl.h"
+      ],
+      "fileCount": 2,
+      "avgInternalCoupling": 0.667
+    },
+    {
+      "id": 26,
+      "name": "Cluster 26",
+      "files": [
+        "src/vbo.cpp",
+        "src/vbo.h"
+      ],
+      "fileCount": 2,
+      "avgInternalCoupling": 0.286
+    },
+    {
+      "id": 27,
+      "name": "Cluster 27",
+      "files": [
+        "src/bloom.cpp",
+        "src/bloom.h"
+      ],
+      "fileCount": 2,
+      "avgInternalCoupling": 0.833
+    },
+    {
+      "id": 28,
+      "name": "Cluster 28",
+      "files": [
+        "data/shaders/text.frag",
+        "data/shaders/text.vert"
+      ],
+      "fileCount": 2,
+      "avgInternalCoupling": 0.5
+    },
+    {
+      "id": 29,
+      "name": "Cluster 29",
+      "files": [
+        "src/formats/apache.cpp",
+        "src/formats/apache.h"
+      ],
+      "fileCount": 2,
+      "avgInternalCoupling": 1
+    }
+  ]
+}
