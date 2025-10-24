@@ -77,7 +77,8 @@
       "Bash(open http://localhost:3001/codecohesion/)",
       "Bash(npm test:*)",
       "Bash(npx vitest run:*)",
-      "Bash(column:*)"
+      "Bash(column:*)",
+      "Bash(echo \"Exit code: $?\")"
     ]
   }
 }
