@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.4.2] - 2025-10-24
+
+- Lines of Code color mode with percentile-based buckets adapting to repository size distribution
+- Intelligent directory coloring showing dominant file color based on file count (works for all color modes)
+- Directory color cache clearing when switching color modes
+- Comprehensive unit tests for directory color aggregation (105 tests passing)
+- Table-driven tests using real React repository `.github` folder structure
+- Extracted `calculateDominantColor` to testable pure function
+- Updated README documentation with all 11 color modes and new features
+
 ## [0.4.1] - 2025-10-22
 
 - File details now show on hover for instant preview (no click required)

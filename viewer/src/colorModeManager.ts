@@ -2,7 +2,7 @@ import { FileNode } from './types';
 import { getColorForExtension } from './colorScheme';
 import { couplingLoader } from './couplingLoader';
 
-export type ColorMode = 'fileType' | 'lastModified' | 'author' | 'churn' | 'contributors' | 'fileAge' | 'recentActivity' | 'stability' | 'recency' | 'cluster';
+export type ColorMode = 'fileType' | 'lastModified' | 'author' | 'churn' | 'contributors' | 'fileAge' | 'recentActivity' | 'stability' | 'recency' | 'cluster' | 'linesOfCode';
 
 export interface ColorInfo {
   hex: string;
@@ -60,6 +60,18 @@ interface LastModifiedInterval {
 }
 
 let lastModifiedIntervals: LastModifiedInterval[] = [];
+
+/**
+ * State for percentile-based lines of code intervals
+ */
+interface LocInterval {
+  minLoc: number;  // Lower bound of this interval (inclusive)
+  maxLoc: number;  // Upper bound of this interval (inclusive)
+  label: string;   // e.g., "Largest 5%: 1000-5000 LOC"
+  hex: string;     // Color for this interval
+}
+
+let locIntervals: LocInterval[] = [];
 
 /**
  * Reset the author color cache
@@ -171,6 +183,83 @@ export function calculateLastModifiedIntervals(dates: string[]): void {
       maxDate: date20,
       label: `Oldest 20%: ${formatYearRange(oldestDate, date20)}`,
       hex: '#666666'  // Gray
+    }
+  ];
+}
+
+/**
+ * Calculate percentile-based intervals for lines of code
+ * This creates 6 buckets with finer granularity for larger files
+ */
+export function calculateLocIntervals(locValues: number[]): void {
+  if (locValues.length === 0) {
+    locIntervals = [];
+    return;
+  }
+
+  // Sort LOC values in ascending order
+  const sortedLoc = [...locValues].sort((a, b) => a - b);
+  const count = sortedLoc.length;
+
+  // Calculate percentile indices (20%, 40%, 60%, 80%, 95%, 100%)
+  const p20 = Math.floor(count * 0.2) - 1;
+  const p40 = Math.floor(count * 0.4) - 1;
+  const p60 = Math.floor(count * 0.6) - 1;
+  const p80 = Math.floor(count * 0.8) - 1;
+  const p95 = Math.floor(count * 0.95) - 1;
+  const p100 = count - 1;
+
+  // Get the LOC values at each percentile
+  const minLoc = sortedLoc[0];
+  const loc20 = sortedLoc[Math.max(0, p20)];
+  const loc40 = sortedLoc[Math.max(0, p40)];
+  const loc60 = sortedLoc[Math.max(0, p60)];
+  const loc80 = sortedLoc[Math.max(0, p80)];
+  const loc95 = sortedLoc[Math.max(0, p95)];
+  const maxLoc = sortedLoc[p100];
+
+  // Helper to format LOC range
+  const formatRange = (min: number, max: number): string => {
+    return min === max ? `${min}` : `${min}-${max}`;
+  };
+
+  // Create intervals (ordered from largest to smallest for display)
+  locIntervals = [
+    {
+      minLoc: loc95,
+      maxLoc: maxLoc,
+      label: `Largest 5%: ${formatRange(loc95, maxLoc)} LOC`,
+      hex: '#c0392b'  // Dark red
+    },
+    {
+      minLoc: loc80,
+      maxLoc: loc95,
+      label: `80-95%: ${formatRange(loc80, loc95)} LOC`,
+      hex: '#e74c3c'  // Red
+    },
+    {
+      minLoc: loc60,
+      maxLoc: loc80,
+      label: `60-80%: ${formatRange(loc60, loc80)} LOC`,
+      hex: '#e67e22'  // Orange
+    },
+    {
+      minLoc: loc40,
+      maxLoc: loc60,
+      label: `40-60%: ${formatRange(loc40, loc60)} LOC`,
+      hex: '#f1c40f'  // Yellow
+    },
+    {
+      minLoc: loc20,
+      maxLoc: loc40,
+      label: `20-40%: ${formatRange(loc20, loc40)} LOC`,
+      hex: '#2ecc71'  // Green
+    },
+    {
+      minLoc: minLoc,
+      maxLoc: loc20,
+      label: `Smallest 20%: ${formatRange(minLoc, loc20)} LOC`,
+      hex: '#3498db'  // Blue
     }
   ];
 }
@@ -377,6 +466,37 @@ function getColorByRecency(daysSinceLastModified: number | null): ColorInfo {
 }
 
 /**
+ * Get color for a file based on lines of code
+ * Uses percentile-based intervals if calculated
+ */
+function getColorByLinesOfCode(loc: number): ColorInfo {
+  // Use percentile intervals if available
+  if (locIntervals.length > 0) {
+    for (const interval of locIntervals) {
+      if (loc >= interval.minLoc && loc <= interval.maxLoc) {
+        return { hex: interval.hex, name: interval.label };
+      }
+    }
+    // Fallback to smallest interval if loc is smaller than all intervals
+    const smallestInterval = locIntervals[locIntervals.length - 1];
+    return { hex: smallestInterval.hex, name: smallestInterval.label };
+  }
+
+  // Fallback to fixed intervals if percentiles not calculated
+  if (loc < 100) {
+    return { hex: '#3498db', name: 'Small (<100 LOC)' };
+  } else if (loc < 300) {
+    return { hex: '#2ecc71', name: 'Medium (100-300 LOC)' };
+  } else if (loc < 600) {
+    return { hex: '#f1c40f', name: 'Large (300-600 LOC)' };
+  } else if (loc < 1000) {
+    return { hex: '#e67e22', name: 'Very large (600-1000 LOC)' };
+  } else {
+    return { hex: '#e74c3c', name: 'Huge (1000+ LOC)' };
+  }
+}
+
+/**
  * Get color for a file based on the selected color mode
  */
 export function getColorForFile(file: FileNode, mode: ColorMode): ColorInfo {
@@ -424,6 +544,9 @@ export function getColorForFile(file: FileNode, mode: ColorMode): ColorInfo {
         name: cluster ? `${cluster.name} (${cluster.fileCount} files)` : `Cluster ${clusterId}`
       };
     }
+
+    case 'linesOfCode':
+      return getColorByLinesOfCode(file.loc);
 
     default:
       return getColorForExtension(file.extension);
@@ -582,6 +705,23 @@ export function getLegendItems(mode: ColorMode): ColorInfo[] {
       }));
     }
 
+    case 'linesOfCode':
+      // Use percentile intervals if calculated
+      if (locIntervals.length > 0) {
+        return locIntervals.map(interval => ({
+          hex: interval.hex,
+          name: interval.label
+        }));
+      }
+      // Fallback to fixed intervals
+      return [
+        { hex: '#e74c3c', name: 'Huge (1000+ LOC)' },
+        { hex: '#e67e22', name: 'Very large (600-1000 LOC)' },
+        { hex: '#f1c40f', name: 'Large (300-600 LOC)' },
+        { hex: '#2ecc71', name: 'Medium (100-300 LOC)' },
+        { hex: '#3498db', name: 'Small (<100 LOC)' }
+      ];
+
     default:
       return [];
   }
@@ -612,6 +752,8 @@ export function getColorModeName(mode: ColorMode): string {
       return 'Recency';
     case 'cluster':
       return 'Coupling Clusters';
+    case 'linesOfCode':
+      return 'Lines of Code';
     default:
       return 'Unknown';
   }

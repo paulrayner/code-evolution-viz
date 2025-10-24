@@ -6,6 +6,7 @@ import { getColorForExtension, DIRECTORY_COLOR } from './colorScheme';
 import { ColorMode, getColorForFile } from './colorModeManager';
 import { FilterManager } from './filterManager';
 import { CouplingLoader } from './couplingLoader';
+import { calculateDominantColor } from './lib/directory-color-aggregation';
 
 interface LayoutNode {
   node: TreeNode;
@@ -199,6 +200,8 @@ export class TreeVisualizer {
    */
   setColorMode(mode: ColorMode) {
     this.colorMode = mode;
+    // Clear directory stats cache so dominant colors are recalculated for new mode
+    this.dirStats.clear();
     if (this.layoutNodes.length > 0) {
       this.rebuildVisualization();
     }
@@ -501,7 +504,7 @@ export class TreeVisualizer {
   }
 
   /**
-   * Calculate statistics for a directory (total LOC, dominant file type)
+   * Calculate statistics for a directory (total LOC, dominant file type, dominant color for current mode)
    */
   private calculateDirectoryStats(dir: DirectoryNode): DirectoryStats {
     const stats: DirectoryStats = {
@@ -529,15 +532,17 @@ export class TreeVisualizer {
       processNode(child);
     }
 
-    // Find dominant extension by LOC
+    // Find dominant extension by LOC (for backward compatibility)
     let maxLoc = 0;
     for (const [ext, loc] of Object.entries(stats.filesByExtension)) {
       if (loc > maxLoc) {
         maxLoc = loc;
         stats.dominantExtension = ext;
-        stats.dominantColor = getColorForExtension(ext).numeric;
       }
     }
+
+    // Calculate dominant color based on current color mode using extracted function
+    stats.dominantColor = calculateDominantColor(dir, this.colorMode);
 
     return stats;
   }
@@ -907,21 +912,8 @@ export class TreeVisualizer {
         const ratio = Math.sqrt(stats.totalLoc / maxDirLoc);
         const normalizedSize = 0.5 + (ratio * 2.5); // Range: 0.5 to 3.0
 
-        // Color based on current mode
-        let color: number;
-        if (this.colorMode === 'lastModified') {
-          // Find most recently modified file in directory
-          const mostRecentFile = this.findMostRecentFile(dirNode);
-          if (mostRecentFile && mostRecentFile.lastModified) {
-            const colorInfo = getColorForFile(mostRecentFile, this.colorMode);
-            color = parseInt(colorInfo.hex.replace('#', ''), 16);
-          } else {
-            color = 0x666666; // Gray for unknown
-          }
-        } else {
-          // File type mode - use dominant file type color
-          color = stats.dominantColor;
-        }
+        // Color based on dominant color from stats (calculated per color mode)
+        const color = stats.dominantColor;
 
         const geometry = new THREE.BoxGeometry(normalizedSize, normalizedSize, normalizedSize);
         const material = new THREE.MeshPhongMaterial({

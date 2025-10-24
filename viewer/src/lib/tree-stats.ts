@@ -84,3 +84,28 @@ export function collectModificationDates(tree: DirectoryNode): string[] {
 
   return dates;
 }
+
+/**
+ * Collect all LOC values from files in the tree
+ * @param tree - The directory tree to traverse
+ * @returns Array of LOC values
+ */
+export function collectLocValues(tree: DirectoryNode): number[] {
+  const locValues: number[] = [];
+
+  const processNode = (node: TreeNode) => {
+    if (node.type === 'file') {
+      locValues.push(node.loc);
+    } else {
+      for (const child of node.children) {
+        processNode(child);
+      }
+    }
+  };
+
+  for (const child of tree.children) {
+    processNode(child);
+  }
+
+  return locValues;
+}
