@@ -208,6 +208,20 @@ export class TreeVisualizer {
   }
 
   /**
+   * Set theme (light or dark)
+   * Updates 3D scene background and fog colors
+   */
+  setTheme(theme: 'light' | 'dark') {
+    if (theme === 'light') {
+      this.scene.background = new THREE.Color(0xf5f5f5);
+      this.scene.fog = new THREE.Fog(0xf5f5f5, 50, 200);
+    } else {
+      this.scene.background = new THREE.Color(0x1a1a1a);
+      this.scene.fog = new THREE.Fog(0x1a1a1a, 50, 200);
+    }
+  }
+
+  /**
    * Set timeline mode
    * @param mode - 'off' (static), 'v1' (spotlight highlighting), 'v2' (additive/Gource-style)
    */
@@ -1702,8 +1716,8 @@ export class TreeVisualizer {
         ghostPosition
       ]);
       const edgeMaterial = new THREE.LineBasicMaterial({
-        color: 0xaaaaaa,
-        opacity: 0.15,
+        color: 0x000000,
+        opacity: 0.4,
         transparent: true
       });
       const edge = new THREE.Line(edgeGeometry, edgeMaterial);

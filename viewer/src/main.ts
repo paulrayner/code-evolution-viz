@@ -75,6 +75,37 @@ async function loadData(repoName: string = 'gource'): Promise<RepositorySnapshot
 }
 
 /**
+ * Filter tree to exclude generated files
+ * Returns a new tree with generated files removed
+ */
+function filterGeneratedFiles(tree: DirectoryNode): DirectoryNode {
+  function filterNode(node: TreeNode): TreeNode | null {
+    if (node.type === 'file') {
+      // Exclude file if marked as generated
+      return node.isGenerated ? null : node;
+    } else {
+      // Directory: recursively filter children
+      const filteredChildren = node.children
+        .map(child => filterNode(child))
+        .filter((child): child is TreeNode => child !== null);
+
+      // Return directory only if it has children after filtering
+      if (filteredChildren.length === 0) {
+        return null;
+      }
+
+      return {
+        ...node,
+        children: filteredChildren
+      };
+    }
+  }
+
+  const filtered = filterNode(tree);
+  return filtered as DirectoryNode; // Root directory always exists
+}
+
+/**
  * Update UI with repository info
  * (Repository name is now shown in dropdown only, no separate display)
  */
@@ -962,6 +993,10 @@ async function loadTimelineV2(data: TimelineDataV2, repoName: string) {
     if (!currentVisualizer) {
       currentVisualizer = new TreeVisualizer(canvas);
 
+      // Apply current theme
+      const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+      currentVisualizer.setTheme(currentTheme as 'light' | 'dark');
+
       // Pass coupling loader if available
       currentVisualizer.setCouplingLoader(couplingLoader.isLoaded() ? couplingLoader : null);
 
@@ -1710,6 +1745,10 @@ async function loadRepository(repoName: string) {
     if (!currentVisualizer) {
       currentVisualizer = new TreeVisualizer(canvas);
 
+      // Apply current theme
+      const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+      currentVisualizer.setTheme(currentTheme as 'light' | 'dark');
+
       // Pass coupling loader if available
       currentVisualizer.setCouplingLoader(couplingLoader.isLoaded() ? couplingLoader : null);
 
@@ -1982,6 +2021,56 @@ async function main() {
       }
 
       console.log('Highlight commit mode:', highlightCommitEnabled ? 'enabled' : 'disabled');
+    });
+  }
+
+  // Set up theme toggle
+  const themeToggle = document.getElementById('theme-toggle');
+  if (themeToggle) {
+    // Load saved theme or default to dark
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    updateThemeButton(savedTheme);
+
+    // Apply initial theme to current visualizer if it exists
+    if (currentVisualizer) {
+      currentVisualizer.setTheme(savedTheme as 'light' | 'dark');
+    }
+
+    themeToggle.addEventListener('click', () => {
+      const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      updateThemeButton(newTheme);
+
+      // Update 3D scene colors
+      if (currentVisualizer) {
+        currentVisualizer.setTheme(newTheme as 'light' | 'dark');
+      }
+    });
+  }
+
+  function updateThemeButton(theme: string) {
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+      themeToggle.textContent = theme === 'dark' ? '☀️ Light' : '🌙 Dark';
+    }
+  }
+
+  // Set up hide generated files checkbox
+  const hideGeneratedCheckbox = document.getElementById('hide-generated-checkbox') as HTMLInputElement;
+  if (hideGeneratedCheckbox) {
+    hideGeneratedCheckbox.addEventListener('change', () => {
+      if (!currentSnapshot || !currentVisualizer) return;
+
+      const shouldHide = hideGeneratedCheckbox.checked;
+      const treeToVisualize = shouldHide
+        ? filterGeneratedFiles(currentSnapshot.tree)
+        : currentSnapshot.tree;
+
+      currentVisualizer.visualize(treeToVisualize);
     });
   }
 
