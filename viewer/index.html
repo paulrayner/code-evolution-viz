@@ -7,6 +7,70 @@
   <meta name="keywords" content="code cohesion, architecture visualization, DDD, bounded contexts, temporal coupling">
   <title>CodeCohesion</title>
   <style>
+    :root {
+      /* Dark mode colors (default) */
+      --bg-primary: #1a1a1a;
+      --bg-panel: rgba(0, 0, 0, 0.7);
+      --bg-panel-solid: #1a1a1a;
+      --text-primary: #ffffff;
+      --text-secondary: #aaa;
+      --text-muted: #888;
+      --text-light: #ccc;
+      --text-lighter: #ddd;
+      --accent-primary: #4a9eff;
+      --accent-hover: rgba(74, 158, 255, 0.4);
+      --accent-active: rgba(74, 158, 255, 0.6);
+      --border-color: rgba(255, 255, 255, 0.1);
+      --border-subtle: rgba(255, 255, 255, 0.05);
+      --border-default: rgba(255, 255, 255, 0.2);
+      --border-accent: rgba(74, 158, 255, 0.3);
+      --warning-color: #ffaa00;
+      --warning-bg: rgba(0, 0, 0, 0.9);
+      --button-bg: rgba(74, 158, 255, 0.2);
+      --button-hover: rgba(74, 158, 255, 0.4);
+      --input-bg: rgba(255, 255, 255, 0.1);
+      --input-focus: rgba(74, 158, 255, 0.1);
+      --hover-bg: rgba(255, 255, 255, 0.05);
+      --shadow: rgba(0, 0, 0, 0.6);
+      --tag-marker: #ffaa00;
+      --tag-marker-hover: #ffdd44;
+      --scrollbar-track: rgba(255, 255, 255, 0.05);
+      --scrollbar-thumb: rgba(74, 158, 255, 0.4);
+      --scrollbar-thumb-hover: rgba(74, 158, 255, 0.6);
+    }
+
+    [data-theme="light"] {
+      /* Light mode colors */
+      --bg-primary: #f5f5f5;
+      --bg-panel: rgba(255, 255, 255, 0.9);
+      --bg-panel-solid: #ffffff;
+      --text-primary: #1a1a1a;
+      --text-secondary: #555;
+      --text-muted: #777;
+      --text-light: #333;
+      --text-lighter: #222;
+      --accent-primary: #2563eb;
+      --accent-hover: rgba(37, 99, 235, 0.2);
+      --accent-active: rgba(37, 99, 235, 0.3);
+      --border-color: rgba(0, 0, 0, 0.1);
+      --border-subtle: rgba(0, 0, 0, 0.05);
+      --border-default: rgba(0, 0, 0, 0.2);
+      --border-accent: rgba(37, 99, 235, 0.3);
+      --warning-color: #d97706;
+      --warning-bg: rgba(255, 255, 255, 0.95);
+      --button-bg: rgba(37, 99, 235, 0.1);
+      --button-hover: rgba(37, 99, 235, 0.2);
+      --input-bg: rgba(0, 0, 0, 0.05);
+      --input-focus: rgba(37, 99, 235, 0.1);
+      --hover-bg: rgba(0, 0, 0, 0.03);
+      --shadow: rgba(0, 0, 0, 0.15);
+      --tag-marker: #d97706;
+      --tag-marker-hover: #f59e0b;
+      --scrollbar-track: rgba(0, 0, 0, 0.05);
+      --scrollbar-thumb: rgba(37, 99, 235, 0.3);
+      --scrollbar-thumb-hover: rgba(37, 99, 235, 0.5);
+    }
+
     * {
       margin: 0;
       padding: 0;
@@ -16,8 +80,9 @@
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       overflow: hidden;
-      background: #1a1a1a;
-      color: #ffffff;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      transition: background-color 0.3s ease, color 0.3s ease;
     }
 
     #container {
@@ -45,11 +110,12 @@
       position: absolute;
       top: 20px;
       left: 20px;
-      background: rgba(0, 0, 0, 0.7);
+      background: var(--bg-panel);
       padding: 15px 20px;
       border-radius: 8px;
       backdrop-filter: blur(10px);
       pointer-events: auto;
+      transition: background-color 0.3s ease;
     }
 
     #header h1 {
@@ -60,7 +126,7 @@
 
     #header p {
       font-size: 12px;
-      color: #aaa;
+      color: var(--text-secondary);
       margin: 2px 0;
     }
 
@@ -68,7 +134,7 @@
       position: absolute;
       top: 20px;
       right: 20px;
-      background: rgba(0, 0, 0, 0.7);
+      background: var(--bg-panel);
       padding: 15px 20px;
       border-radius: 8px;
       backdrop-filter: blur(10px);
@@ -78,6 +144,7 @@
       pointer-events: auto;
       display: none;
       overflow: hidden;
+      transition: background-color 0.3s ease;
     }
 
     #info-panel.visible {
@@ -93,7 +160,7 @@
       font-size: 14px;
       font-weight: 600;
       margin-bottom: 10px;
-      color: #4a9eff;
+      color: var(--accent-primary);
       cursor: pointer;
       display: flex;
       justify-content: space-between;
@@ -116,7 +183,7 @@
       font-size: 12px;
       margin: 5px 0;
       padding: 5px 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      border-bottom: 1px solid var(--border-subtle);
     }
 
     #info-panel .info-row:last-child {
@@ -124,11 +191,11 @@
     }
 
     #info-panel .label {
-      color: #888;
+      color: var(--text-muted);
     }
 
     #info-panel .value {
-      color: #fff;
+      color: var(--text-primary);
       font-weight: 500;
     }
 
@@ -151,8 +218,8 @@
     }
 
     .spinner {
-      border: 3px solid rgba(255, 255, 255, 0.1);
-      border-top: 3px solid #4a9eff;
+      border: 3px solid var(--border-subtle);
+      border-top: 3px solid var(--accent-primary);
       border-radius: 50%;
       width: 40px;
       height: 40px;
@@ -170,13 +237,14 @@
       bottom: 20px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(0, 0, 0, 0.7);
+      background: var(--bg-panel);
       padding: 10px 15px;
       border-radius: 8px;
       backdrop-filter: blur(10px);
       pointer-events: auto;
       font-size: 12px;
-      color: #aaa;
+      color: var(--text-secondary);
+      transition: background-color 0.3s ease;
     }
 
     #timeline-controls {
@@ -184,7 +252,7 @@
       bottom: 70px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(0, 0, 0, 0.7);
+      background: var(--bg-panel);
       padding: 15px 20px;
       border-radius: 8px;
       backdrop-filter: blur(10px);
@@ -193,6 +261,7 @@
       flex-direction: column;
       gap: 10px;
       min-width: 600px;
+      transition: background-color 0.3s ease;
     }
 
     #timeline-controls .timeline-row {
@@ -203,9 +272,9 @@
 
     #timeline-controls button {
       padding: 6px 12px;
-      background: rgba(74, 158, 255, 0.2);
-      color: white;
-      border: 1px solid #4a9eff;
+      background: var(--button-bg);
+      color: var(--text-primary);
+      border: 1px solid var(--accent-primary);
       border-radius: 4px;
       cursor: pointer;
       font-size: 12px;
@@ -213,7 +282,7 @@
     }
 
     #timeline-controls button:hover {
-      background: rgba(74, 158, 255, 0.4);
+      background: var(--button-hover);
     }
 
     #timeline-controls button:disabled {
@@ -224,7 +293,7 @@
     #timeline-scrubber {
       flex: 1;
       height: 6px;
-      background: rgba(255, 255, 255, 0.2);
+      background: var(--border-subtle);
       border-radius: 3px;
       position: relative;
       cursor: pointer;
@@ -232,7 +301,7 @@
 
     #timeline-progress {
       height: 100%;
-      background: #4a9eff;
+      background: var(--accent-primary);
       border-radius: 3px;
       position: relative;
       transition: width 0.1s linear;
@@ -246,9 +315,9 @@
       transform: translateY(-50%);
       width: 12px;
       height: 12px;
-      background: #4a9eff;
+      background: var(--accent-primary);
       border-radius: 50%;
-      border: 2px solid white;
+      border: 2px solid var(--text-primary);
     }
 
     #tag-markers {
@@ -265,14 +334,14 @@
       top: -3px;
       width: 2px;
       height: calc(100% + 6px);
-      background: #ffaa00;
+      background: var(--tag-marker);
       cursor: pointer;
       pointer-events: auto;
       transition: background 0.2s, width 0.2s;
     }
 
     .tag-marker:hover {
-      background: #ffdd44;
+      background: var(--tag-marker-hover);
       width: 3px;
     }
 
@@ -282,8 +351,8 @@
       bottom: calc(100% + 4px);
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(0, 0, 0, 0.9);
-      color: #ffaa00;
+      background: var(--bg-panel);
+      color: var(--tag-marker);
       padding: 4px 8px;
       border-radius: 3px;
       font-size: 10px;
@@ -291,7 +360,7 @@
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.2s;
-      border: 1px solid #ffaa00;
+      border: 1px solid var(--tag-marker);
     }
 
     .tag-marker:hover::after {
@@ -300,8 +369,8 @@
 
     /* 3D Floating Cluster Details Card */
     .cluster-details-card {
-      background: rgba(0, 0, 0, 0.6);
-      border: 1px solid rgba(74, 158, 255, 0.5);
+      background: var(--bg-panel);
+      border: 1px solid var(--accent-primary);
       border-radius: 6px;
       padding: 12px 14px;
       min-width: 280px;
@@ -310,22 +379,23 @@
       overflow-y: auto;
       pointer-events: auto;
       font-family: monospace;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+      box-shadow: 0 4px 12px var(--shadow);
       backdrop-filter: blur(8px);
+      transition: background-color 0.3s ease, border-color 0.3s ease;
     }
 
     .cluster-details-card h4 {
       font-size: 12px;
       font-weight: 600;
-      color: #4a9eff;
+      color: var(--accent-primary);
       margin: 0 0 8px 0;
       padding-bottom: 6px;
-      border-bottom: 1px solid rgba(74, 158, 255, 0.3);
+      border-bottom: 1px solid var(--border-accent);
     }
 
     .cluster-details-card .cluster-name {
       font-size: 11px;
-      color: #ccc;
+      color: var(--text-secondary);
       margin-bottom: 10px;
     }
 
@@ -335,8 +405,8 @@
 
     .cluster-details-card .file-item {
       padding: 5px 0;
-      color: #ddd;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border-subtle);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -347,7 +417,7 @@
     }
 
     .cluster-details-card .file-name {
-      color: #ddd;
+      color: var(--text-secondary);
       flex: 1;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -355,7 +425,7 @@
     }
 
     .cluster-details-card .coupling-strength {
-      color: #888;
+      color: var(--text-muted);
       font-size: 10px;
       margin-left: 8px;
       white-space: nowrap;
@@ -367,21 +437,21 @@
     }
 
     .cluster-details-card::-webkit-scrollbar-track {
-      background: rgba(255, 255, 255, 0.05);
+      background: var(--scrollbar-track);
       border-radius: 3px;
     }
 
     .cluster-details-card::-webkit-scrollbar-thumb {
-      background: rgba(74, 158, 255, 0.4);
+      background: var(--scrollbar-thumb);
       border-radius: 3px;
     }
 
     .cluster-details-card::-webkit-scrollbar-thumb:hover {
-      background: rgba(74, 158, 255, 0.6);
+      background: var(--scrollbar-thumb-hover);
     }
 
     #timeline-info {
-      color: #aaa;
+      color: var(--text-secondary);
       font-size: 11px;
       display: flex;
       justify-content: space-between;
@@ -398,25 +468,25 @@
     #jump-to-commit input {
       width: 60px;
       padding: 2px 6px;
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.3);
+      background: var(--input-bg);
+      border: 1px solid var(--border-default);
       border-radius: 3px;
-      color: white;
+      color: var(--text-primary);
       font-size: 11px;
       text-align: center;
     }
 
     #jump-to-commit input:focus {
       outline: none;
-      border-color: #4a9eff;
-      background: rgba(74, 158, 255, 0.1);
+      border-color: var(--accent-primary);
+      background: var(--input-focus);
     }
 
     #jump-to-commit button {
       padding: 2px 8px;
-      background: rgba(74, 158, 255, 0.2);
-      color: white;
-      border: 1px solid #4a9eff;
+      background: var(--button-bg);
+      color: var(--text-primary);
+      border: 1px solid var(--accent-primary);
       border-radius: 3px;
       cursor: pointer;
       font-size: 10px;
@@ -424,14 +494,14 @@
     }
 
     #jump-to-commit button:hover {
-      background: rgba(74, 158, 255, 0.4);
+      background: var(--button-hover);
     }
 
     #legend {
       position: absolute;
       bottom: 20px;
       left: 20px;
-      background: rgba(0, 0, 0, 0.7);
+      background: var(--bg-panel);
       padding: 15px 20px;
       border-radius: 8px;
       backdrop-filter: blur(10px);
@@ -439,6 +509,7 @@
       min-width: 200px;
       max-height: 400px;
       overflow-y: auto;
+      transition: background-color 0.3s ease;
     }
 
     #legend.collapsed {
@@ -450,7 +521,7 @@
       font-size: 14px;
       font-weight: 600;
       margin-bottom: 10px;
-      color: #4a9eff;
+      color: var(--accent-primary);
       cursor: pointer;
       display: flex;
       justify-content: space-between;
@@ -478,7 +549,7 @@
     }
 
     .legend-item:hover {
-      background: rgba(255, 255, 255, 0.05);
+      background: var(--hover-bg);
       border-radius: 3px;
     }
 
@@ -496,7 +567,7 @@
       border-radius: 50%;
       margin-right: 10px;
       flex-shrink: 0;
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      border: 1px solid var(--border-default);
     }
 
     .legend-cube {
@@ -504,15 +575,15 @@
       height: 16px;
       margin-right: 10px;
       flex-shrink: 0;
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      border: 1px solid var(--border-default);
     }
 
     .legend-label {
-      color: #ccc;
+      color: var(--text-secondary);
     }
 
     .legend-item.unchecked .legend-label {
-      color: #666;
+      color: var(--text-muted);
       text-decoration: line-through;
     }
 
@@ -526,14 +597,14 @@
       gap: 5px;
       margin-bottom: 10px;
       padding-bottom: 10px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      border-bottom: 1px solid var(--border-subtle);
     }
 
     .filter-controls button {
       padding: 3px 8px;
-      background: rgba(74, 158, 255, 0.2);
-      color: white;
-      border: 1px solid #4a9eff;
+      background: var(--button-bg);
+      color: var(--text-primary);
+      border: 1px solid var(--accent-primary);
       border-radius: 3px;
       cursor: pointer;
       font-size: 10px;
@@ -542,7 +613,7 @@
     }
 
     .filter-controls button:hover {
-      background: rgba(74, 158, 255, 0.4);
+      background: var(--button-hover);
     }
 
     .filter-controls button:disabled {
@@ -552,15 +623,15 @@
 
     #filter-status {
       font-size: 10px;
-      color: #888;
+      color: var(--text-muted);
       margin-top: 8px;
       font-style: italic;
     }
 
     #tooltip {
       position: absolute;
-      background: rgba(0, 0, 0, 0.9);
-      color: white;
+      background: var(--bg-panel);
+      color: var(--text-primary);
       padding: 8px 12px;
       border-radius: 4px;
       font-size: 12px;
@@ -568,14 +639,14 @@
       display: none;
       z-index: 1000;
       white-space: nowrap;
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      border: 1px solid var(--border-default);
     }
 
     #stats-panel {
       position: absolute;
       bottom: 20px;
       right: 20px;
-      background: rgba(0, 0, 0, 0.7);
+      background: var(--bg-panel);
       padding: 15px 20px;
       border-radius: 8px;
       backdrop-filter: blur(10px);
@@ -583,6 +654,7 @@
       min-width: 200px;
       max-height: 500px;
       overflow-y: auto;
+      transition: background-color 0.3s ease;
     }
 
     #stats-panel.collapsed {
@@ -594,7 +666,7 @@
       font-size: 14px;
       font-weight: 600;
       margin-bottom: 10px;
-      color: #4a9eff;
+      color: var(--accent-primary);
       cursor: pointer;
       display: flex;
       justify-content: space-between;
@@ -620,11 +692,11 @@
     }
 
     #stats-panel .stat-label {
-      color: #888;
+      color: var(--text-muted);
     }
 
     #stats-panel .stat-value {
-      color: #fff;
+      color: var(--text-primary);
       font-weight: 500;
       font-family: monospace;
     }
@@ -635,7 +707,7 @@
 
     #stats-panel .stat-bar-label {
       font-size: 10px;
-      color: #aaa;
+      color: var(--text-secondary);
       margin-bottom: 2px;
     }
 
@@ -644,7 +716,7 @@
       border-radius: 3px;
       position: relative;
       overflow: hidden;
-      background: rgba(255, 255, 255, 0.1);
+      background: var(--border-subtle);
     }
 
     #stats-panel .stat-bar-fill-inner {
@@ -669,16 +741,23 @@
 
     <div id="ui">
       <div id="header">
-        <h1>CodeCohesion</h1>
-        <p style="font-size: 11px; color: #888; margin: -2px 0 10px 0;">Visualizing Code Evolution</p>
-        <select id="repo-selector" style="margin-bottom: 10px; padding: 5px; background: rgba(255,255,255,0.1); color: white; border: 1px solid #4a9eff; border-radius: 4px; cursor: pointer;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h1 style="margin: 0;">CodeCohesion</h1>
+            <p style="font-size: 11px; color: var(--text-muted); margin: -2px 0 10px 0;">Visualizing Code Evolution</p>
+          </div>
+          <button id="theme-toggle" style="padding: 6px 12px; background: var(--button-bg); color: var(--text-primary); border: 1px solid var(--accent-primary); border-radius: 4px; cursor: pointer; font-size: 11px; transition: background 0.2s;" title="Toggle light/dark mode">
+            🌙 Dark
+          </button>
+        </div>
+        <select id="repo-selector" style="margin-bottom: 10px; padding: 5px; background: var(--input-bg); color: var(--text-primary); border: 1px solid var(--accent-primary); border-radius: 4px; cursor: pointer;">
           <option value="">Loading repositories...</option>
         </select>
-        <a id="repo-github-link" href="" target="_blank" style="display: none; font-size: 11px; color: #4a9eff; text-decoration: none; margin-left: 10px; align-items: center; gap: 4px;">
+        <a id="repo-github-link" href="" target="_blank" style="display: none; font-size: 11px; color: var(--accent-primary); text-decoration: none; margin-left: 10px; align-items: center; gap: 4px;">
           🔗 <span></span>
         </a>
         <div id="mode-switcher" style="display: none; margin-bottom: 10px; align-items: center;">
-          <label style="font-size: 11px; color: #aaa; margin-right: 8px;">Visualization Mode:</label>
+          <label style="font-size: 11px; color: var(--text-secondary); margin-right: 8px;">Visualization Mode:</label>
           <label style="font-size: 11px; margin-right: 15px; cursor: pointer;">
             <input type="radio" name="view-mode" value="head" checked style="margin-right: 4px; cursor: pointer;">
             HEAD Analysis
@@ -689,8 +768,8 @@
           </label>
         </div>
         <div style="margin-bottom: 10px;">
-          <label style="font-size: 11px; color: #aaa; margin-right: 5px;">Color by:</label>
-          <select id="color-mode-selector" style="padding: 4px 10px; background: rgba(255,255,255,0.1); color: white; border: 1px solid #4a9eff; border-radius: 4px; cursor: pointer; font-size: 11px; margin-right: 15px;">
+          <label style="font-size: 11px; color: var(--text-secondary); margin-right: 5px;">Color by:</label>
+          <select id="color-mode-selector" style="padding: 4px 10px; background: var(--input-bg); color: var(--text-primary); border: 1px solid var(--accent-primary); border-radius: 4px; cursor: pointer; font-size: 11px; margin-right: 15px;">
             <option value="fileType">File Type</option>
             <option value="lastModified">Last Modified</option>
             <option value="author">Author</option>
@@ -702,12 +781,16 @@
             <option value="recency">Recency</option>
             <option value="linesOfCode">Lines of Code</option>
           </select>
-          <label style="font-size: 11px; color: #aaa; margin-right: 5px;">Labels:</label>
-          <button id="label-toggle" style="padding: 4px 10px; background: rgba(255,255,255,0.1); color: white; border: 1px solid #4a9eff; border-radius: 4px; cursor: pointer; font-size: 11px;">Always On</button>
-          <label style="font-size: 11px; color: #aaa; margin-left: 15px; margin-right: 5px;">View:</label>
-          <button id="view-mode-toggle" style="padding: 4px 10px; background: rgba(255,255,255,0.1); color: white; border: 1px solid #4a9eff; border-radius: 4px; cursor: pointer; font-size: 11px;">Navigate</button>
-          <label style="font-size: 11px; color: #aaa; margin-left: 15px; margin-right: 5px;">Highlight Commit:</label>
-          <button id="highlight-commit-toggle" style="padding: 4px 10px; background: rgba(255,255,255,0.1); color: white; border: 1px solid #4a9eff; border-radius: 4px; cursor: pointer; font-size: 11px;">On</button>
+          <label style="font-size: 11px; color: var(--text-secondary); margin-right: 5px; cursor: pointer;">
+            <input type="checkbox" id="hide-generated-checkbox" style="margin-right: 3px; cursor: pointer;">
+            Hide generated files
+          </label>
+          <label style="font-size: 11px; color: var(--text-secondary); margin-left: 15px; margin-right: 5px;">Labels:</label>
+          <button id="label-toggle" style="padding: 4px 10px; background: var(--button-bg); color: var(--text-primary); border: 1px solid var(--accent-primary); border-radius: 4px; cursor: pointer; font-size: 11px;">Always On</button>
+          <label style="font-size: 11px; color: var(--text-secondary); margin-left: 15px; margin-right: 5px;">View:</label>
+          <button id="view-mode-toggle" style="padding: 4px 10px; background: var(--button-bg); color: var(--text-primary); border: 1px solid var(--accent-primary); border-radius: 4px; cursor: pointer; font-size: 11px;">Navigate</button>
+          <label style="font-size: 11px; color: var(--text-secondary); margin-left: 15px; margin-right: 5px;">Highlight Commit:</label>
+          <button id="highlight-commit-toggle" style="padding: 4px 10px; background: var(--button-bg); color: var(--text-primary); border: 1px solid var(--accent-primary); border-radius: 4px; cursor: pointer; font-size: 11px;">On</button>
         </div>
       </div>
 

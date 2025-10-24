@@ -38,6 +38,30 @@ class RepositoryAnalyzer {
   }
 
   /**
+   * Check if file path matches generated/minified file patterns
+   * Phase 1: Simple pattern matching (no content heuristics)
+   */
+  private isGeneratedFile(filePath: string): boolean {
+    // Normalize path separators
+    const normalizedPath = filePath.replace(/\\/g, '/');
+
+    const patterns = [
+      '.min.js',
+      '.min.css',
+      '/dist/',
+      '/build/',
+      '/out/',
+      '/node_modules/',
+      '/vendor/',
+      '.bundle.js',
+      'bundle.js',
+      '/__generated__/'
+    ];
+
+    return patterns.some(pattern => normalizedPath.includes(pattern));
+  }
+
+  /**
    * Get git metadata for a file (all metrics for visualization)
    */
   private async getGitMetadata(filePath: string): Promise<{
@@ -274,6 +298,8 @@ class RepositoryAnalyzer {
     for (let i = 0; i < fileInfos.length; i++) {
       const f = fileInfos[i];
       const metadata = await this.getGitMetadata(f.path);
+      const isGenerated = this.isGeneratedFile(f.path);
+
       filesWithMetadata.push({
         path: f.path,
         loc: this.countLinesOfCode(f.content),
@@ -285,7 +311,8 @@ class RepositoryAnalyzer {
         firstCommitDate: metadata.firstCommitDate,
         recentLinesChanged: metadata.recentLinesChanged,
         avgLinesPerCommit: metadata.avgLinesPerCommit,
-        daysSinceLastModified: metadata.daysSinceLastModified
+        daysSinceLastModified: metadata.daysSinceLastModified,
+        isGenerated: isGenerated || undefined  // Only include if true
       });
 
       // Collect unique commit messages

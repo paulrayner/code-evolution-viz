@@ -17,6 +17,7 @@ export interface FileNode {
   recentLinesChanged: number | null; // Lines added + deleted in last 90 days
   avgLinesPerCommit: number | null;  // Average lines changed per commit (volatility)
   daysSinceLastModified: number | null; // Days since last modification
+  isGenerated?: boolean;             // Whether file is auto-generated/minified (Phase 1)
 }
 
 export interface DirectoryNode {

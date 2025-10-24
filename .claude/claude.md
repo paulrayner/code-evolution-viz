@@ -43,6 +43,8 @@ If changes to TypeScript source files aren't appearing in the browser:
 - Vite tries to load the `.js` files first, ignoring the updated TypeScript source
 - Deleting `.js` files forces Vite to transpile the `.ts` source files properly
 
+**Prevention:** The `tsconfig.json` includes `"noEmit": true` to prevent TypeScript from generating `.js` files. Vite handles all transpilation.
+
 ### Color Mode Legend Order
 
 Legend items are rendered **top-to-bottom** in the order they appear in the array returned by `getLegendItems()` in `colorModeManager.ts`:
@@ -224,3 +226,8 @@ When releasing a new version:
 - Patch (0.x.y): Bug fixes and incremental enhancements
 
 Keep entries simple, user-facing, no technical jargon.
+
+## Notification Settings
+
+- **Task completion**: Always `say "Done"` when completing significant tasks
+- **Waiting for input**: Always `say "Hey"` when needing user response
