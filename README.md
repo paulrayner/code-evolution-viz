@@ -99,7 +99,13 @@ Visualize the same codebase through different analytical lenses:
    - Stale repos: Percentile-based intervals with year ranges
 3. **Author** - Consistent hash-based colors per contributor
 4. **Churn (Lifetime Commits)** - Heatmap showing frequently modified files
-5. **Recent Activity (90 days)** - Lines changed in recent window
+5. **Contributors (Lifetime)** - Number of unique contributors per file
+6. **File Age** - When files were first created (new → legacy)
+7. **Recent Activity (90 days)** - Lines changed in recent window
+8. **Code Stability** - Average lines changed per commit (stable → volatile)
+9. **Recency** - Days since last modification (hot → cold)
+10. **Lines of Code** - File size distribution with percentile-based buckets (small → large)
+11. **Coupling Clusters** - Files grouped by temporal coupling (change together)
 
 ![Churn Mode on React Repository](docs/images/churn-mode-react.png)
 *React repository (6,784 files) colored by commit frequency - red spheres indicate high-churn hotspots that may need refactoring*
@@ -115,12 +121,24 @@ Visualize the same codebase through different analytical lenses:
 
 </details>
 
+#### Intelligent Directory Coloring
+- Directories show the **dominant color** of their files based on file count
+- Works for all color modes (not just file type)
+- Recursive aggregation - includes all nested files
+- Updates when switching color modes
+
 #### Commit Siblings Highlighting
 - Click any file with "Highlight Commit" enabled
 - See all files changed in the same commit (at HEAD)
 - Dramatic visual highlighting with bright yellow glow
 - Connection lines from highlighted files to parent directories
 - Toggle to clear highlighting
+
+#### Coupling Cluster Analysis
+- **Temporal coupling detection** - Files that frequently change together
+- **3D floating cards** - Hover over clustered files to see cluster details
+- **Scrollable file lists** - View all files in each coupling cluster
+- **Color-coded visualization** - Each cluster gets a unique color
 
 ### Timeline V2 - Repository Evolution Playback
 
@@ -201,11 +219,12 @@ Open http://localhost:3000 (or http://localhost:3001 if port 3000 is in use)
 - **Click file/directory** - View details and drill down into directories
 
 **UI Controls:**
-- **Color Mode dropdown** - Switch between File Type, Last Modified, Author, Churn, Recent Activity
+- **Color Mode dropdown** - 11 visualization modes including Lines of Code and Coupling Clusters
 - **Labels toggle** - Toggle directory labels between Always On and Hover Only
 - **Repository selector** - Switch between different analyzed repositories
 - **Highlight Commit** - Toggle commit siblings highlighting mode
 - **Panel headers** - Click to collapse/expand Stats and Legend panels
+- **Legend filtering** - Multi-select filtering by clicking legend items (works with all color modes)
 
 ## 📁 Project Structure
 
@@ -272,15 +291,21 @@ Rather than hard-coded time intervals, the Last Modified mode adapts:
 - Commit siblings highlighting
 
 **Slices 3-5: Advanced Metrics**
-- Churn (Lifetime Commits) heatmap coloring
-- Contributors count visualization
-- Recent Activity (90 days) coloring
+- 11 color modes: File Type, Last Modified, Author, Churn, Contributors, File Age, Recent Activity, Stability, Recency, **Lines of Code**, **Coupling Clusters**
+- Adaptive percentile-based coloring for repository-specific distributions
+- **Intelligent directory coloring** - Shows dominant file color by count, works for all modes
+- Legend-based multi-select filtering
 
 **Slices 6-8: Timeline & Evolution**
 - **Timeline V2** - Full commit history playback with delta reconstruction
 - Live repository stats updating per commit
 - Color-coded file change highlights (green for adds, orange for modifications)
 - VCR-style playback controls with variable speed
+
+**Slice 9: Coupling Analysis**
+- **Temporal coupling detection** - Identifies files that change together
+- **3D floating cluster cards** - Interactive details with scrollable file lists
+- **Louvain clustering algorithm** - Groups files by change patterns
 
 ### 🚧 In Progress
 
@@ -409,18 +434,25 @@ cd viewer && rm src/*.js
 **Current Test Coverage:**
 - Solar system layout with various tree depths
 - Hierarchical focus mode navigation
-- All 5 color modes (file type, last modified, author, churn, recent activity)
+- All 11 color modes with adaptive percentile-based coloring
+- Directory color aggregation (dominant file color by count)
 - Commit siblings highlighting
 - Timeline V2 playback (forward, backward, speed control)
 - Label visibility in Always On and Hover modes
 - Repository switching
 - Collapsible UI panels
 - Hover highlighting and tooltips
+- Coupling cluster visualization with floating detail cards
+- Legend-based multi-select filtering
+
+**Automated Tests:**
+- 105 passing unit tests covering core functionality
+- Directory color aggregation tests with real React repository data
+- Tree utilities and data loading validation
 
 **Known Limitations:**
 - Very large repositories (10K+ files) not yet tested
 - Performance with deep hierarchies (10+ levels) unknown
-- No automated tests yet (manual testing only)
 
 ## 🤝 Contributing
 
@@ -454,6 +486,6 @@ MIT
 
 **Repository:** https://github.com/paulrayner/codecohesion
 
-*Last Updated: 2025-10-20*
-*Status: Timeline V2 Complete | Slices 1-8 ✅*
-*Next: Performance Optimization & Video Demo*
+*Last Updated: 2025-10-24*
+*Status: Coupling Analysis Complete | Slices 1-9 ✅ | 11 Color Modes | 105 Tests Passing*
+*Next: Performance Optimization & Advanced DDD Analysis*

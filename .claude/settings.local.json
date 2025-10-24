@@ -76,7 +76,8 @@
       "Bash(./node_modules/.bin/tsc:*)",
       "Bash(open http://localhost:3001/codecohesion/)",
       "Bash(npm test:*)",
-      "Bash(npx vitest run:*)"
+      "Bash(npx vitest run:*)",
+      "Bash(column:*)"
     ]
   }
 }

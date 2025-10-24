@@ -1,10 +1,10 @@
 import { TreeVisualizer } from './TreeVisualizer';
 import { RepositorySnapshot, FileNode, DirectoryNode, TreeNode, TimelineData, TimelineDataV2 } from './types';
 import { FILE_COLORS, DIRECTORY_COLOR } from './colorScheme';
-import { ColorMode, getLegendItems, getColorModeName, getColorForFile, assignAuthorColors, calculateLastModifiedIntervals, isUsingPercentileIntervals } from './colorModeManager';
+import { ColorMode, getLegendItems, getColorModeName, getColorForFile, assignAuthorColors, calculateLastModifiedIntervals, calculateLocIntervals, isUsingPercentileIntervals } from './colorModeManager';
 import { DeltaReplayController } from './DeltaReplayController';
 import { couplingLoader } from './couplingLoader';
-import { calculateDirectoryStats, calculateMaxDepth, countDirectories, collectModificationDates } from './lib/tree-stats';
+import { calculateDirectoryStats, calculateMaxDepth, countDirectories, collectModificationDates, collectLocValues } from './lib/tree-stats';
 import { buildCommitIndex, buildPathIndex } from './lib/tree-indexers';
 import { findFileInTree } from './lib/tree-utils';
 import { getBaseRepoName } from './lib/repo-utils';
@@ -1664,6 +1664,11 @@ async function loadRepository(repoName: string) {
     const modificationDates = collectModificationDates(snapshot.tree);
     calculateLastModifiedIntervals(modificationDates);
     console.log(`Calculated last modified intervals from ${modificationDates.length} files`);
+
+    // Calculate percentile-based intervals for lines of code
+    const locValues = collectLocValues(snapshot.tree);
+    calculateLocIntervals(locValues);
+    console.log(`Calculated LOC intervals from ${locValues.length} files`);
 
     // Clear UI state from previous repo
     const infoPanel = document.getElementById('info-panel');
