@@ -2,6 +2,28 @@
 
 Future enhancements, ideas, and known limitations.
 
+## Force-Directed Layout (Marco's Request)
+
+- [ ] **Dynamic force-directed graph layout**
+  - Replace static tree layout with physics-based force simulation
+  - Files/directories attract based on coupling/relationship strength
+  - Files/directories repel when weakly related
+  - Creates organic clustering visualization
+  - **Implementation options:**
+    - Use D3-force in 3D space
+    - Custom physics engine with Three.js
+    - Spring forces for connections, repulsion for spacing
+  - **Relationship metrics for attraction:**
+    - Code coupling (shared dependencies)
+    - Temporal coupling (files changed together)
+    - Directory proximity
+    - Contributor overlap
+  - **UX considerations:**
+    - Toggle between static tree and force-directed layouts
+    - Damping/stabilization controls
+    - Animation speed controls
+    - Pin/freeze specific nodes
+
 ## Lines of Code Mode - Enhancements
 
 ### Known Limitations to Address
