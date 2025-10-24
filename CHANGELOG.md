@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.3] - 2025-10-24
+
+- 3D floating cluster details card showing coupled files with scrollable list in 3D space
+- Light/Dark mode theme toggle with CSS custom properties and automatic 3D scene background adaptation
+- Improved connection line visibility (increased edge opacity, black color instead of gray)
+- Extracted GhostRenderer module for Timeline V2 deletion visualization (9 unit tests)
+- Extracted LayoutEngine module for 3D tree layout calculations (12 unit tests)
+- Reduced TreeVisualizer from 1775 to 1477 lines (17% reduction, 298 lines removed)
+- Increased test coverage to 126 passing tests (21 new tests)
+- Code quality improvements following extract-and-prove refactoring pattern
+
+*Note: Refactoring work completed during Kandddinsky conference mob programming session - thanks to all participants!*
+
 ## [0.4.2] - 2025-10-24
 
 - Lines of Code color mode with percentile-based buckets adapting to repository size distribution
