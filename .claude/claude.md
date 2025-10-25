@@ -221,6 +221,8 @@ When releasing a new version:
 3. Maintain ordering: Added items first, then Changed items, then Fixed items
 4. Update version in `viewer/package.json` and `processor/package.json`
 
+IMPORTANT: Do NOT add an unreleased section at the top of the file.
+
 **Versioning (SemVer):**
 - Minor (0.x.0): Major new features (Timeline, Filtering, etc.)
 - Patch (0.x.y): Bug fixes and incremental enhancements
