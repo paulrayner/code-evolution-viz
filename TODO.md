@@ -46,6 +46,41 @@ Future enhancements, ideas, and known limitations.
   - Patterns: `.min.js`, `.min.css`, `/dist/`, `/build/`, `/out/`, `/node_modules/`, `/vendor/`, `.bundle.js`, `/bundle.js`, `/__generated__/`
   - **Tested with:** Test repository with build/, dist/, node_modules/ files ✓
 
+  **Phase 1.5: Re-analyze Existing Repositories** ⏳ PENDING
+  - [ ] Re-analyze Gource repository (2 minutes, ~120 files)
+  - [ ] Re-analyze React repository (10-15 minutes, ~6,784 files)
+  - [ ] Re-analyze cBioPortal repository (10-15 minutes, large)
+  - [ ] Re-analyze cBioPortal-Frontend repository (10-15 minutes, large)
+  - [ ] Verify isGenerated fields in updated JSON files
+  - [ ] Test checkbox functionality with each newly analyzed repo
+
+  **Why:** Existing data files were generated before the isGenerated fix, so they have 0 generated files detected. Need HEAD snapshot re-analysis to enable filtering.
+
+  **Strategy:** Re-analyze HEAD snapshots only (fast ~30 min total). Skip timeline files for now (much slower, can do later if needed).
+
+  **Commands:**
+  ```bash
+  # Gource (2 min)
+  cd processor
+  npm run dev -- /Users/paul/Documents/Gource output/gource-new.json
+  cp output/gource-new.json ../viewer/public/data/gource.json
+
+  # React (10-15 min)
+  npm run dev -- /Users/paul/Documents/react output/react-new.json
+  cp output/react-new.json ../viewer/public/data/react.json
+
+  # cBioPortal repos (10-15 min each)
+  npm run dev -- /Users/paul/Documents/cbioportal/cbioportal output/cbioportal-new.json
+  npm run dev -- /Users/paul/Documents/cbioportal/cbioportal-frontend output/cbioportal-frontend-new.json
+  cp output/cbioportal-new.json ../viewer/public/data/cbioportal.json
+  cp output/cbioportal-frontend-new.json ../viewer/public/data/cbioportal-frontend.json
+  ```
+
+  **Expected results:**
+  - Gource: 0 generated files (clean C++ project)
+  - React: Some generated files detected (build/, fixtures/, dist/ if present)
+  - cBioPortal: Possibly generated files in build outputs
+
   **Phase 2: Content heuristics & enhanced UX**
   - [ ] Add content-based detection (line length, whitespace ratio, alphanumeric density)
   - [ ] Implement dual-mode: "Lines of Code" vs "Lines of Code (All Files)"
