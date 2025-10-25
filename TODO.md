@@ -46,12 +46,12 @@ Future enhancements, ideas, and known limitations.
   - Patterns: `.min.js`, `.min.css`, `/dist/`, `/build/`, `/out/`, `/node_modules/`, `/vendor/`, `.bundle.js`, `/bundle.js`, `/__generated__/`
   - **Tested with:** Test repository with build/, dist/, node_modules/ files ✓
 
-  **Phase 1.5: Re-analyze Existing Repositories** ⏳ PENDING
+  **Phase 1.5: Re-analyze Existing Repositories** ⏳ IN PROGRESS
   - [ ] Re-analyze Gource repository (2 minutes, ~120 files)
-  - [ ] Re-analyze React repository (10-15 minutes, ~6,784 files)
+  - [x] Re-analyze React repository (10-15 minutes, ~6,784 files) - **10 generated files detected** ✓
   - [ ] Re-analyze cBioPortal repository (10-15 minutes, large)
   - [ ] Re-analyze cBioPortal-Frontend repository (10-15 minutes, large)
-  - [ ] Verify isGenerated fields in updated JSON files
+  - [x] Verify isGenerated fields in updated JSON files - React: 10 files ✓
   - [ ] Test checkbox functionality with each newly analyzed repo
 
   **Why:** Existing data files were generated before the isGenerated fix, so they have 0 generated files detected. Need HEAD snapshot re-analysis to enable filtering.
