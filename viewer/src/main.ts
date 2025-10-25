@@ -577,6 +577,61 @@ function updateHideGeneratedCheckbox(snapshot: RepositorySnapshot) {
 }
 
 /**
+ * Apply generated file filter based on checkbox state
+ * Call this after loading a repository to visualize with or without generated files
+ */
+function applyGeneratedFileFilter() {
+  if (!currentSnapshot || !currentVisualizer) return;
+
+  const checkbox = document.getElementById('hide-generated-checkbox') as HTMLInputElement;
+  const shouldHide = checkbox && checkbox.checked;
+
+  const generatedCount = countGeneratedFiles(currentSnapshot.tree);
+
+  if (shouldHide && generatedCount > 0) {
+    console.log(`Hiding ${generatedCount} generated files`);
+    const filteredTree = filterGeneratedFiles(currentSnapshot.tree);
+    currentVisualizer.visualize(filteredTree);
+
+    // Update stats to reflect filtered tree
+    populateStatsForFilteredTree(filteredTree);
+  } else {
+    console.log(`Showing all files (${generatedCount} generated files present)`);
+    currentVisualizer.visualize(currentSnapshot.tree);
+
+    // Restore original stats
+    populateStats(currentSnapshot);
+  }
+}
+
+/**
+ * Update statistics for filtered tree (when hiding generated files)
+ */
+function populateStatsForFilteredTree(tree: DirectoryNode) {
+  // Count files and LOC in filtered tree
+  let totalFiles = 0;
+  let totalLoc = 0;
+
+  function countInTree(node: TreeNode) {
+    if (node.type === 'file') {
+      totalFiles++;
+      totalLoc += node.loc;
+    } else {
+      node.children.forEach(child => countInTree(child));
+    }
+  }
+
+  countInTree(tree);
+
+  // Update stats display
+  const filesEl = document.getElementById('stat-files');
+  const locEl = document.getElementById('stat-loc');
+
+  if (filesEl) filesEl.textContent = totalFiles.toLocaleString();
+  if (locEl) locEl.textContent = totalLoc.toLocaleString();
+}
+
+/**
  * Update statistics panel from tree (for Timeline V2 where we don't have a full snapshot)
  */
 function updateStatsForTree(tree: DirectoryNode, commitIndex?: number, totalCommits?: number) {
@@ -1879,8 +1934,8 @@ async function loadRepository(repoName: string) {
     // Enable timeline mode if loading timeline data (shows all files for highlighting)
     currentVisualizer.setTimelineMode(currentTimelineData !== null ? 'v1' : 'off');
 
-    // Visualize the tree
-    currentVisualizer.visualize(snapshot.tree);
+    // Visualize the tree (apply filter if checkbox is checked)
+    applyGeneratedFileFilter();
 
     // Update legend based on current color mode
     const currentColorMode = (localStorage.getItem('colorMode') as ColorMode) || 'fileType';
@@ -2116,14 +2171,7 @@ async function main() {
   const hideGeneratedCheckbox = document.getElementById('hide-generated-checkbox') as HTMLInputElement;
   if (hideGeneratedCheckbox) {
     hideGeneratedCheckbox.addEventListener('change', () => {
-      if (!currentSnapshot || !currentVisualizer) return;
-
-      const shouldHide = hideGeneratedCheckbox.checked;
-      const treeToVisualize = shouldHide
-        ? filterGeneratedFiles(currentSnapshot.tree)
-        : currentSnapshot.tree;
-
-      currentVisualizer.visualize(treeToVisualize);
+      applyGeneratedFileFilter();
     });
   }
 
