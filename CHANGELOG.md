@@ -1,12 +1,12 @@
 # Changelog
 
-## [Unreleased]
+## [0.4.4] - 2025-10-25
 
-- Generated file detection and filtering (Phase 1)
-- "Hide generated files" checkbox with automatic count display
-- Pattern-based detection for build artifacts (dist/, build/, node_modules/, *.min.js, *.bundle.js, __generated__/, vendor/)
-- Checkbox automatically disables when no generated files detected
-- Console logging during analysis shows generated file count
+- Generated file detection and filtering with pattern matching for build artifacts
+- "Hide generated files" checkbox showing count of detected files
+- Checkbox automatically disables when no generated files found
+- Fixed detection logic for accurate path pattern matching
+- Console logging during analysis reports generated file count
 
 ## [0.4.3] - 2025-10-24
 
