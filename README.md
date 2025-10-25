@@ -220,6 +220,7 @@ Open http://localhost:3000 (or http://localhost:3001 if port 3000 is in use)
 
 **UI Controls:**
 - **Color Mode dropdown** - 11 visualization modes including Lines of Code and Coupling Clusters
+- **Hide generated files** - Filter out build artifacts, minified files, and dependencies (dist/, build/, node_modules/, *.min.js, etc.)
 - **Labels toggle** - Toggle directory labels between Always On and Hover Only
 - **Repository selector** - Switch between different analyzed repositories
 - **Highlight Commit** - Toggle commit siblings highlighting mode

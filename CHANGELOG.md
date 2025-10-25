@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+- Generated file detection and filtering (Phase 1)
+- "Hide generated files" checkbox with automatic count display
+- Pattern-based detection for build artifacts (dist/, build/, node_modules/, *.min.js, *.bundle.js, __generated__/, vendor/)
+- Checkbox automatically disables when no generated files detected
+- Console logging during analysis shows generated file count
+
 ## [0.4.3] - 2025-10-24
 
 - 3D floating cluster details card showing coupled files with scrollable list in 3D space
