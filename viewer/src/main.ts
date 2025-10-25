@@ -75,6 +75,26 @@ async function loadData(repoName: string = 'gource'): Promise<RepositorySnapshot
 }
 
 /**
+ * Count generated files in tree
+ */
+function countGeneratedFiles(tree: DirectoryNode): number {
+  let count = 0;
+
+  function countNode(node: TreeNode): void {
+    if (node.type === 'file') {
+      if (node.isGenerated) {
+        count++;
+      }
+    } else {
+      node.children.forEach(child => countNode(child));
+    }
+  }
+
+  countNode(tree);
+  return count;
+}
+
+/**
  * Filter tree to exclude generated files
  * Returns a new tree with generated files removed
  */
@@ -522,6 +542,38 @@ function updateStatsDisplay(snapshot: RepositorySnapshot) {
     langBreakdown.appendChild(bar);
   }
 
+}
+
+/**
+ * Update "Hide generated files" checkbox label with count
+ */
+function updateHideGeneratedCheckbox(snapshot: RepositorySnapshot) {
+  const generatedCount = countGeneratedFiles(snapshot.tree);
+  const checkboxLabel = document.querySelector('label[for="hide-generated-checkbox"]');
+
+  if (!checkboxLabel) {
+    // If no label exists, find the checkbox and add text after it
+    const checkbox = document.getElementById('hide-generated-checkbox');
+    if (checkbox && checkbox.nextSibling) {
+      const textNode = checkbox.nextSibling;
+      if (textNode.nodeType === Node.TEXT_NODE) {
+        if (generatedCount > 0) {
+          textNode.textContent = ` Hide generated files (${generatedCount} found)`;
+        } else {
+          textNode.textContent = ' Hide generated files';
+        }
+      }
+    }
+  }
+
+  // Disable checkbox if no generated files
+  const checkbox = document.getElementById('hide-generated-checkbox') as HTMLInputElement;
+  if (checkbox) {
+    checkbox.disabled = generatedCount === 0;
+    if (generatedCount === 0) {
+      checkbox.checked = false;
+    }
+  }
 }
 
 /**
@@ -1717,6 +1769,7 @@ async function loadRepository(repoName: string) {
 
     updateHeader(snapshot);
     populateStats(snapshot);
+    updateHideGeneratedCheckbox(snapshot);
 
     // Show/hide timeline controls based on format
     const timelineControls = document.getElementById('timeline-controls');

@@ -42,8 +42,8 @@ class RepositoryAnalyzer {
    * Phase 1: Simple pattern matching (no content heuristics)
    */
   private isGeneratedFile(filePath: string): boolean {
-    // Normalize path separators
-    const normalizedPath = filePath.replace(/\\/g, '/');
+    // Normalize path separators and ensure leading slash for pattern matching
+    const normalizedPath = '/' + filePath.replace(/\\/g, '/');
 
     const patterns = [
       '.min.js',
@@ -54,7 +54,7 @@ class RepositoryAnalyzer {
       '/node_modules/',
       '/vendor/',
       '.bundle.js',
-      'bundle.js',
+      '/bundle.js',
       '/__generated__/'
     ];
 
@@ -211,6 +211,7 @@ class RepositoryAnalyzer {
     recentLinesChanged: number | null;
     avgLinesPerCommit: number | null;
     daysSinceLastModified: number | null;
+    isGenerated?: boolean;
   }>): DirectoryNode {
     const root: DirectoryNode = {
       path: '',
@@ -261,7 +262,8 @@ class RepositoryAnalyzer {
         firstCommitDate: file.firstCommitDate,
         recentLinesChanged: file.recentLinesChanged,
         avgLinesPerCommit: file.avgLinesPerCommit,
-        daysSinceLastModified: file.daysSinceLastModified
+        daysSinceLastModified: file.daysSinceLastModified,
+        isGenerated: file.isGenerated
       };
       currentNode.children.push(fileNode);
     }
@@ -294,11 +296,16 @@ class RepositoryAnalyzer {
     console.log('Collecting git metadata...');
     const filesWithMetadata = [];
     const commitMessages: Record<string, string> = {};
+    let generatedFileCount = 0;
 
     for (let i = 0; i < fileInfos.length; i++) {
       const f = fileInfos[i];
       const metadata = await this.getGitMetadata(f.path);
       const isGenerated = this.isGeneratedFile(f.path);
+
+      if (isGenerated) {
+        generatedFileCount++;
+      }
 
       filesWithMetadata.push({
         path: f.path,
@@ -326,6 +333,11 @@ class RepositoryAnalyzer {
       if ((i + 1) % 100 === 0) {
         console.log(`  Processed ${i + 1}/${fileInfos.length} files...`);
       }
+    }
+
+    // Report generated file detection
+    if (generatedFileCount > 0) {
+      console.log(`Detected ${generatedFileCount} generated/minified files (node_modules, dist, build, etc.)`);
     }
 
     // Build tree structure

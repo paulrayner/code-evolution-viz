@@ -33,12 +33,18 @@ Future enhancements, ideas, and known limitations.
   - Generated files (bundled JS, compiled output) skew distribution
   - Minified files appear "huge" but may not be concerning
 
-  **Phase 1: Pattern-based detection (MVP)** ✅ COMPLETE
+  **Phase 1: Pattern-based detection (MVP)** ✅ VERIFIED COMPLETE (2025-10-25)
   - [x] Add `isGenerated` field to FileNode type (processor & viewer)
-  - [x] Implement pattern matching in processor (hardcoded 10 patterns)
+  - [x] Implement pattern matching in processor (10 patterns)
   - [x] Add "Hide generated files" checkbox in viewer (unchecked by default)
   - [x] Filter tree before rendering when checkbox is checked
-  - Patterns: `.min.js`, `.min.css`, `/dist/`, `/build/`, `/out/`, `/node_modules/`, `/vendor/`, `.bundle.js`, `bundle.js`, `/__generated__/`
+  - [x] Fixed detection logic to prepend leading slash for accurate pattern matching
+  - [x] Fixed buildTree() to pass through isGenerated field
+  - [x] Added file count indicator to checkbox label: "Hide generated files (N found)"
+  - [x] Checkbox auto-disables when no generated files detected
+  - [x] Console logging shows generated file count during analysis
+  - Patterns: `.min.js`, `.min.css`, `/dist/`, `/build/`, `/out/`, `/node_modules/`, `/vendor/`, `.bundle.js`, `/bundle.js`, `/__generated__/`
+  - **Tested with:** Test repository with build/, dist/, node_modules/ files ✓
 
   **Phase 2: Content heuristics & enhanced UX**
   - [ ] Add content-based detection (line length, whitespace ratio, alphanumeric density)
