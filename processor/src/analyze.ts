@@ -39,23 +39,46 @@ class RepositoryAnalyzer {
 
   /**
    * Check if file path matches generated/minified file patterns
-   * Phase 1: Simple pattern matching (no content heuristics)
+   * Phase 1.6: Expanded pattern coverage for common generated files
    */
   private isGeneratedFile(filePath: string): boolean {
     // Normalize path separators and ensure leading slash for pattern matching
     const normalizedPath = '/' + filePath.replace(/\\/g, '/');
 
     const patterns = [
+      // Minified files
       '.min.js',
       '.min.css',
+
+      // Build output directories
       '/dist/',
       '/build/',
       '/out/',
       '/node_modules/',
       '/vendor/',
+
+      // Bundled files
       '.bundle.js',
       '/bundle.js',
-      '/__generated__/'
+      '/__generated__/',
+
+      // Lock files (Phase 1.6)
+      'yarn.lock',
+      'package-lock.json',
+      'pnpm-lock.yaml',
+      'composer.lock',
+      'Gemfile.lock',
+      'Cargo.lock',
+      'poetry.lock',
+      'Pipfile.lock',
+
+      // Build artifacts (Phase 1.6)
+      '.map',                // Source maps
+
+      // Test artifacts (Phase 1.6)
+      '/__snapshots__/',     // Jest snapshot directories
+      '.snap',               // Jest snapshot files
+      '/__compiled__/'       // Compiled test fixtures
     ];
 
     return patterns.some(pattern => normalizedPath.includes(pattern));
