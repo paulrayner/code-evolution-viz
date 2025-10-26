@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as THREE from 'three';
-import { LayoutEngine } from './LayoutEngine';
+import { HierarchicalLayoutStrategy } from './HierarchicalLayoutStrategy';
 import { DirectoryNode, FileNode } from './types';
 
-describe('LayoutEngine', () => {
-  let layoutEngine: LayoutEngine;
+describe('HierarchicalLayoutStrategy', () => {
+  let layoutEngine: HierarchicalLayoutStrategy;
 
   beforeEach(() => {
-    layoutEngine = new LayoutEngine();
+    layoutEngine = new HierarchicalLayoutStrategy();
   });
 
   describe('calculateRadius', () => {

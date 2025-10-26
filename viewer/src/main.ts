@@ -4,6 +4,9 @@ import { FILE_COLORS, DIRECTORY_COLOR } from './colorScheme';
 import { ColorMode, getLegendItems, getColorModeName, getColorForFile, assignAuthorColors, calculateLastModifiedIntervals, calculateLocIntervals, isUsingPercentileIntervals } from './colorModeManager';
 import { DeltaReplayController } from './DeltaReplayController';
 import { couplingLoader } from './couplingLoader';
+import { HierarchicalLayoutStrategy } from './HierarchicalLayoutStrategy';
+import { FlatLayoutStrategy } from './FlatLayoutStrategy';
+import { ForceDirectedLayoutStrategy } from './ForceDirectedLayoutStrategy';
 import { calculateDirectoryStats, calculateMaxDepth, countDirectories, collectModificationDates, collectLocValues } from './lib/tree-stats';
 import { buildCommitIndex, buildPathIndex } from './lib/tree-indexers';
 import { findFileInTree } from './lib/tree-utils';
@@ -2020,6 +2023,34 @@ async function main() {
       }
     });
   });
+
+  // Set up layout mode selector
+  const layoutModeSelector = document.getElementById('layout-mode-selector') as HTMLSelectElement;
+  if (layoutModeSelector) {
+    // Load saved preference from localStorage
+    const savedLayoutMode = localStorage.getItem('layoutMode') || 'hierarchical';
+    layoutModeSelector.value = savedLayoutMode;
+
+    // Handle layout mode change
+    layoutModeSelector.addEventListener('change', (e) => {
+      const target = e.target as HTMLSelectElement;
+      const newMode = target.value;
+      localStorage.setItem('layoutMode', newMode);
+
+      if (currentVisualizer) {
+        // Switch layout strategy
+        let strategy;
+        if (newMode === 'forceDirected') {
+          strategy = new ForceDirectedLayoutStrategy();
+        } else if (newMode === 'flat') {
+          strategy = new FlatLayoutStrategy();
+        } else {
+          strategy = new HierarchicalLayoutStrategy();
+        }
+        currentVisualizer.setLayoutStrategy(strategy);
+      }
+    });
+  }
 
   // Set up color mode selector
   const colorModeSelector = document.getElementById('color-mode-selector') as HTMLSelectElement;

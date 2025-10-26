@@ -8,7 +8,8 @@ import { FilterManager } from './filterManager';
 import { CouplingLoader } from './couplingLoader';
 import { calculateDominantColor } from './lib/directory-color-aggregation';
 import { GhostRenderer } from './GhostRenderer';
-import { LayoutEngine, LayoutNode } from './LayoutEngine';
+import { ILayoutStrategy, LayoutNode } from './ILayoutStrategy';
+import { HierarchicalLayoutStrategy } from './HierarchicalLayoutStrategy';
 
 interface DirectoryStats {
   totalLoc: number;
@@ -51,8 +52,12 @@ export class TreeVisualizer {
   // Ghost rendering for Timeline V2 deletions (extracted to GhostRenderer module)
   private ghostRenderer: GhostRenderer = new GhostRenderer();
 
-  // Layout engine for 3D tree positioning (extracted to LayoutEngine module)
-  private layoutEngine: LayoutEngine = new LayoutEngine();
+  // Layout strategy for tree positioning (supports multiple layout algorithms)
+  private layoutStrategy: ILayoutStrategy = new HierarchicalLayoutStrategy();
+  private currentTree: DirectoryNode | null = null; // Store tree for re-layout when strategy changes
+
+  // Physics animation timing
+  private lastFrameTime: number = 0;
 
   private edges: THREE.Line[] = [];
   private edgeNodeMap: Map<THREE.Line, { parent: TreeNode; child: TreeNode }> = new Map();
@@ -201,6 +206,44 @@ export class TreeVisualizer {
     this.dirStats.clear();
     if (this.layoutNodes.length > 0) {
       this.rebuildVisualization();
+    }
+  }
+
+  /**
+   * Set layout strategy and rebuild visualization
+   * Switches between different layout algorithms (3D hierarchy, flat 2D, etc.)
+   */
+  setLayoutStrategy(strategy: ILayoutStrategy) {
+    this.layoutStrategy = strategy;
+
+    // Apply camera defaults for this layout
+    const { position, lookAt } = strategy.getCameraDefaults();
+    this.camera.position.copy(position);
+    this.camera.lookAt(lookAt);
+    this.controls.target.copy(lookAt);
+    this.controls.update();
+
+    // Adjust camera FOV and scene fog for layout type
+    if (strategy.needsContinuousUpdate?.()) {
+      // Force-directed 2D: narrower FOV (less perspective distortion)
+      this.camera.fov = 30;
+      this.camera.updateProjectionMatrix();
+      // Disable fog for true 2D appearance
+      this.scene.fog = null;
+      // Disable rotation - only allow pan and zoom in 2D view
+      this.controls.enableRotate = false;
+    } else {
+      // 3D layouts: standard FOV and fog
+      this.camera.fov = 60;
+      this.camera.updateProjectionMatrix();
+      this.scene.fog = new THREE.Fog(0x1a1a1a, 50, 200);
+      // Re-enable rotation for 3D views
+      this.controls.enableRotate = true;
+    }
+
+    // Re-layout tree with new strategy (don't reset camera - we just did above)
+    if (this.currentTree) {
+      this.visualize(this.currentTree, false);
     }
   }
 
@@ -588,8 +631,8 @@ export class TreeVisualizer {
     return mostRecent;
   }
 
-  // Layout methods delegated to LayoutEngine module
-  // See LayoutEngine.ts for implementation
+  // Layout methods delegated to layout strategy
+  // See ILayoutStrategy.ts and implementing classes for details
 
   /**
    * Check if a layout node should be hidden
@@ -965,6 +1008,9 @@ export class TreeVisualizer {
    * @param resetCamera - Whether to auto-frame the camera (default: true)
    */
   visualize(tree: DirectoryNode, resetCamera: boolean = true) {
+    // Store tree for re-layout when strategy changes
+    this.currentTree = tree;
+
     // Clear any ghost files from previous commit (Timeline V2 deletions)
     this.ghostRenderer.clearGhosts(this.scene, this.fileObjects, this.edges, this.edgeNodeMap);
 
@@ -980,7 +1026,7 @@ export class TreeVisualizer {
 
     // Layout the tree
     const rootPosition = new THREE.Vector3(0, 10, 0);
-    this.layoutNodes = this.layoutEngine.layoutTree(tree, rootPosition, 0, 0, Math.PI * 2);
+    this.layoutNodes = this.layoutStrategy.layoutTree(tree, rootPosition, 0, 0, Math.PI * 2);
 
     // Create visuals
     this.createVisuals(this.layoutNodes, maxFileLoc, maxDirLoc);
@@ -1277,6 +1323,19 @@ export class TreeVisualizer {
    */
   animate() {
     requestAnimationFrame(() => this.animate());
+
+    // Physics update (for force-directed layouts)
+    const now = performance.now();
+    if (this.lastFrameTime > 0) {
+      const dt = Math.min((now - this.lastFrameTime) / 1000, 0.1); // Cap at 100ms
+
+      if (this.layoutStrategy.tick && this.layoutStrategy.needsContinuousUpdate?.()) {
+        this.layoutStrategy.tick(dt);
+        this.updateMeshPositions();
+      }
+    }
+    this.lastFrameTime = now;
+
     this.controls.update();
     this.renderer.render(this.scene, this.camera);
     this.labelRenderer.render(this.scene, this.camera);
@@ -1287,6 +1346,17 @@ export class TreeVisualizer {
    */
   start() {
     this.animate();
+  }
+
+  /**
+   * Update mesh positions from layout nodes (for physics simulation)
+   */
+  private updateMeshPositions(): void {
+    for (const layoutNode of this.layoutNodes) {
+      if (layoutNode.mesh) {
+        layoutNode.mesh.position.copy(layoutNode.position);
+      }
+    }
   }
 
   // ============================================================================
