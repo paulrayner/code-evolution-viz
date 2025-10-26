@@ -1025,11 +1025,18 @@ export class TreeVisualizer {
     const maxDirLoc = this.findMaxDirectoryLoc(tree);
 
     // Layout the tree
-    const rootPosition = new THREE.Vector3(0, 10, 0);
+    // Force-Directed layout uses Y=0 (true flat 2D), others use Y=10 (hierarchical)
+    const rootY = this.layoutStrategy.needsContinuousUpdate?.() ? 0 : 10;
+    const rootPosition = new THREE.Vector3(0, rootY, 0);
     this.layoutNodes = this.layoutStrategy.layoutTree(tree, rootPosition, 0, 0, Math.PI * 2);
 
     // Create visuals
     this.createVisuals(this.layoutNodes, maxFileLoc, maxDirLoc);
+
+    // Update edge positions to match current node positions (for Force-Directed layout)
+    if (this.layoutStrategy.needsContinuousUpdate?.()) {
+      this.updateEdgePositions();
+    }
 
     // Auto-frame camera to show entire tree (only visible nodes)
     if (resetCamera) {
@@ -1332,6 +1339,7 @@ export class TreeVisualizer {
       if (this.layoutStrategy.tick && this.layoutStrategy.needsContinuousUpdate?.()) {
         this.layoutStrategy.tick(dt);
         this.updateMeshPositions();
+        this.updateEdgePositions();
       }
     }
     this.lastFrameTime = now;
@@ -1355,6 +1363,27 @@ export class TreeVisualizer {
     for (const layoutNode of this.layoutNodes) {
       if (layoutNode.mesh) {
         layoutNode.mesh.position.copy(layoutNode.position);
+      }
+    }
+  }
+
+  /**
+   * Update edge positions to follow moving nodes (for physics simulation)
+   */
+  private updateEdgePositions(): void {
+    for (const edge of this.edges) {
+      const edgeInfo = this.edgeNodeMap.get(edge);
+      if (!edgeInfo) continue;
+
+      const parentLayout = this.layoutNodes.find(ln => ln.node === edgeInfo.parent);
+      const childLayout = this.layoutNodes.find(ln => ln.node === edgeInfo.child);
+
+      if (parentLayout && childLayout) {
+        // Update edge geometry with current positions
+        const positions = edge.geometry.attributes.position as THREE.BufferAttribute;
+        positions.setXYZ(0, parentLayout.position.x, parentLayout.position.y, parentLayout.position.z);
+        positions.setXYZ(1, childLayout.position.x, childLayout.position.y, childLayout.position.z);
+        positions.needsUpdate = true;
       }
     }
   }

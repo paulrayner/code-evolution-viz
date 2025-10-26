@@ -218,8 +218,8 @@ export class ForceDirectedLayoutStrategy implements ILayoutStrategy {
       let filesRemaining = files.length;
 
       while (filesRemaining > 0) {
-        // Max files in this ring: scaled up for denser packing (Gource-like)
-        const maxFilesInRing = Math.max(1, Math.floor(diameter * Math.PI * 3.5));
+        // Max files in this ring: scaled up for much denser packing
+        const maxFilesInRing = Math.max(1, Math.floor(diameter * Math.PI * 8.0));
         const filesInRing = Math.min(filesRemaining, maxFilesInRing);
         const angleStep = (Math.PI * 2) / filesInRing;
         const angleOffset = (diameter - 1) * 0.5; // Rotate each ring to stagger files organically
@@ -253,7 +253,7 @@ export class ForceDirectedLayoutStrategy implements ILayoutStrategy {
 
         filesRemaining -= filesInRing;
         diameter++;
-        distance += this.config.fileDiameter * 2; // Larger spacing for visible ring separation
+        distance += this.config.fileDiameter * 1.0; // Tighter ring spacing
       }
     });
 
