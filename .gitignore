@@ -3,6 +3,9 @@ dist/
 *.log
 .DS_Store
 
+# Claude Code
+.claude/
+
 # Processor output
 processor/output/*.json
 
