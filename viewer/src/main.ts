@@ -13,7 +13,16 @@ import { findFileInTree } from './lib/tree-utils';
 import { getBaseRepoName } from './lib/repo-utils';
 import { buildFileDetailsHTML } from './lib/html-builders/file-details';
 import { buildDirectoryDetailsHTML } from './lib/html-builders/directory-details';
-import { buildDirectoryLegendItemHTML, buildFileTypeLegendItemHTML, buildOtherLegendItemHTML } from './lib/html-builders/legend';
+import {
+  buildDirectoryLegendItemHTML,
+  buildFileTypeLegendItemHTML,
+  buildOtherLegendItemHTML,
+  buildIntervalLegendItemHTML,
+  buildGenericLegendItemHTML,
+  buildAuthorLegendItemHTML,
+  buildOverflowMessageHTML,
+} from './lib/html-builders/legend';
+import { createLegendItem } from './lib/legend-adapter';
 import { determineFileToLoad, detectDataFormat, extractSnapshot } from './lib/data-loader';
 import { buildVisualizerConfig, SavedPreferences, createLayoutStrategy } from './lib/visualizer-config';
 import { applyVisualizerConfig } from './lib/visualizer-adapter';
@@ -738,20 +747,13 @@ function populateLegend(snapshot: RepositorySnapshot) {
   for (const ext of presentExtensions) {
     const info = FILE_COLORS[ext];
     const count = snapshot.stats.filesByExtension[ext];
-    const item = document.createElement('label');
-    item.className = 'legend-item';
-    item.innerHTML = buildFileTypeLegendItemHTML({
+    const html = buildFileTypeLegendItemHTML({
       name: info.name,
       hex: info.hex,
       count,
     });
+    const item = createLegendItem(html, applyLegendFilters, 'label');
     legendContent.appendChild(item);
-
-    // Add change event listener
-    const checkbox = item.querySelector('.legend-checkbox') as HTMLInputElement;
-    if (checkbox) {
-      checkbox.addEventListener('change', applyLegendFilters);
-    }
   }
 
   // Add "Other" if there are unknown extensions (with checkbox)
@@ -760,16 +762,9 @@ function populateLegend(snapshot: RepositorySnapshot) {
     .reduce((sum, ext) => sum + snapshot.stats.filesByExtension[ext], 0);
 
   if (unknownCount > 0) {
-    const item = document.createElement('label');
-    item.className = 'legend-item';
-    item.innerHTML = buildOtherLegendItemHTML(unknownCount);
+    const html = buildOtherLegendItemHTML(unknownCount);
+    const item = createLegendItem(html, applyLegendFilters, 'label');
     legendContent.appendChild(item);
-
-    // Add change event listener
-    const checkbox = item.querySelector('.legend-checkbox') as HTMLInputElement;
-    if (checkbox) {
-      checkbox.addEventListener('change', applyLegendFilters);
-    }
   }
 
   // Show filter controls for file type mode
@@ -2535,40 +2530,18 @@ function updateLegendForColorMode(mode: ColorMode) {
       const percentage = ((count / totalFiles) * 100).toFixed(1);
       const fileLabel = count === 1 ? 'file' : 'files';
 
-      const legendItem = document.createElement('label');
-      legendItem.className = 'legend-item';
-      legendItem.innerHTML = `
-        <input type="checkbox" class="legend-checkbox" data-category="${item.name}" checked>
-        <div class="legend-color" style="background: ${item.hex};"></div>
-        <span class="legend-label">${item.name} <span style="color: #888;">(${count} ${fileLabel}, ${percentage}%)</span></span>
-      `;
+      const html = buildIntervalLegendItemHTML({ ...item, count, percentage }, fileLabel);
+      const legendItem = createLegendItem(html, applyLegendFilters, 'label');
       legendContent.appendChild(legendItem);
-
-      // Add change event listener
-      const checkbox = legendItem.querySelector('.legend-checkbox') as HTMLInputElement;
-      if (checkbox) {
-        checkbox.addEventListener('change', applyLegendFilters);
-      }
     }
     showFilterControls();
     updateFilterControlStates();
   } else if (items.length > 0) {
     // Show color mode specific legend without counts (with checkboxes for supported modes)
     for (const item of items) {
-      const legendItem = document.createElement('label');
-      legendItem.className = 'legend-item';
-      legendItem.innerHTML = `
-        <input type="checkbox" class="legend-checkbox" data-category="${item.name}" checked>
-        <div class="legend-color" style="background: ${item.hex};"></div>
-        <span class="legend-label">${item.name}</span>
-      `;
+      const html = buildGenericLegendItemHTML(item);
+      const legendItem = createLegendItem(html, applyLegendFilters, 'label');
       legendContent.appendChild(legendItem);
-
-      // Add change event listener
-      const checkbox = legendItem.querySelector('.legend-checkbox') as HTMLInputElement;
-      if (checkbox) {
-        checkbox.addEventListener('change', applyLegendFilters);
-      }
     }
     showFilterControls();
     updateFilterControlStates();
@@ -2601,21 +2574,11 @@ function updateLegendForColorMode(mode: ColorMode) {
     for (const [author, count] of displayAuthors) {
       const percentage = ((count / totalFiles) * 100).toFixed(1);
       const colorInfo = getColorForFile({ lastAuthor: author } as FileNode, 'author');
-      const legendItem = document.createElement('label');
-      legendItem.className = 'legend-item';
       const fileLabel = count === 1 ? 'file' : 'files';
-      legendItem.innerHTML = `
-        <input type="checkbox" class="legend-checkbox" data-category="${author}" checked>
-        <div class="legend-color" style="background: ${colorInfo.hex};"></div>
-        <span class="legend-label">${author} <span style="color: #888;">(${count} ${fileLabel}, ${percentage}%)</span></span>
-      `;
-      legendContent.appendChild(legendItem);
 
-      // Add change event listener
-      const checkbox = legendItem.querySelector('.legend-checkbox') as HTMLInputElement;
-      if (checkbox) {
-        checkbox.addEventListener('change', applyLegendFilters);
-      }
+      const html = buildAuthorLegendItemHTML(author, colorInfo.hex, count, percentage, fileLabel);
+      const legendItem = createLegendItem(html, applyLegendFilters, 'label');
+      legendContent.appendChild(legendItem);
     }
 
     if (sortedAuthors.length > 20) {
@@ -2623,11 +2586,8 @@ function updateLegendForColorMode(mode: ColorMode) {
       const top20FileCount = displayAuthors.reduce((sum, [, count]) => sum + count, 0);
       const coveragePercent = ((top20FileCount / totalFiles) * 100).toFixed(1);
 
-      const legendItem = document.createElement('div');
-      legendItem.className = 'legend-item';
-      legendItem.innerHTML = `
-        <span class="legend-label" style="color: #888; font-style: italic;">...and ${sortedAuthors.length - 20} more (${coveragePercent}% coverage shown)</span>
-      `;
+      const html = buildOverflowMessageHTML(sortedAuthors.length - 20, coveragePercent);
+      const legendItem = createLegendItem(html, applyLegendFilters, 'div');
       legendContent.appendChild(legendItem);
     }
     showFilterControls();
