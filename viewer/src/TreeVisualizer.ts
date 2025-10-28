@@ -989,13 +989,28 @@ export class TreeVisualizer {
     // Add some padding (20%)
     cameraDistance *= 1.2;
 
-    // Position camera at an angle for good perspective
-    const angle = Math.PI / 4; // 45 degrees
-    this.camera.position.set(
-      center.x + cameraDistance * Math.cos(angle),
-      center.y + cameraDistance * 0.5,
-      center.z + cameraDistance * Math.sin(angle)
-    );
+    // Get camera orientation from layout strategy
+    const { position: defaultPos } = this.layoutStrategy.getCameraDefaults();
+
+    // Check if this is a top-down 2D layout (camera looking straight down from above)
+    const isTopDown2D = defaultPos.x === 0 && defaultPos.z < 1 && defaultPos.y > 0;
+
+    if (isTopDown2D) {
+      // Top-down 2D view: position camera directly above center
+      this.camera.position.set(
+        center.x,
+        center.y + cameraDistance,
+        center.z
+      );
+    } else {
+      // 3D view: position camera at an angle for perspective
+      const angle = Math.PI / 4; // 45 degrees
+      this.camera.position.set(
+        center.x + cameraDistance * Math.cos(angle),
+        center.y + cameraDistance * 0.5,
+        center.z + cameraDistance * Math.sin(angle)
+      );
+    }
 
     // Look at center
     this.camera.lookAt(center);
@@ -1051,6 +1066,224 @@ export class TreeVisualizer {
       this.controls.target.copy(rootPosition);
     }
     this.controls.update();
+  }
+
+  /**
+   * Update tree incrementally for timeline mode (preserves physics state)
+   * Only updates/adds/removes changed nodes instead of rebuilding entire scene
+   * @param newTree - The new tree state
+   * @param addedPaths - Paths of newly added files
+   * @param modifiedPaths - Paths of modified files (already exist, just update metadata)
+   * @param deletedPaths - Paths of deleted files
+   */
+  updateTreeIncremental(
+    newTree: DirectoryNode,
+    addedPaths: string[],
+    modifiedPaths: string[],
+    deletedPaths: string[]
+  ) {
+    // Store tree for re-layout when strategy changes
+    this.currentTree = newTree;
+
+    // Build a path-to-node map for quick lookup in the new tree
+    const pathToNode = new Map<string, TreeNode>();
+    const buildPathMap = (node: TreeNode, parentPath: string = '') => {
+      const currentPath = node.type === 'file'
+        ? (node as FileNode).path
+        : parentPath ? `${parentPath}/${node.name}` : node.name;
+
+      pathToNode.set(currentPath, node);
+
+      if (node.type === 'directory') {
+        for (const child of node.children) {
+          buildPathMap(child, currentPath);
+        }
+      }
+    };
+    buildPathMap(newTree);
+
+    // Calculate max LOC for normalization
+    const maxFileLoc = this.findMaxLoc(newTree);
+    const maxDirLoc = this.findMaxDirectoryLoc(newTree);
+
+    // Step 1: Remove deleted nodes and their edges
+    for (const deletedPath of deletedPaths) {
+      // Find and remove the layout node
+      const layoutNodeIndex = this.layoutNodes.findIndex(
+        ln => ln.node.type === 'file' && (ln.node as FileNode).path === deletedPath
+      );
+
+      if (layoutNodeIndex !== -1) {
+        const layoutNode = this.layoutNodes[layoutNodeIndex];
+
+        // Remove mesh from scene
+        if (layoutNode.mesh) {
+          this.scene.remove(layoutNode.mesh);
+          this.fileObjects.delete(layoutNode.mesh);
+        }
+
+        // Remove from layout strategy (for Force-Directed physics)
+        if (this.layoutStrategy.removeNode) {
+          this.layoutStrategy.removeNode(layoutNode);
+        }
+
+        // Remove from layout nodes array
+        this.layoutNodes.splice(layoutNodeIndex, 1);
+
+        // Remove edges connected to this node
+        this.edges = this.edges.filter(edge => {
+          const edgeInfo = this.edgeNodeMap.get(edge);
+          if (edgeInfo &&
+              (edgeInfo.child === layoutNode.node || edgeInfo.parent === layoutNode.node)) {
+            this.scene.remove(edge);
+            this.edgeNodeMap.delete(edge);
+            return false;
+          }
+          return true;
+        });
+      }
+    }
+
+    // Step 2: Add new nodes
+    const rootY = this.layoutStrategy.needsContinuousUpdate?.() ? 0 : 10;
+
+    for (const addedPath of addedPaths) {
+      const node = pathToNode.get(addedPath);
+      if (!node || node.type !== 'file') continue;
+
+      const fileNode = node as FileNode;
+
+      // Find parent layout node
+      const parentDirPath = addedPath.substring(0, addedPath.lastIndexOf('/'));
+      const parentLayoutNode = this.layoutNodes.find(
+        ln => ln.node.type === 'directory' && this.getNodePath(ln.node) === parentDirPath
+      );
+
+      if (!parentLayoutNode) continue;
+
+      // Create new layout node with position near parent (physics will adjust)
+      const newLayoutNode: LayoutNode = {
+        node: fileNode,
+        position: parentLayoutNode.position.clone().add(
+          new THREE.Vector3(
+            (Math.random() - 0.5) * 5,  // Random offset around parent
+            0,
+            (Math.random() - 0.5) * 5
+          )
+        ),
+        parent: parentLayoutNode,
+        depth: (parentLayoutNode.depth ?? 0) + 1,
+        mesh: undefined
+      };
+
+      // Add to layout strategy's internal state (for Force-Directed physics)
+      if (this.layoutStrategy.addNode) {
+        this.layoutStrategy.addNode(newLayoutNode);
+      }
+
+      // Create visual mesh
+      const sizeMultiplier = this.timelineMode !== 'off' ? 0.3 : 2;
+      const minSize = this.timelineMode !== 'off' ? 0.3 : 0.3;
+      const normalizedSize = Math.max(minSize, (fileNode.loc / maxFileLoc) * sizeMultiplier);
+
+      const colorInfo = getColorForFile(fileNode, this.colorMode);
+      const color = parseInt(colorInfo.hex.replace('#', ''), 16);
+      const emissiveIntensity = this.timelineMode !== 'off' ? 0.6 : 0.2;
+
+      const geometry = new THREE.SphereGeometry(normalizedSize, 16, 16);
+      const material = new THREE.MeshPhongMaterial({
+        color,
+        emissive: color,
+        emissiveIntensity,
+        transparent: false,
+        opacity: 1.0
+      });
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.position.copy(newLayoutNode.position);
+
+      this.scene.add(mesh);
+      this.fileObjects.set(mesh, fileNode);
+      newLayoutNode.mesh = mesh;
+
+      // Add to layout nodes
+      this.layoutNodes.push(newLayoutNode);
+
+      // Create edge from parent to new node
+      const edgeGeometry = new THREE.BufferGeometry().setFromPoints([
+        parentLayoutNode.position,
+        newLayoutNode.position
+      ]);
+      const edgeMaterial = new THREE.LineBasicMaterial({
+        color: 0xaaaaaa,
+        transparent: true,
+        opacity: 0.8,
+        linewidth: 3
+      });
+      const edge = new THREE.Line(edgeGeometry, edgeMaterial);
+      this.scene.add(edge);
+      this.edges.push(edge);
+      this.edgeNodeMap.set(edge, { parent: parentLayoutNode.node, child: fileNode });
+
+      // Add edge to layout strategy (for Force-Directed physics)
+      if (this.layoutStrategy.addEdge) {
+        this.layoutStrategy.addEdge(parentLayoutNode, newLayoutNode);
+      }
+    }
+
+    // Step 3: Update modified nodes (just metadata, position stays the same)
+    for (const modifiedPath of modifiedPaths) {
+      const node = pathToNode.get(modifiedPath);
+      if (!node || node.type !== 'file') continue;
+
+      const fileNode = node as FileNode;
+      const layoutNode = this.layoutNodes.find(
+        ln => ln.node.type === 'file' && (ln.node as FileNode).path === modifiedPath
+      );
+
+      if (layoutNode && layoutNode.mesh) {
+        // Update node reference to point to new tree's node (with updated metadata)
+        layoutNode.node = fileNode;
+        this.fileObjects.set(layoutNode.mesh, fileNode);
+
+        // Update color if needed (some color modes depend on metadata like churn)
+        const colorInfo = getColorForFile(fileNode, this.colorMode);
+        const color = parseInt(colorInfo.hex.replace('#', ''), 16);
+        const material = (layoutNode.mesh as THREE.Mesh).material as THREE.MeshPhongMaterial;
+        material.color.setHex(color);
+        material.emissive.setHex(color);
+        material.needsUpdate = true;
+      }
+    }
+
+    // Update edge positions (for Force-Directed layout)
+    if (this.layoutStrategy.needsContinuousUpdate?.()) {
+      this.updateEdgePositions();
+    }
+  }
+
+  /**
+   * Get full path for a tree node (helper for incremental updates)
+   */
+  private getNodePath(node: TreeNode): string {
+    if (node.type === 'file') {
+      return (node as FileNode).path;
+    }
+
+    // For directories, build path from name hierarchy
+    const parts: string[] = [];
+    let current: TreeNode | undefined = node;
+
+    while (current) {
+      if (current.name) {
+        parts.unshift(current.name);
+      }
+
+      // Find parent
+      const layoutNode = this.layoutNodes.find(ln => ln.node === current);
+      current = layoutNode?.parent?.node;
+    }
+
+    return parts.join('/');
   }
 
   /**
