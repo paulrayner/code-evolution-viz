@@ -1,5 +1,29 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`buildAuthorLegendItemHTML > should handle author names with special characters 1`] = `
+"
+        <input type="checkbox" class="legend-checkbox" data-category="O'Brien" checked>
+        <div class="legend-color" style="background: #000;"></div>
+        <span class="legend-label">O'Brien <span style="color: #888;">(10 files, 5.0%)</span></span>
+      "
+`;
+
+exports[`buildAuthorLegendItemHTML > should handle singular file label 1`] = `
+"
+        <input type="checkbox" class="legend-checkbox" data-category="Alice" checked>
+        <div class="legend-color" style="background: #3498db;"></div>
+        <span class="legend-label">Alice <span style="color: #888;">(1 file, 0.5%)</span></span>
+      "
+`;
+
+exports[`buildAuthorLegendItemHTML > should render author legend item with count and percentage 1`] = `
+"
+        <input type="checkbox" class="legend-checkbox" data-category="John Doe" checked>
+        <div class="legend-color" style="background: #e74c3c;"></div>
+        <span class="legend-label">John Doe <span style="color: #888;">(87 files, 42.3%)</span></span>
+      "
+`;
+
 exports[`buildDirectoryLegendItemHTML > should handle different directory color 1`] = `
 "
     <div class="legend-cube" style="background: #ff0000;"></div>
@@ -54,6 +78,46 @@ exports[`buildFileTypeLegendItemHTML > should render file type with single file 
     "
 `;
 
+exports[`buildGenericLegendItemHTML > should handle different category names 1`] = `
+"
+        <input type="checkbox" class="legend-checkbox" data-category="Low complexity" checked>
+        <div class="legend-color" style="background: #2ecc71;"></div>
+        <span class="legend-label">Low complexity</span>
+      "
+`;
+
+exports[`buildGenericLegendItemHTML > should render generic legend item with name and color only 1`] = `
+"
+        <input type="checkbox" class="legend-checkbox" data-category="High Churn" checked>
+        <div class="legend-color" style="background: #c0392b;"></div>
+        <span class="legend-label">High Churn</span>
+      "
+`;
+
+exports[`buildIntervalLegendItemHTML > should handle different interval names 1`] = `
+"
+        <input type="checkbox" class="legend-checkbox" data-category="30-60 days" checked>
+        <div class="legend-color" style="background: #3498db;"></div>
+        <span class="legend-label">30-60 days <span style="color: #888;">(100 files, 42.3%)</span></span>
+      "
+`;
+
+exports[`buildIntervalLegendItemHTML > should handle singular file label 1`] = `
+"
+        <input type="checkbox" class="legend-checkbox" data-category="Yesterday" checked>
+        <div class="legend-color" style="background: #e74c3c;"></div>
+        <span class="legend-label">Yesterday <span style="color: #888;">(1 file, 5.0%)</span></span>
+      "
+`;
+
+exports[`buildIntervalLegendItemHTML > should render interval legend item with count and percentage 1`] = `
+"
+        <input type="checkbox" class="legend-checkbox" data-category="Last 7 days" checked>
+        <div class="legend-color" style="background: #c0392b;"></div>
+        <span class="legend-label">Last 7 days <span style="color: #888;">(15 files, 25.5%)</span></span>
+      "
+`;
+
 exports[`buildOtherLegendItemHTML > should render Other legend item with count 1`] = `
 "
       <input type="checkbox" class="legend-checkbox" data-category="Other" checked>
@@ -76,4 +140,22 @@ exports[`buildOtherLegendItemHTML > should render Other legend item with single 
       <div class="legend-color" style="background: #aaa;"></div>
       <span class="legend-label">Other (1)</span>
     "
+`;
+
+exports[`buildOverflowMessageHTML > should handle large overflow counts 1`] = `
+"
+        <span class="legend-label" style="color: #888; font-style: italic;">...and 999 more (50.0% coverage shown)</span>
+      "
+`;
+
+exports[`buildOverflowMessageHTML > should handle single overflow item 1`] = `
+"
+        <span class="legend-label" style="color: #888; font-style: italic;">...and 1 more (90.0% coverage shown)</span>
+      "
+`;
+
+exports[`buildOverflowMessageHTML > should render overflow message with count and coverage 1`] = `
+"
+        <span class="legend-label" style="color: #888; font-style: italic;">...and 15 more (85.2% coverage shown)</span>
+      "
 `;
