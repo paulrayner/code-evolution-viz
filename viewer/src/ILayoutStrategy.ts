@@ -6,6 +6,7 @@ export interface LayoutNode {
   position: THREE.Vector3;
   mesh?: THREE.Mesh;
   parent?: LayoutNode;
+  depth?: number;
 }
 
 /**
@@ -66,4 +67,23 @@ export interface ILayoutStrategy {
    * @returns True if tick() should be called every frame (for physics)
    */
   needsContinuousUpdate?(): boolean;
+
+  /**
+   * Add a new node incrementally (optional, for timeline updates)
+   * @param layoutNode The layout node to add
+   */
+  addNode?(layoutNode: LayoutNode): void;
+
+  /**
+   * Add a new edge incrementally (optional, for timeline updates)
+   * @param parent Parent layout node
+   * @param child Child layout node
+   */
+  addEdge?(parent: LayoutNode, child: LayoutNode): void;
+
+  /**
+   * Remove a node incrementally (optional, for timeline updates)
+   * @param layoutNode The layout node to remove
+   */
+  removeNode?(layoutNode: LayoutNode): void;
 }

@@ -443,4 +443,79 @@ export class ForceDirectedLayoutStrategy implements ILayoutStrategy {
   needsContinuousUpdate(): boolean {
     return true;
   }
+
+  /**
+   * Add a new node to the layout (for incremental timeline updates)
+   * @param layoutNode - The new layout node to add (must be a file)
+   */
+  addNode(layoutNode: LayoutNode): void {
+    // Only files can be added incrementally (directories are structural)
+    if (layoutNode.node.type !== 'file') return;
+    if (!layoutNode.parent) return;
+
+    // Find parent physics node
+    const parentDirNode = layoutNode.parent.node as DirectoryNode;
+    const parentPhysicsNode = this.physicsNodes.get(parentDirNode);
+    if (!parentPhysicsNode) return;
+
+    // Calculate relative offset for this file (add to outer ring of parent)
+    const existingFiles = this.fileOrbitInfo.filter(
+      info => info.parentPhysicsNode === parentPhysicsNode
+    );
+
+    // Place on new outer ring
+    const ringIndex = Math.floor(existingFiles.length / 8); // 8 files per ring
+    const posInRing = existingFiles.length % 8;
+    const distance = 3.0 + ringIndex * this.config.fileDiameter * 1.0;
+    const angle = (Math.PI * 2 / 8) * posInRing + ringIndex * 0.5;
+
+    const relativeOffset = new THREE.Vector2(
+      Math.cos(angle) * distance,
+      Math.sin(angle) * distance
+    );
+
+    // Calculate absolute position
+    layoutNode.position.x = parentPhysicsNode.position.x + relativeOffset.x;
+    layoutNode.position.y = 0;
+    layoutNode.position.z = parentPhysicsNode.position.z + relativeOffset.y;
+
+    // Add to orbit tracking
+    this.fileOrbitInfo.push({
+      layoutNode,
+      relativeOffset,
+      parentPhysicsNode
+    });
+
+    this.fileLayoutNodes.push(layoutNode);
+  }
+
+  /**
+   * Add a new edge to the layout (for incremental timeline updates)
+   * Note: Edges are implicitly defined by parent-child relationships,
+   * so this is a no-op for this layout strategy
+   */
+  addEdge(parent: LayoutNode, child: LayoutNode): void {
+    // No-op: edges follow parent-child relationships automatically
+  }
+
+  /**
+   * Remove a node from the layout (for incremental timeline updates)
+   * @param layoutNode - The layout node to remove (must be a file)
+   */
+  removeNode(layoutNode: LayoutNode): void {
+    // Only files can be removed incrementally
+    if (layoutNode.node.type !== 'file') return;
+
+    // Remove from orbit tracking
+    const orbitIndex = this.fileOrbitInfo.findIndex(info => info.layoutNode === layoutNode);
+    if (orbitIndex !== -1) {
+      this.fileOrbitInfo.splice(orbitIndex, 1);
+    }
+
+    // Remove from file layout nodes
+    const fileIndex = this.fileLayoutNodes.indexOf(layoutNode);
+    if (fileIndex !== -1) {
+      this.fileLayoutNodes.splice(fileIndex, 1);
+    }
+  }
 }
