@@ -15,6 +15,8 @@ import { buildFileDetailsHTML } from './lib/html-builders/file-details';
 import { buildDirectoryDetailsHTML } from './lib/html-builders/directory-details';
 import { buildDirectoryLegendItemHTML, buildFileTypeLegendItemHTML, buildOtherLegendItemHTML } from './lib/html-builders/legend';
 import { determineFileToLoad, detectDataFormat, extractSnapshot } from './lib/data-loader';
+import { buildVisualizerConfig, SavedPreferences } from './lib/visualizer-config';
+import { applyVisualizerConfig } from './lib/visualizer-adapter';
 
 /**
  * Get list of available repositories (base names only, no -timeline variants)
@@ -1103,67 +1105,68 @@ async function loadTimelineV2(data: TimelineDataV2, repoName: string) {
     if (!currentVisualizer) {
       currentVisualizer = new TreeVisualizer(canvas);
 
-      // Apply current theme
+      // Build configuration from saved preferences
       const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
-      currentVisualizer.setTheme(currentTheme as 'light' | 'dark');
+      const preferences: SavedPreferences = {
+        labelMode: localStorage.getItem('labelMode') as 'always' | 'hover' | null,
+        colorMode: localStorage.getItem('colorMode'),
+        viewMode: localStorage.getItem('viewMode') as 'navigate' | 'overview' | null,
+        layoutMode: localStorage.getItem('layoutMode'),
+      };
+      const config = buildVisualizerConfig(currentTheme as 'light' | 'dark', preferences);
 
-      // Pass coupling loader if available
-      currentVisualizer.setCouplingLoader(couplingLoader.isLoaded() ? couplingLoader : null);
+      // Apply configuration with event handlers
+      applyVisualizerConfig(
+        currentVisualizer,
+        config,
+        couplingLoader.isLoaded() ? couplingLoader : null,
+        {
+          onFileClick: (file) => {
+            // Check if we're about to toggle OFF highlighting (clicking same file twice)
+            const wasHighlighted = currentHighlightedCommit === file.lastCommitHash;
 
-      currentVisualizer.setOnFileClick((file) => {
-        // Check if we're about to toggle OFF highlighting (clicking same file twice)
-        const wasHighlighted = currentHighlightedCommit === file.lastCommitHash;
+            lastClickedFile = file;
+            lastClickedDir = null;
+            showFileDetails(file, true); // true = handle commit highlighting on click
 
-        lastClickedFile = file;
-        lastClickedDir = null;
-        showFileDetails(file, true); // true = handle commit highlighting on click
-
-        // If we toggled OFF highlighting, clear the selection to restore hover mode
-        if (wasHighlighted && currentHighlightedCommit === null) {
-          lastClickedFile = null;
-          lastClickedDir = null;
-        }
-      });
-      currentVisualizer.setOnDirClick((dir) => {
-        lastClickedDir = dir;
-        lastClickedFile = null;
-        showDirectoryDetails(dir);
-      });
-      currentVisualizer.setOnHover((node, event) => {
-        if (!node) {
-          // Only hide panel if nothing is currently clicked/selected
-          if (!lastClickedFile && !lastClickedDir) {
-            const panel = document.getElementById('info-panel');
-            if (panel) panel.classList.remove('visible');
-          }
-          return;
-        }
-
-        // Only show hover details if nothing is currently clicked/pinned
-        // When a file is clicked, it stays pinned until clicked again
-        if (!lastClickedFile && !lastClickedDir) {
-          // Show details based on node type (temporary preview, doesn't affect clicked state)
-          if (node.type === 'file') {
-            // In cluster mode, don't show right panel - cluster card is shown in 3D
-            const currentColorMode = localStorage.getItem('colorMode') as ColorMode | null;
-            if (currentColorMode !== 'cluster') {
-              showFileDetails(node, false); // false = no commit highlighting (just preview)
+            // If we toggled OFF highlighting, clear the selection to restore hover mode
+            if (wasHighlighted && currentHighlightedCommit === null) {
+              lastClickedFile = null;
+              lastClickedDir = null;
             }
-          } else {
-            showDirectoryDetails(node);
-          }
+          },
+          onDirClick: (dir) => {
+            lastClickedDir = dir;
+            lastClickedFile = null;
+            showDirectoryDetails(dir);
+          },
+          onHover: (node, event) => {
+            if (!node) {
+              // Only hide panel if nothing is currently clicked/selected
+              if (!lastClickedFile && !lastClickedDir) {
+                const panel = document.getElementById('info-panel');
+                if (panel) panel.classList.remove('visible');
+              }
+              return;
+            }
+
+            // Only show hover details if nothing is currently clicked/pinned
+            // When a file is clicked, it stays pinned until clicked again
+            if (!lastClickedFile && !lastClickedDir) {
+              // Show details based on node type (temporary preview, doesn't affect clicked state)
+              if (node.type === 'file') {
+                // In cluster mode, don't show right panel - cluster card is shown in 3D
+                const currentColorMode = localStorage.getItem('colorMode') as ColorMode | null;
+                if (currentColorMode !== 'cluster') {
+                  showFileDetails(node, false); // false = no commit highlighting (just preview)
+                }
+              } else {
+                showDirectoryDetails(node);
+              }
+            }
+          },
         }
-      });
-
-      const savedMode = localStorage.getItem('labelMode') as 'always' | 'hover' | null;
-      if (savedMode) {
-        currentVisualizer.setLabelMode(savedMode);
-      }
-
-      const savedColorMode = localStorage.getItem('colorMode') as ColorMode | null;
-      if (savedColorMode) {
-        currentVisualizer.setColorMode(savedColorMode);
-      }
+      );
 
       currentVisualizer.start();
     } else {
@@ -1283,14 +1286,25 @@ function setupTimelineV2Controls() {
     // Get previous tree for ghost rendering
     const prevTree = index > 0 ? currentDeltaController?.getTreeAtCommit(index - 1) : null;
 
-    // Update visualizer with current tree (normal flow)
+    // Update visualizer with current tree
     if (currentVisualizer && tree) {
-      // Reset camera only on first commit, then allow manual rotation
       const t0 = performance.now();
-      currentVisualizer.visualize(tree, isFirstCommit);
-      timings.visualize = performance.now() - t0;
 
-      isFirstCommit = false;
+      if (isFirstCommit) {
+        // First commit: do full visualization with camera reset
+        currentVisualizer.visualize(tree, true);
+        isFirstCommit = false;
+      } else {
+        // Subsequent commits: use incremental update to preserve physics state
+        currentVisualizer.updateTreeIncremental(
+          tree,
+          commit.changes.filesAdded,
+          commit.changes.filesModified,
+          commit.changes.filesDeleted || []
+        );
+      }
+
+      timings.visualize = performance.now() - t0;
 
       const t1 = performance.now();
       pathToFileIndex = buildPathIndex(tree);
@@ -1856,76 +1870,68 @@ async function loadRepository(repoName: string) {
     if (!currentVisualizer) {
       currentVisualizer = new TreeVisualizer(canvas);
 
-      // Apply current theme
+      // Build configuration from saved preferences
       const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
-      currentVisualizer.setTheme(currentTheme as 'light' | 'dark');
+      const preferences: SavedPreferences = {
+        labelMode: localStorage.getItem('labelMode') as 'always' | 'hover' | null,
+        colorMode: localStorage.getItem('colorMode'),
+        viewMode: localStorage.getItem('viewMode') as 'navigate' | 'overview' | null,
+        layoutMode: localStorage.getItem('layoutMode'),
+      };
+      const config = buildVisualizerConfig(currentTheme as 'light' | 'dark', preferences);
 
-      // Pass coupling loader if available
-      currentVisualizer.setCouplingLoader(couplingLoader.isLoaded() ? couplingLoader : null);
+      // Apply configuration with event handlers
+      applyVisualizerConfig(
+        currentVisualizer,
+        config,
+        couplingLoader.isLoaded() ? couplingLoader : null,
+        {
+          onFileClick: (file) => {
+            // Check if we're about to toggle OFF highlighting (clicking same file twice)
+            const wasHighlighted = currentHighlightedCommit === file.lastCommitHash;
 
-      // Set up interaction handlers
-      currentVisualizer.setOnFileClick((file) => {
-        // Check if we're about to toggle OFF highlighting (clicking same file twice)
-        const wasHighlighted = currentHighlightedCommit === file.lastCommitHash;
+            lastClickedFile = file;
+            lastClickedDir = null;
+            showFileDetails(file, true); // true = handle commit highlighting on click
 
-        lastClickedFile = file;
-        lastClickedDir = null;
-        showFileDetails(file, true); // true = handle commit highlighting on click
-
-        // If we toggled OFF highlighting, clear the selection to restore hover mode
-        if (wasHighlighted && currentHighlightedCommit === null) {
-          lastClickedFile = null;
-          lastClickedDir = null;
-        }
-      });
-      currentVisualizer.setOnDirClick((dir) => {
-        lastClickedDir = dir;
-        lastClickedFile = null;
-        showDirectoryDetails(dir);
-      });
-      currentVisualizer.setOnHover((node, event) => {
-        if (!node) {
-          // Only hide panel if nothing is currently clicked/selected
-          if (!lastClickedFile && !lastClickedDir) {
-            const panel = document.getElementById('info-panel');
-            if (panel) panel.classList.remove('visible');
-          }
-          return;
-        }
-
-        // Only show hover details if nothing is currently clicked/pinned
-        // When a file is clicked, it stays pinned until clicked again
-        if (!lastClickedFile && !lastClickedDir) {
-          // Show details based on node type (temporary preview, doesn't affect clicked state)
-          if (node.type === 'file') {
-            // In cluster mode, don't show right panel - cluster card is shown in 3D
-            const currentColorMode = localStorage.getItem('colorMode') as ColorMode | null;
-            if (currentColorMode !== 'cluster') {
-              showFileDetails(node, false); // false = no commit highlighting (just preview)
+            // If we toggled OFF highlighting, clear the selection to restore hover mode
+            if (wasHighlighted && currentHighlightedCommit === null) {
+              lastClickedFile = null;
+              lastClickedDir = null;
             }
-          } else {
-            showDirectoryDetails(node);
-          }
+          },
+          onDirClick: (dir) => {
+            lastClickedDir = dir;
+            lastClickedFile = null;
+            showDirectoryDetails(dir);
+          },
+          onHover: (node, event) => {
+            if (!node) {
+              // Only hide panel if nothing is currently clicked/selected
+              if (!lastClickedFile && !lastClickedDir) {
+                const panel = document.getElementById('info-panel');
+                if (panel) panel.classList.remove('visible');
+              }
+              return;
+            }
+
+            // Only show hover details if nothing is currently clicked/pinned
+            // When a file is clicked, it stays pinned until clicked again
+            if (!lastClickedFile && !lastClickedDir) {
+              // Show details based on node type (temporary preview, doesn't affect clicked state)
+              if (node.type === 'file') {
+                // In cluster mode, don't show right panel - cluster card is shown in 3D
+                const currentColorMode = localStorage.getItem('colorMode') as ColorMode | null;
+                if (currentColorMode !== 'cluster') {
+                  showFileDetails(node, false); // false = no commit highlighting (just preview)
+                }
+              } else {
+                showDirectoryDetails(node);
+              }
+            }
+          },
         }
-      });
-
-      // Load saved label mode
-      const savedMode = localStorage.getItem('labelMode') as 'always' | 'hover' | null;
-      if (savedMode) {
-        currentVisualizer.setLabelMode(savedMode);
-      }
-
-      // Load saved color mode
-      const savedColorMode = localStorage.getItem('colorMode') as ColorMode | null;
-      if (savedColorMode) {
-        currentVisualizer.setColorMode(savedColorMode);
-      }
-
-      // Load saved view mode
-      const savedViewMode = localStorage.getItem('viewMode') as 'navigate' | 'overview' | null;
-      if (savedViewMode) {
-        currentVisualizer.setViewMode(savedViewMode);
-      }
+      );
 
       // Start animation
       currentVisualizer.start();
