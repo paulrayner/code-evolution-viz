@@ -15,7 +15,7 @@ import { buildFileDetailsHTML } from './lib/html-builders/file-details';
 import { buildDirectoryDetailsHTML } from './lib/html-builders/directory-details';
 import { buildDirectoryLegendItemHTML, buildFileTypeLegendItemHTML, buildOtherLegendItemHTML } from './lib/html-builders/legend';
 import { determineFileToLoad, detectDataFormat, extractSnapshot } from './lib/data-loader';
-import { buildVisualizerConfig, SavedPreferences } from './lib/visualizer-config';
+import { buildVisualizerConfig, SavedPreferences, createLayoutStrategy } from './lib/visualizer-config';
 import { applyVisualizerConfig } from './lib/visualizer-adapter';
 
 /**
@@ -2044,16 +2044,7 @@ async function main() {
       localStorage.setItem('layoutMode', newMode);
 
       if (currentVisualizer) {
-        // Switch layout strategy
-        let strategy;
-        if (newMode === 'forceDirected') {
-          strategy = new ForceDirectedLayoutStrategy();
-        } else if (newMode === 'flat') {
-          strategy = new FlatLayoutStrategy();
-        } else {
-          strategy = new HierarchicalLayoutStrategy();
-        }
-        currentVisualizer.setLayoutStrategy(strategy);
+        currentVisualizer.setLayoutStrategy(createLayoutStrategy(newMode));
       }
     });
   }
