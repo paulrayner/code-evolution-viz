@@ -24,9 +24,9 @@ export class PhysicsNode implements SpatialItem {
   acceleration: THREE.Vector3;
   prevAcceleration: THREE.Vector3;
 
-  // Geometry
-  radius: number;
-  territoryRadius: number; // Radius including orbiting files (for collision detection)
+  // Geometry (Gource uses TWO radii)
+  radius: number;        // dir_radius: collision detection (includes all descendants)
+  parentRadius: number;  // parent_radius: child orbit distance (direct files only)
 
   // Hierarchy references
   parent: PhysicsNode | null;
@@ -35,11 +35,11 @@ export class PhysicsNode implements SpatialItem {
   // Initialization
   isInitialized: boolean = false;
 
-  constructor(layoutNode: LayoutNode, radius: number, parent: PhysicsNode | null = null) {
+  constructor(layoutNode: LayoutNode, radius: number, parentRadius: number, parent: PhysicsNode | null = null) {
     this.layoutNode = layoutNode;
     this.directoryNode = layoutNode.node as DirectoryNode;
     this.radius = radius;
-    this.territoryRadius = radius; // Initially same as radius, will be updated after file placement
+    this.parentRadius = parentRadius;
     this.parent = parent;
 
     // Initialize physics state
@@ -51,31 +51,32 @@ export class PhysicsNode implements SpatialItem {
 
   /**
    * Get bounding box for spatial indexing (X/Z plane only)
-   * Uses territory radius to properly capture file orbit space
+   * Uses collision radius (Gource algorithm)
    */
   getBounds(): AABB2D {
     return {
-      minX: this.position.x - this.territoryRadius,
-      minZ: this.position.z - this.territoryRadius,
-      maxX: this.position.x + this.territoryRadius,
-      maxZ: this.position.z + this.territoryRadius
+      minX: this.position.x - this.radius,
+      minZ: this.position.z - this.radius,
+      maxX: this.position.x + this.radius,
+      maxZ: this.position.z + this.radius
     };
   }
 
   /**
-   * Check if this node overlaps with another using territory radius
-   * Territory radius includes orbiting files, preventing file cloud overlap
+   * Check if this node overlaps with another using collision radius (Gource algorithm)
+   * Gource uses ONE radius (dir_radius) for overlap detection, not separate territory radius.
    */
   overlaps(other: PhysicsNode): boolean {
     const dx = other.position.x - this.position.x;
     const dz = other.position.z - this.position.z;
     const distSq = dx * dx + dz * dz;
-    const sumTerritory = this.territoryRadius + other.territoryRadius;
-    return distSq < sumTerritory * sumTerritory;
+    const sumRadius = this.radius + other.radius;
+    return distSq < sumRadius * sumRadius;
   }
 
   /**
    * Get distance to parent (in X/Z plane)
+   * Uses parent.parentRadius (Gource: based on direct files only) for child orbit distance.
    */
   distanceToParent(): number {
     if (!this.parent) return 0;
@@ -85,7 +86,8 @@ export class PhysicsNode implements SpatialItem {
     const dist = Math.sqrt(dx * dx + dz * dz);
 
     // Distance from edge to edge (not center to center)
-    return dist - this.radius - this.parent.radius;
+    // Uses parent.parentRadius (direct files only) instead of parent.radius (all descendants)
+    return dist - this.radius - this.parent.parentRadius;
   }
 
   /**

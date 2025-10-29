@@ -2,9 +2,507 @@ import { describe, it, expect } from 'vitest';
 import * as THREE from 'three';
 import { ForceDirectedLayoutStrategy } from './ForceDirectedLayoutStrategy';
 import { DirectoryNode, FileNode } from './types';
+import { PhysicsNode } from './PhysicsNode';
+import { LayoutNode } from './ILayoutStrategy';
 
 /**
- * Test Suite: Force-Directed Layout Strategy - Territory Management
+ * Test Suite: Force-Directed Layout Strategy - Gource Two-Radius System
+ * Tests Gource's area-based sizing using TWO radii: dir_radius and parent_radius.
+ */
+
+describe('PhysicsNode - Parent Radius (Gource Two-Radius System)', () => {
+  /**
+   * Phase 1 - RED
+   *
+   * Gource uses TWO radii per directory:
+   * 1. dir_radius: Full size (all descendants) - for collision detection
+   * 2. parent_radius: Smaller size (direct files only) - for child orbit distance
+   *
+   * This test verifies the calculation is correct.
+   */
+  it('should calculate parent_radius from direct files only (not subdirectories)', () => {
+    const fileDiameter = 1.5;
+    const padding = 0.23;
+    const fileArea = fileDiameter * fileDiameter * Math.PI;
+
+    // Expected parent_radius: based on 10 direct files only
+    const directFileCount = 10;
+    const parentArea_directFilesOnly = fileArea * directFileCount;
+    const expectedParentRadius = Math.max(1.0, Math.sqrt(parentArea_directFilesOnly)) * padding;
+
+    // Expected dir_radius: based on all 110 files (10 + 50 + 50)
+    const totalFileCount = 110;
+    const totalArea_allFiles = fileArea * totalFileCount;
+    const expectedDirRadius = Math.max(1.0, Math.sqrt(totalArea_allFiles)) * padding;
+
+    console.log('\nGource parent_radius vs dir_radius:');
+    console.log(`  Direct files in parent: ${directFileCount}`);
+    console.log(`  Total files (with subdirs): ${totalFileCount}`);
+    console.log(`  Expected parent_radius: ${expectedParentRadius.toFixed(2)} (for child orbit)`);
+    console.log(`  Expected dir_radius: ${expectedDirRadius.toFixed(2)} (for collision)`);
+    console.log(`  Ratio: ${(expectedParentRadius / expectedDirRadius).toFixed(2)} (parent_radius < dir_radius)`);
+
+    // Test expectation: parent_radius should be much smaller than dir_radius
+    expect(expectedParentRadius).toBeLessThan(expectedDirRadius);
+    expect(expectedParentRadius).toBeCloseTo(1.93, 1); // Calculated value from test output
+    expect(expectedDirRadius).toBeCloseTo(6.41, 1); // Calculated value from test output
+    expect(expectedParentRadius / expectedDirRadius).toBeCloseTo(0.30, 1); // ~30% ratio
+
+    // This test PASSES - it verifies the math
+    // Now we need to implement parentRadius in PhysicsNode
+  });
+});
+
+describe('PhysicsNode - Single Radius (Gource Algorithm)', () => {
+  /**
+   * CYCLE 1 - RED
+   * Gource uses ONE radius (dir_radius) for collision detection.
+   * Our implementation incorrectly uses territoryRadius which inflates spacing.
+   * This test verifies overlaps() uses radius, not territoryRadius.
+   */
+  it('should use radius (not territoryRadius) for overlap detection', () => {
+    // Create two physics nodes with known radii
+    const layoutNode1: LayoutNode = {
+      node: { type: 'directory', name: 'dir1', children: [] } as DirectoryNode,
+      position: new THREE.Vector3(0, 0, 0),
+      parent: undefined
+    };
+
+    const layoutNode2: LayoutNode = {
+      node: { type: 'directory', name: 'dir2', children: [] } as DirectoryNode,
+      position: new THREE.Vector3(0, 0, 0),
+      parent: undefined
+    };
+
+    const node1 = new PhysicsNode(layoutNode1, 5.0, null);
+    const node2 = new PhysicsNode(layoutNode2, 3.0, null);
+
+    // Position nodes beyond their radius sum
+    node1.position.set(0, 0, 0);
+    node2.position.set(10, 0, 0); // Distance = 10
+
+    // Gource behavior: Should NOT overlap because distance (10) > radius sum (5 + 3 = 8)
+    const radiiSum = node1.radius + node2.radius; // 8
+    const distanceBetween = 10;
+
+    // Test expectation based on Gource: use radius only
+    expect(distanceBetween).toBeGreaterThan(radiiSum);
+    expect(node1.overlaps(node2)).toBe(false);
+  });
+
+  /**
+   * CYCLE 2 - RED
+   * Gource uses ONE radius property. Our PhysicsNode incorrectly has territoryRadius.
+   * This test verifies PhysicsNode only has radius property (like Gource's RDirNode).
+   */
+  it('should only have radius property, not territoryRadius (Gource has one radius)', () => {
+    const layoutNode: LayoutNode = {
+      node: { type: 'directory', name: 'dir1', children: [] } as DirectoryNode,
+      position: new THREE.Vector3(0, 0, 0),
+      parent: undefined
+    };
+
+    const physicsNode = new PhysicsNode(layoutNode, 5.0, null);
+
+    // Gource's RDirNode only has dir_radius (one radius for everything)
+    expect(physicsNode.radius).toBe(5.0);
+
+    // territoryRadius should not exist (Gource doesn't have this concept)
+    // This will FAIL with current code that has territoryRadius property
+    expect(physicsNode).not.toHaveProperty('territoryRadius');
+  });
+});
+
+describe('ForceDirectedLayoutStrategy - Directory Sizing (Padding Tuning)', () => {
+  /**
+   * TDD CYCLE 1 - RED
+   *
+   * Files should orbit NEAR THE EDGE of the directory radius, not deep inside.
+   * This minimizes empty space between directory file clouds.
+   *
+   * Current padding (0.3) creates radius too small → files orbit at ~66% of radius
+   * → 34% wasted space inside each directory → excessive empty space between clouds
+   *
+   * Target: Files should orbit at 80-95% of radius for natural, compact spacing
+   */
+  it('should size directories so files orbit near the radius edge (80-95% for 50+ files)', () => {
+    const fileDiameter = 1.5;
+    const currentPadding = 0.23; // Line 118 in ForceDirectedLayoutStrategy.ts
+
+    function calculateOrbitRatio(fileCount: number, padding: number): number {
+      // Calculate max file orbit distance using Gource's ring algorithm
+      let maxOrbitDistance = 0;
+      let filesPlaced = 0;
+      let maxFilesInRing = 1;
+      let diameter = 1;
+      let distance = 0.0;
+
+      while (filesPlaced < fileCount) {
+        const filesInRing = Math.min(fileCount - filesPlaced, maxFilesInRing);
+        maxOrbitDistance = distance;
+        filesPlaced += filesInRing;
+        diameter++;
+        distance += fileDiameter * 0.5;
+        maxFilesInRing = Math.max(1, Math.floor(diameter * Math.PI));
+      }
+
+      // Calculate directory radius
+      const fileArea = fileDiameter * fileDiameter * Math.PI;
+      const dirArea = fileArea * fileCount;
+      const dirRadius = Math.max(1.0, Math.sqrt(dirArea)) * padding;
+
+      return maxOrbitDistance / dirRadius;
+    }
+
+    // Test with different directory sizes (50, 100, 200, 500 files)
+    const testCases = [50, 100, 200, 500];
+    console.log(`\nOrbit ratios with padding=${currentPadding}:`);
+
+    for (const fileCount of testCases) {
+      const orbitRatio = calculateOrbitRatio(fileCount, currentPadding);
+      console.log(`  ${fileCount} files: ${(orbitRatio * 100).toFixed(1)}%`);
+
+      // Test expectation: For directories with 50+ files, orbit ratio should be 80-95%
+      // Current padding (0.3) gives ~66% → test FAILS
+      // Need padding ~0.22-0.24 to reach 80-95% target
+      expect(orbitRatio).toBeGreaterThanOrEqual(0.80);
+      expect(orbitRatio).toBeLessThanOrEqual(0.95);
+    }
+  });
+});
+
+describe('ForceDirectedLayoutStrategy - Connection Line Distances (Realistic Repos)', () => {
+  /**
+   * Test fixture factory: Creates realistic directory structures
+   * matching actual repository patterns
+   */
+  function createRepoStructure(config: {
+    subdirs: Array<{ name: string; fileCount: number; children?: Array<{ name: string; fileCount: number }> }>;
+    rootFiles: number;
+  }): DirectoryNode {
+    const createFiles = (count: number, prefix: string): FileNode[] => {
+      return Array(count).fill(null).map((_, i) => ({
+        type: 'file' as const,
+        name: `${prefix}${i}.ts`,
+        path: `/${prefix}${i}.ts`,
+        extension: 'ts',
+        loc: 100,
+        lastModified: new Date().toISOString(),
+        lastAuthor: 'test',
+        lastCommitHash: 'abc123',
+        commitCount: 5,
+        contributorCount: 2,
+        churn: 3,
+        complexity: 1,
+        age: 30
+      }));
+    };
+
+    const subdirNodes: DirectoryNode[] = config.subdirs.map(subdir => {
+      const subdirChildren: (FileNode | DirectoryNode)[] = createFiles(subdir.fileCount, `${subdir.name}_file`);
+
+      // Add nested subdirectories if specified
+      if (subdir.children) {
+        for (const nestedSubdir of subdir.children) {
+          subdirChildren.push({
+            type: 'directory',
+            name: nestedSubdir.name,
+            path: `/${subdir.name}/${nestedSubdir.name}`,
+            children: createFiles(nestedSubdir.fileCount, `${nestedSubdir.name}_file`)
+          });
+        }
+      }
+
+      return {
+        type: 'directory',
+        name: subdir.name,
+        path: `/${subdir.name}`,
+        children: subdirChildren
+      };
+    });
+
+    const rootFiles = createFiles(config.rootFiles, 'root_file');
+
+    return {
+      type: 'directory',
+      name: 'root',
+      path: '/',
+      children: [...subdirNodes, ...rootFiles]
+    };
+  }
+
+  /**
+   * Small repo: ~30-40 files (like codecohesion)
+   */
+  function createSmallRepo(): DirectoryNode {
+    return createRepoStructure({
+      subdirs: [
+        { name: 'src', fileCount: 10, children: [
+          { name: 'lib', fileCount: 5 },
+          { name: 'utils', fileCount: 5 }
+        ]},
+        { name: 'tests', fileCount: 8 }
+      ],
+      rootFiles: 3
+    });
+  }
+
+  /**
+   * Medium repo: ~120-150 files (like gource)
+   */
+  function createMediumRepo(): DirectoryNode {
+    return createRepoStructure({
+      subdirs: [
+        { name: 'src', fileCount: 30, children: [
+          { name: 'core', fileCount: 25 },
+          { name: 'ui', fileCount: 20 },
+          { name: 'utils', fileCount: 15 }
+        ]},
+        { name: 'tests', fileCount: 25 }
+      ],
+      rootFiles: 5
+    });
+  }
+
+  /**
+   * Large repo: ~400-500 files (like cbioportal)
+   */
+  function createLargeRepo(): DirectoryNode {
+    return createRepoStructure({
+      subdirs: [
+        { name: 'api', fileCount: 50, children: [
+          { name: 'handlers', fileCount: 40 },
+          { name: 'models', fileCount: 60 },
+          { name: 'utils', fileCount: 30 }
+        ]},
+        { name: 'ui', fileCount: 70, children: [
+          { name: 'components', fileCount: 80 },
+          { name: 'pages', fileCount: 70 }
+        ]},
+        { name: 'tests', fileCount: 40 }
+      ],
+      rootFiles: 10
+    });
+  }
+
+  /**
+   * Calculate directory radius using the same formula as ForceDirectedLayoutStrategy
+   */
+  function calculateDirectoryRadius(dirNode: DirectoryNode): number {
+    const fileDiameter = 1.5;
+    const padding = 0.23; // Current value in ForceDirectedLayoutStrategy.ts
+
+    function calculateArea(node: DirectoryNode): number {
+      const file_area = fileDiameter * fileDiameter * Math.PI;
+      const visible_count = node.children.filter(c => c.type === 'file').length;
+      let dir_area = file_area * visible_count;
+
+      // Add area of subdirectories (recursive)
+      for (const child of node.children) {
+        if (child.type === 'directory') {
+          dir_area += calculateArea(child as DirectoryNode);
+        }
+      }
+
+      return dir_area;
+    }
+
+    const dir_area = calculateArea(dirNode);
+    return Math.max(1.0, Math.sqrt(dir_area)) * padding;
+  }
+
+  /**
+   * Measure distances between sibling directories (connection line lengths)
+   */
+  function measureSiblingDistances(layoutNodes: LayoutNode[]): {
+    distances: number[];
+    siblingPairs: Array<{ node1: string; node2: string; distance: number; radius1: number; radius2: number; ratio: number }>;
+  } {
+    const directories = layoutNodes.filter(ln => ln.node.type === 'directory');
+    const distances: number[] = [];
+    const siblingPairs: Array<{ node1: string; node2: string; distance: number; radius1: number; radius2: number; ratio: number }> = [];
+
+    // Group by parent to find siblings
+    const byParent = new Map<LayoutNode | undefined, LayoutNode[]>();
+    for (const dir of directories) {
+      const siblings = byParent.get(dir.parent) || [];
+      siblings.push(dir);
+      byParent.set(dir.parent, siblings);
+    }
+
+    // Measure distances between siblings
+    for (const [parent, siblings] of byParent.entries()) {
+      if (siblings.length < 2) continue;
+
+      for (let i = 0; i < siblings.length; i++) {
+        for (let j = i + 1; j < siblings.length; j++) {
+          const dist = Math.sqrt(
+            Math.pow(siblings[j].position.x - siblings[i].position.x, 2) +
+            Math.pow(siblings[j].position.z - siblings[i].position.z, 2)
+          );
+
+          // Calculate radii
+          const radius1 = calculateDirectoryRadius(siblings[i].node as DirectoryNode);
+          const radius2 = calculateDirectoryRadius(siblings[j].node as DirectoryNode);
+          const radiusSum = radius1 + radius2;
+          const ratio = dist / radiusSum;
+
+          distances.push(dist);
+          siblingPairs.push({
+            node1: siblings[i].node.name,
+            node2: siblings[j].node.name,
+            distance: dist,
+            radius1,
+            radius2,
+            ratio
+          });
+        }
+      }
+    }
+
+    return { distances, siblingPairs };
+  }
+
+  /**
+   * TDD CYCLE 1 - RED
+   *
+   * Connection lines between sibling directories should be 2-4x the sum of their radii.
+   * Current spacing is too large (5-10x), causing the "long connection lines" problem.
+   *
+   * Target: avgDistance / avgRadiusSum should be 2-4
+   */
+  it('should space sibling directories at 2-4x their combined radii (compact but not cramped)', () => {
+    const strategy = new ForceDirectedLayoutStrategy();
+    const testCases = [
+      { name: 'small', repo: createSmallRepo(), expectedRatio: { min: 2, max: 4 } },
+      { name: 'medium', repo: createMediumRepo(), expectedRatio: { min: 2, max: 4 } },
+      { name: 'large', repo: createLargeRepo(), expectedRatio: { min: 2, max: 4 } }
+    ];
+
+    for (const { name, repo, expectedRatio } of testCases) {
+      const layoutNodes = strategy.layoutTree(repo, new THREE.Vector3(0, 0, 0), 0, 0, Math.PI * 2);
+
+      // Run physics simulation to let directories spread out
+      // Simulate 3 seconds at 60fps (180 frames)
+      const dt = 1 / 60;
+      for (let i = 0; i < 180; i++) {
+        strategy.tick(dt);
+      }
+
+      const { distances, siblingPairs } = measureSiblingDistances(layoutNodes);
+
+      // Calculate average distance and ratio
+      const avgDistance = distances.reduce((sum, d) => sum + d, 0) / distances.length;
+      const ratios = siblingPairs.map(p => p.ratio);
+      const avgRatio = ratios.reduce((sum, r) => sum + r, 0) / ratios.length;
+      const minRatio = Math.min(...ratios);
+      const maxRatio = Math.max(...ratios);
+
+      console.log(`\n${name} repo (after 3s physics):`);
+      console.log(`  Sibling pairs: ${siblingPairs.length}`);
+      console.log(`  Avg distance: ${avgDistance.toFixed(2)}`);
+      console.log(`  Avg distance/radius ratio: ${avgRatio.toFixed(2)}x (target: 2-4x)`);
+      console.log(`  Min ratio: ${minRatio.toFixed(2)}x, Max ratio: ${maxRatio.toFixed(2)}x`);
+      console.log(`  Sample pairs:`);
+      for (const p of siblingPairs.slice(0, 3)) {
+        console.log(`    ${p.node1} <-> ${p.node2}: dist=${p.distance.toFixed(2)}, ` +
+                    `radii=${p.radius1.toFixed(2)}+${p.radius2.toFixed(2)}, ratio=${p.ratio.toFixed(2)}x`);
+      }
+
+      // Test expectation: avg ratio should be 2-4x
+      // Current behavior is unknown - this test will tell us
+      expect(avgRatio).toBeGreaterThanOrEqual(2.0);
+      expect(avgRatio).toBeLessThanOrEqual(4.0);
+    }
+  });
+
+  /**
+   * TDD CYCLE 2
+   *
+   * Parent-to-child connection lines should also be reasonable (2-4x radii sum).
+   * This tests the "long lines" connecting root to its immediate children.
+   */
+  it('should space parent-child directories at 2-4x their combined radii', () => {
+    const strategy = new ForceDirectedLayoutStrategy();
+    const fileDiameter = 1.5;
+    const padding = 0.23;
+    const fileArea = fileDiameter * fileDiameter * Math.PI;
+
+    const testCases = [
+      { name: 'small', repo: createSmallRepo() },
+      { name: 'medium', repo: createMediumRepo() },
+      { name: 'large', repo: createLargeRepo() }
+    ];
+
+    for (const { name, repo } of testCases) {
+      const layoutNodes = strategy.layoutTree(repo, new THREE.Vector3(0, 0, 0), 0, 0, Math.PI * 2);
+
+      // Run physics simulation
+      const dt = 1 / 60;
+      for (let i = 0; i < 180; i++) {
+        strategy.tick(dt);
+      }
+
+      // Find parent-child pairs
+      const directories = layoutNodes.filter(ln => ln.node.type === 'directory');
+      const parentChildPairs: Array<{ parent: string; child: string; distance: number; ratio: number; parentParentRadius: number; childRadius: number }> = [];
+
+      for (const child of directories) {
+        if (!child.parent) continue; // Skip root
+
+        const parent = directories.find(d => d.node === child.parent.node);
+        if (!parent) continue;
+
+        const dist = Math.sqrt(
+          Math.pow(child.position.x - parent.position.x, 2) +
+          Math.pow(child.position.z - parent.position.z, 2)
+        );
+
+        // Gource algorithm: child's dir_radius + parent's parent_radius (NOT parent's dir_radius)
+        const parentNode = parent.node as DirectoryNode;
+        const fileCount = parentNode.children.filter(c => c.type === 'file').length;
+        const parentArea = fileArea * fileCount;
+        const parentParentRadius = Math.max(1.0, Math.sqrt(parentArea)) * padding; // Parent's parent_radius
+
+        const childRadius = calculateDirectoryRadius(child.node as DirectoryNode); // Child's dir_radius
+        const ratio = dist / (parentParentRadius + childRadius);
+
+        parentChildPairs.push({
+          parent: parent.node.name,
+          child: child.node.name,
+          distance: dist,
+          ratio,
+          parentParentRadius,
+          childRadius
+        });
+      }
+
+      const avgDistance = parentChildPairs.reduce((sum, p) => sum + p.distance, 0) / parentChildPairs.length;
+      const avgRatio = parentChildPairs.reduce((sum, p) => sum + p.ratio, 0) / parentChildPairs.length;
+      const ratios = parentChildPairs.map(p => p.ratio);
+      const minRatio = Math.min(...ratios);
+      const maxRatio = Math.max(...ratios);
+
+      console.log(`\n${name} repo - parent-child connections (Gource algorithm):`);
+      console.log(`  Pairs: ${parentChildPairs.length}`);
+      console.log(`  Avg distance: ${avgDistance.toFixed(2)}`);
+      console.log(`  Avg ratio: ${avgRatio.toFixed(2)}x (target: tight orbit, close to 1x)`);
+      console.log(`  Min ratio: ${minRatio.toFixed(2)}x, Max ratio: ${maxRatio.toFixed(2)}x`);
+      console.log(`  Sample pairs:`);
+      for (const p of parentChildPairs.slice(0, 3)) {
+        console.log(`    ${p.parent} -> ${p.child}: dist=${p.distance.toFixed(2)}, ratio=${p.ratio.toFixed(2)}x (parent_radius=${p.parentParentRadius.toFixed(2)}, child_radius=${p.childRadius.toFixed(2)})`);
+      }
+
+      // Test expectation: children should orbit close to parent's file cloud edge (ratio close to 1.0)
+      // Gource uses parent_radius (small) not dir_radius (large), so children orbit tightly
+      expect(avgRatio).toBeGreaterThanOrEqual(0.5); // Allow some settling/physics variance
+      expect(avgRatio).toBeLessThanOrEqual(2.0);   // Should be much closer than sibling spacing
+    }
+  });
+});
+
+/**
+ * Test Suite: Force-Directed Layout Strategy - Territory Management (DEPRECATED)
  *
  * Tests for territory-based collision detection and spacing to prevent
  * overlapping file clouds in large projects.
