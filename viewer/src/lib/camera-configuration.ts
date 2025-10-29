@@ -28,3 +28,19 @@ export function getCameraFOV(is2DLayout: boolean): number {
 export function getControlsConfig(is2DLayout: boolean): { enableRotate: boolean } {
   return { enableRotate: !is2DLayout };
 }
+
+/**
+ * Get OrbitControls damping configuration for layout mode
+ *
+ * 2D layouts disable damping to prevent OrbitControls from "correcting"
+ * the overhead camera rotation. Damping causes controls.update() to
+ * reset overhead camera to default orbit angle.
+ *
+ * 3D layouts enable damping for smooth, natural camera motion.
+ *
+ * @param is2DLayout Whether using 2D Force-Directed layout (overhead view)
+ * @returns True if damping should be enabled, false otherwise
+ */
+export function getDampingEnabled(is2DLayout: boolean): boolean {
+  return !is2DLayout;
+}

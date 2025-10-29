@@ -11,7 +11,7 @@ import { calculateFramingPosition } from './lib/cameraPositioning';
 import { calculateDirectorySize } from './lib/node-sizing';
 import { shouldShowGrid } from './lib/grid-visibility';
 import { shouldShowFog } from './lib/fog-visibility';
-import { getCameraFOV, getControlsConfig } from './lib/camera-configuration';
+import { getCameraFOV, getControlsConfig, getDampingEnabled } from './lib/camera-configuration';
 import { getRootYPosition } from './lib/layout-positioning';
 import { GhostRenderer } from './GhostRenderer';
 import { ILayoutStrategy, LayoutNode } from './ILayoutStrategy';
@@ -1049,6 +1049,9 @@ export class TreeVisualizer {
     // Calculate camera position using pure function
     const config = calculateFramingPosition(bbox, cameraDefaults, this.camera.fov);
 
+    // Determine layout mode for configuration decisions
+    const is2DLayout = this.layoutStrategy.needsContinuousUpdate?.() ?? false;
+
     // Debug: Log camera state BEFORE any changes
     const beforeQuat = this.camera.quaternion.toArray();
     console.log('[autoFrameCamera] BEFORE changes:');
@@ -1056,27 +1059,23 @@ export class TreeVisualizer {
     console.log('  up:', this.camera.up.toArray());
     console.log('  quaternion:', beforeQuat);
     console.log('  target:', this.controls.target.toArray());
-    console.log('  is2D:', this.layoutStrategy.needsContinuousUpdate?.());
+    console.log('  is2D:', is2DLayout);
 
     // For 2D Force-Directed layouts, set up vector FIRST (before position)
     // This matches the sequence in setLayoutStrategy() which works correctly
-    if (this.layoutStrategy.needsContinuousUpdate?.()) {
+    if (is2DLayout) {
       console.log('[autoFrameCamera] Setting overhead orientation for 2D mode');
       this.camera.up.set(0, 1, 0);
-
-      // Disable damping in 2D mode to prevent OrbitControls from "correcting" camera rotation
-      // Damping causes controls.update() to reset overhead camera to default orbit angle
-      this.controls.enableDamping = false;
-    } else {
-      // Re-enable damping for 3D mode
-      this.controls.enableDamping = true;
     }
+
+    // Apply damping configuration
+    this.controls.enableDamping = getDampingEnabled(is2DLayout);
 
     // Apply camera position
     this.camera.position.set(config.position.x, config.position.y, config.position.z);
 
     // For 2D, add tiny Z offset to avoid lookAt() ambiguity (matches setLayoutStrategy)
-    if (this.layoutStrategy.needsContinuousUpdate?.()) {
+    if (is2DLayout) {
       this.camera.position.z += 0.1;
     }
 
@@ -1121,7 +1120,7 @@ export class TreeVisualizer {
 
       // For 2D layouts, reset controls to sync internal spherical coordinates
       // This prevents controls.update() from reverting camera to old position
-      if (this.layoutStrategy.needsContinuousUpdate?.()) {
+      if (is2DLayout) {
         console.log('[autoFrameCamera] Calling reset() to sync OrbitControls internal state...');
         this.controls.reset();
         console.log('[autoFrameCamera] AFTER reset:');

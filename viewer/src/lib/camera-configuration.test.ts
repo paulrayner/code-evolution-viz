@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getCameraFOV, getControlsConfig } from './camera-configuration';
+import { getCameraFOV, getControlsConfig, getDampingEnabled } from './camera-configuration';
 
 describe('getCameraFOV', () => {
   /**
@@ -38,5 +38,26 @@ describe('getControlsConfig', () => {
   it('should enable rotation for 3D layout', () => {
     const config = getControlsConfig(false);
     expect(config.enableRotate).toBe(true);
+  });
+});
+
+describe('getDampingEnabled', () => {
+  /**
+   * 2D overhead view should disable damping to prevent OrbitControls from
+   * "correcting" the camera rotation. Damping causes controls.update() to
+   * reset overhead camera to default orbit angle instead of staying directly above.
+   */
+  it('should disable damping for 2D layout', () => {
+    const damping = getDampingEnabled(true);
+    expect(damping).toBe(false);
+  });
+
+  /**
+   * 3D perspective view should enable damping for smooth, natural camera motion.
+   * Damping adds inertia to camera movements, making orbiting feel more fluid.
+   */
+  it('should enable damping for 3D layout', () => {
+    const damping = getDampingEnabled(false);
+    expect(damping).toBe(true);
   });
 });
