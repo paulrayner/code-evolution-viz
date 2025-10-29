@@ -8,11 +8,12 @@ import { FilterManager } from './filterManager';
 import { CouplingLoader } from './couplingLoader';
 import { calculateDominantColor } from './lib/directory-color-aggregation';
 import { calculateFramingPosition } from './lib/cameraPositioning';
-import { calculateDirectorySize } from './lib/node-sizing';
+import { calculateDirectorySize, calculateFileSize } from './lib/node-sizing';
 import { shouldShowGrid } from './lib/grid-visibility';
 import { shouldShowFog } from './lib/fog-visibility';
 import { getCameraFOV, getControlsConfig, getDampingEnabled } from './lib/camera-configuration';
 import { getRootYPosition, getCameraZOffset } from './lib/layout-positioning';
+import { shouldHideDirectoryNodes } from './lib/directory-visibility';
 import { GhostRenderer } from './GhostRenderer';
 import { ILayoutStrategy, LayoutNode } from './ILayoutStrategy';
 import { HierarchicalLayoutStrategy } from './HierarchicalLayoutStrategy';
@@ -911,11 +912,9 @@ export class TreeVisualizer {
       if (layoutNode.node.type === 'file') {
         const fileNode = layoutNode.node;
 
-        // Scale based on LOC (normalized)
-        // Use smaller base size for timeline mode where all LOC values are placeholders
-        const sizeMultiplier = this.timelineMode !== 'off' ? 0.3 : 2;
-        const minSize = this.timelineMode !== 'off' ? 0.3 : 0.3;
-        const normalizedSize = Math.max(minSize, (fileNode.loc / maxFileLoc) * sizeMultiplier);
+        // Size calculation: uniform for 2D layouts, LOC-based for 3D
+        const is2DLayout = this.layoutStrategy.needsContinuousUpdate?.() ?? false;
+        const normalizedSize = calculateFileSize(fileNode.loc, maxFileLoc, is2DLayout, this.timelineMode);
 
         // Color based on current mode
         const colorInfo = getColorForFile(fileNode, this.colorMode);
@@ -943,6 +942,13 @@ export class TreeVisualizer {
         // Directory node - cube shape with aggregation coloring
         const dirNode = layoutNode.node;
 
+        // In 2D mode, hide directory nodes to show only files
+        const is2DLayout = this.layoutStrategy.needsContinuousUpdate?.() ?? false;
+        if (shouldHideDirectoryNodes(is2DLayout)) {
+          // Skip mesh creation - directory exists in layout but has no visual representation
+          continue;
+        }
+
         // Get or calculate directory stats
         let stats = this.dirStats.get(dirNode);
         if (!stats) {
@@ -951,7 +957,6 @@ export class TreeVisualizer {
         }
 
         // Size calculation: uniform for 2D layouts, LOC-based for 3D
-        const is2DLayout = this.layoutStrategy.needsContinuousUpdate?.() ?? false;
         const normalizedSize = calculateDirectorySize(stats.totalLoc, maxDirLoc, is2DLayout);
 
         // Color based on dominant color from stats (calculated per color mode)
@@ -1340,9 +1345,8 @@ export class TreeVisualizer {
       }
 
       // Create visual mesh
-      const sizeMultiplier = this.timelineMode !== 'off' ? 0.3 : 2;
-      const minSize = this.timelineMode !== 'off' ? 0.3 : 0.3;
-      const normalizedSize = Math.max(minSize, (fileNode.loc / maxFileLoc) * sizeMultiplier);
+      const is2DLayout = this.layoutStrategy.needsContinuousUpdate?.() ?? false;
+      const normalizedSize = calculateFileSize(fileNode.loc, maxFileLoc, is2DLayout, this.timelineMode);
 
       const colorInfo = getColorForFile(fileNode, this.colorMode);
       const color = parseInt(colorInfo.hex.replace('#', ''), 16);
@@ -1497,6 +1501,17 @@ export class TreeVisualizer {
   }
 
   /**
+   * Get objects for raycasting (excludes directories in 2D mode)
+   */
+  private getRaycastObjects(): THREE.Object3D[] {
+    const is2DLayout = this.layoutStrategy.needsContinuousUpdate?.() ?? false;
+    const dirObjectsArray = shouldHideDirectoryNodes(is2DLayout)
+      ? []
+      : Array.from(this.dirObjects.keys());
+    return [...Array.from(this.fileObjects.keys()), ...dirObjectsArray];
+  }
+
+  /**
    * Handle mouse move for hover effects
    * Files: highlight file + all ancestors
    * Directories: highlight directory + all ancestors + all descendants
@@ -1507,9 +1522,7 @@ export class TreeVisualizer {
 
     this.raycaster.setFromCamera(this.mouse, this.camera);
 
-    // Check both files and directories
-    const allObjects = [...Array.from(this.fileObjects.keys()), ...Array.from(this.dirObjects.keys())];
-    const intersects = this.raycaster.intersectObjects(allObjects);
+    const intersects = this.raycaster.intersectObjects(this.getRaycastObjects());
 
     // Reset previously hovered objects
     for (const mesh of this.hoveredObjects) {
@@ -1635,9 +1648,7 @@ export class TreeVisualizer {
 
     this.raycaster.setFromCamera(this.mouse, this.camera);
 
-    // Check both files and directories
-    const allObjects = [...Array.from(this.fileObjects.keys()), ...Array.from(this.dirObjects.keys())];
-    const intersects = this.raycaster.intersectObjects(allObjects);
+    const intersects = this.raycaster.intersectObjects(this.getRaycastObjects());
 
     if (intersects.length > 0) {
       const mesh = intersects[0].object;
