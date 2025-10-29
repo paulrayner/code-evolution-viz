@@ -12,7 +12,7 @@ import { calculateDirectorySize } from './lib/node-sizing';
 import { shouldShowGrid } from './lib/grid-visibility';
 import { shouldShowFog } from './lib/fog-visibility';
 import { getCameraFOV, getControlsConfig, getDampingEnabled } from './lib/camera-configuration';
-import { getRootYPosition } from './lib/layout-positioning';
+import { getRootYPosition, getCameraZOffset } from './lib/layout-positioning';
 import { GhostRenderer } from './GhostRenderer';
 import { ILayoutStrategy, LayoutNode } from './ILayoutStrategy';
 import { HierarchicalLayoutStrategy } from './HierarchicalLayoutStrategy';
@@ -1071,13 +1071,9 @@ export class TreeVisualizer {
     // Apply damping configuration
     this.controls.enableDamping = getDampingEnabled(is2DLayout);
 
-    // Apply camera position
-    this.camera.position.set(config.position.x, config.position.y, config.position.z);
-
-    // For 2D, add tiny Z offset to avoid lookAt() ambiguity (matches setLayoutStrategy)
-    if (is2DLayout) {
-      this.camera.position.z += 0.1;
-    }
+    // Apply camera position with Z offset for 2D mode
+    const zOffset = getCameraZOffset(is2DLayout);
+    this.camera.position.set(config.position.x, config.position.y, config.position.z + zOffset);
 
     // Apply lookAt and controls target
     this.camera.lookAt(config.target.x, config.target.y, config.target.z);
