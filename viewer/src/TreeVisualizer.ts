@@ -7,6 +7,7 @@ import { ColorMode, getColorForFile } from './colorModeManager';
 import { FilterManager } from './filterManager';
 import { CouplingLoader } from './couplingLoader';
 import { calculateDominantColor } from './lib/directory-color-aggregation';
+import { calculateFramingPosition } from './lib/cameraPositioning';
 import { GhostRenderer } from './GhostRenderer';
 import { ILayoutStrategy, LayoutNode } from './ILayoutStrategy';
 import { HierarchicalLayoutStrategy } from './HierarchicalLayoutStrategy';
@@ -212,19 +213,38 @@ export class TreeVisualizer {
   /**
    * Set layout strategy and rebuild visualization
    * Switches between different layout algorithms (3D hierarchy, flat 2D, etc.)
+   *
+   * TDD RED PHASE - Failing specification:
+   * Bug (user verified): Switching 2D→3D→2D keeps rotated view instead of overhead
+   * Test steps that FAIL:
+   *   1. Load in 2D mode → overhead view (0,150,0.1) ✓
+   *   2. Switch to 3D → angled view (30,30,30) ✓
+   *   3. Switch back to 2D → FAILS: keeps rotated view, SHOULD be overhead
+   *
+   * Expected (after GREEN phase):
+   *   - 2D mode MUST always show overhead (0,150,0.1)
+   *   - 3D mode MUST always show angle (30,30,30)
+   *   - Mode switches MUST reset camera to mode default
    */
   setLayoutStrategy(strategy: ILayoutStrategy) {
+    console.log('[setLayoutStrategy] ENTER - current camera:', this.camera.position.toArray());
     this.layoutStrategy = strategy;
 
     // Apply camera defaults for this layout
     const { position, lookAt } = strategy.getCameraDefaults();
-    this.camera.position.copy(position);
-    this.camera.lookAt(lookAt);
-    this.controls.target.copy(lookAt);
-    this.controls.update();
+    console.log('[setLayoutStrategy] Strategy defaults:', position.toArray(), 'lookAt:', lookAt.toArray());
 
     // Adjust camera FOV and scene fog for layout type
     if (strategy.needsContinuousUpdate?.()) {
+      // Force-directed 2D: ensure true overhead view
+      this.camera.up.set(0, 1, 0);
+      this.camera.position.copy(position);
+      this.camera.lookAt(lookAt);
+      this.controls.target.copy(lookAt);
+      this.controls.update();
+      console.log('[setLayoutStrategy] 2D mode - saving state at:', this.camera.position.toArray());
+      this.controls.saveState(); // GREEN PHASE: Save (0,150,0.1) as OrbitControls home
+
       // Force-directed 2D: narrower FOV (less perspective distortion)
       this.camera.fov = 30;
       this.camera.updateProjectionMatrix();
@@ -233,6 +253,14 @@ export class TreeVisualizer {
       // Disable rotation - only allow pan and zoom in 2D view
       this.controls.enableRotate = false;
     } else {
+      // 3D layouts: standard camera setup
+      this.camera.position.copy(position);
+      this.camera.lookAt(lookAt);
+      this.controls.target.copy(lookAt);
+      this.controls.update();
+      console.log('[setLayoutStrategy] 3D mode - saving state at:', this.camera.position.toArray());
+      this.controls.saveState(); // GREEN PHASE: Save (30,30,30) as OrbitControls home
+
       // 3D layouts: standard FOV and fog
       this.camera.fov = 60;
       this.camera.updateProjectionMatrix();
@@ -972,50 +1000,148 @@ export class TreeVisualizer {
 
   /**
    * Auto-frame camera to fit entire tree
+   *
+   * Calculates camera position to frame bounding box, then saves the position
+   * to OrbitControls so mode switches return to correct orientation.
    */
   private autoFrameCamera(boundingBox: THREE.Box3) {
-    // Get box center and size
+    console.log('[autoFrameCamera] ENTER - current camera:', this.camera.position.toArray());
+    // Extract bounding box data
     const center = new THREE.Vector3();
     boundingBox.getCenter(center);
-
     const size = new THREE.Vector3();
     boundingBox.getSize(size);
 
-    // Calculate distance needed to fit everything in view
-    const maxDim = Math.max(size.x, size.y, size.z);
-    const fov = this.camera.fov * (Math.PI / 180);
-    let cameraDistance = Math.abs(maxDim / Math.sin(fov / 2));
+    const bbox = {
+      center: { x: center.x, y: center.y, z: center.z },
+      size: { x: size.x, y: size.y, z: size.z }
+    };
 
-    // Add some padding (20%)
-    cameraDistance *= 1.2;
+    // Get camera defaults from layout strategy
+    const cameraDefaults = this.layoutStrategy.getCameraDefaults();
 
-    // Get camera orientation from layout strategy
-    const { position: defaultPos } = this.layoutStrategy.getCameraDefaults();
+    // Calculate camera position using pure function
+    const config = calculateFramingPosition(bbox, cameraDefaults, this.camera.fov);
 
-    // Check if this is a top-down 2D layout (camera looking straight down from above)
-    const isTopDown2D = defaultPos.x === 0 && defaultPos.z < 1 && defaultPos.y > 0;
+    // Debug: Log camera state BEFORE any changes
+    const beforeQuat = this.camera.quaternion.toArray();
+    console.log('[autoFrameCamera] BEFORE changes:');
+    console.log('  position:', this.camera.position.toArray());
+    console.log('  up:', this.camera.up.toArray());
+    console.log('  quaternion:', beforeQuat);
+    console.log('  target:', this.controls.target.toArray());
+    console.log('  is2D:', this.layoutStrategy.needsContinuousUpdate?.());
 
-    if (isTopDown2D) {
-      // Top-down 2D view: position camera directly above center
-      this.camera.position.set(
-        center.x,
-        center.y + cameraDistance,
-        center.z
-      );
+    // For 2D Force-Directed layouts, set up vector FIRST (before position)
+    // This matches the sequence in setLayoutStrategy() which works correctly
+    if (this.layoutStrategy.needsContinuousUpdate?.()) {
+      console.log('[autoFrameCamera] Setting overhead orientation for 2D mode');
+      this.camera.up.set(0, 1, 0);
+
+      // Disable damping in 2D mode to prevent OrbitControls from "correcting" camera rotation
+      // Damping causes controls.update() to reset overhead camera to default orbit angle
+      this.controls.enableDamping = false;
     } else {
-      // 3D view: position camera at an angle for perspective
-      const angle = Math.PI / 4; // 45 degrees
-      this.camera.position.set(
-        center.x + cameraDistance * Math.cos(angle),
-        center.y + cameraDistance * 0.5,
-        center.z + cameraDistance * Math.sin(angle)
-      );
+      // Re-enable damping for 3D mode
+      this.controls.enableDamping = true;
     }
 
-    // Look at center
-    this.camera.lookAt(center);
-    this.controls.target.copy(center);
+    // Apply camera position
+    this.camera.position.set(config.position.x, config.position.y, config.position.z);
+
+    // For 2D, add tiny Z offset to avoid lookAt() ambiguity (matches setLayoutStrategy)
+    if (this.layoutStrategy.needsContinuousUpdate?.()) {
+      this.camera.position.z += 0.1;
+    }
+
+    // Apply lookAt and controls target
+    this.camera.lookAt(config.target.x, config.target.y, config.target.z);
+    this.controls.target.copy(new THREE.Vector3(config.target.x, config.target.y, config.target.z));
+
+    console.log('[autoFrameCamera] BEFORE controls.update():');
+    console.log('  camera.position:', this.camera.position.toArray());
+    console.log('  camera.quaternion:', this.camera.quaternion.toArray());
+    console.log('  controls.target:', this.controls.target.toArray());
+    // Access OrbitControls internals (these are private but we can log them for debugging)
+    console.log('  controls object:', this.controls);
+
     this.controls.update();
+
+    console.log('[autoFrameCamera] AFTER controls.update():');
+    console.log('  camera.position:', this.camera.position.toArray());
+    console.log('  camera.quaternion:', this.camera.quaternion.toArray());
+
+    // Debug: Log camera state AFTER changes but BEFORE saveState
+    const afterQuat = this.camera.quaternion.toArray();
+    console.log('[autoFrameCamera] AFTER changes, BEFORE saveState:');
+    console.log('  position:', this.camera.position.toArray());
+    console.log('  up:', this.camera.up.toArray());
+    console.log('  quaternion:', afterQuat);
+    console.log('  target:', this.controls.target.toArray());
+    console.log('  quaternion changed?',
+      beforeQuat[0] !== afterQuat[0] ||
+      beforeQuat[1] !== afterQuat[1] ||
+      beforeQuat[2] !== afterQuat[2] ||
+      beforeQuat[3] !== afterQuat[3]);
+
+    // Save camera state so OrbitControls home position matches actual camera position
+    // Fixes bug where switching repos/modes loses overhead orientation (2D mode)
+    if (config.shouldSaveState) {
+      console.log('[autoFrameCamera] Calling saveState()...');
+      this.controls.saveState();
+
+      console.log('[autoFrameCamera] AFTER saveState:');
+      console.log('  camera.quaternion:', this.camera.quaternion.toArray());
+
+      // For 2D layouts, reset controls to sync internal spherical coordinates
+      // This prevents controls.update() from reverting camera to old position
+      if (this.layoutStrategy.needsContinuousUpdate?.()) {
+        console.log('[autoFrameCamera] Calling reset() to sync OrbitControls internal state...');
+        this.controls.reset();
+        console.log('[autoFrameCamera] AFTER reset:');
+        console.log('  camera.quaternion:', this.camera.quaternion.toArray());
+        console.log('  camera.position:', this.camera.position.toArray());
+
+        // Enable animation loop debugging to see what controls.update() does
+        this.debugControlsUpdate = true;
+        this.debugFrameCount = 0;
+        console.log('[autoFrameCamera] Enabled animation loop debugging for next 5 frames');
+      }
+
+      // CRITICAL TEST: Monitor what happens to the camera in subsequent frames
+      let frameCount = 0;
+      const savedQuat = this.camera.quaternion.clone();
+      const savedPos = this.camera.position.clone();
+
+      const monitorCamera = () => {
+        frameCount++;
+        const currentQuat = this.camera.quaternion;
+        const currentPos = this.camera.position;
+
+        const quatChanged = !savedQuat.equals(currentQuat);
+        const posChanged = !savedPos.equals(currentPos);
+
+        if (quatChanged || posChanged) {
+          console.log(`[FRAME ${frameCount}] CAMERA CHANGED!`);
+          if (quatChanged) {
+            console.log('  Quaternion:', currentQuat.toArray());
+          }
+          if (posChanged) {
+            console.log('  Position:', currentPos.toArray());
+          }
+        }
+
+        if (frameCount < 60) {
+          requestAnimationFrame(monitorCamera);
+        } else {
+          console.log('[MONITOR COMPLETE] Checked 60 frames');
+        }
+      };
+
+      requestAnimationFrame(monitorCamera);
+    } else {
+      console.log('[autoFrameCamera] NOT saving state (shouldSaveState=false)');
+    }
   }
 
   /**
@@ -1064,8 +1190,13 @@ export class TreeVisualizer {
     // Only reset target on initial load to preserve user's pan during timeline playback
     if (resetCamera) {
       this.controls.target.copy(rootPosition);
+
+      // In 3D mode, update controls to sync camera with new target
+      // In 2D mode, skip update to avoid recalculating camera orientation (preserves overhead view)
+      if (!this.layoutStrategy.needsContinuousUpdate?.()) {
+        this.controls.update();
+      }
     }
-    this.controls.update();
   }
 
   /**
@@ -1558,6 +1689,10 @@ export class TreeVisualizer {
     }
   }
 
+  // Debug flag to log controls.update() behavior
+  private debugControlsUpdate = false;
+  private debugFrameCount = 0;
+
   /**
    * Animation loop
    */
@@ -1577,7 +1712,30 @@ export class TreeVisualizer {
     }
     this.lastFrameTime = now;
 
-    this.controls.update();
+    // Debug: Log what controls.update() does to the camera
+    if (this.debugControlsUpdate && this.debugFrameCount < 5) {
+      this.debugFrameCount++;
+      const beforeQuat = this.camera.quaternion.clone();
+      const beforePos = this.camera.position.clone();
+
+      this.controls.update();
+
+      const afterQuat = this.camera.quaternion;
+      const afterPos = this.camera.position;
+
+      if (!beforeQuat.equals(afterQuat) || !beforePos.equals(afterPos)) {
+        console.log(`[ANIMATE FRAME ${this.debugFrameCount}] controls.update() CHANGED camera!`);
+        console.log('  BEFORE: quat =', beforeQuat.toArray(), 'pos =', beforePos.toArray());
+        console.log('  AFTER:  quat =', afterQuat.toArray(), 'pos =', afterPos.toArray());
+        console.log('  controls.enableDamping =', this.controls.enableDamping);
+        console.log('  controls.target =', this.controls.target.toArray());
+      } else {
+        console.log(`[ANIMATE FRAME ${this.debugFrameCount}] controls.update() did NOT change camera`);
+      }
+    } else {
+      this.controls.update();
+    }
+
     this.renderer.render(this.scene, this.camera);
     this.labelRenderer.render(this.scene, this.camera);
   }
