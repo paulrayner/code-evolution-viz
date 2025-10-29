@@ -26,6 +26,7 @@ export class PhysicsNode implements SpatialItem {
 
   // Geometry
   radius: number;
+  territoryRadius: number; // Radius including orbiting files (for collision detection)
 
   // Hierarchy references
   parent: PhysicsNode | null;
@@ -38,6 +39,7 @@ export class PhysicsNode implements SpatialItem {
     this.layoutNode = layoutNode;
     this.directoryNode = layoutNode.node as DirectoryNode;
     this.radius = radius;
+    this.territoryRadius = radius; // Initially same as radius, will be updated after file placement
     this.parent = parent;
 
     // Initialize physics state
@@ -49,25 +51,27 @@ export class PhysicsNode implements SpatialItem {
 
   /**
    * Get bounding box for spatial indexing (X/Z plane only)
+   * Uses territory radius to properly capture file orbit space
    */
   getBounds(): AABB2D {
     return {
-      minX: this.position.x - this.radius,
-      minZ: this.position.z - this.radius,
-      maxX: this.position.x + this.radius,
-      maxZ: this.position.z + this.radius
+      minX: this.position.x - this.territoryRadius,
+      minZ: this.position.z - this.territoryRadius,
+      maxX: this.position.x + this.territoryRadius,
+      maxZ: this.position.z + this.territoryRadius
     };
   }
 
   /**
-   * Check if this node overlaps with another
+   * Check if this node overlaps with another using territory radius
+   * Territory radius includes orbiting files, preventing file cloud overlap
    */
   overlaps(other: PhysicsNode): boolean {
     const dx = other.position.x - this.position.x;
     const dz = other.position.z - this.position.z;
     const distSq = dx * dx + dz * dz;
-    const sumRadius = this.radius + other.radius;
-    return distSq < sumRadius * sumRadius;
+    const sumTerritory = this.territoryRadius + other.territoryRadius;
+    return distSq < sumTerritory * sumTerritory;
   }
 
   /**
@@ -125,36 +129,20 @@ export class PhysicsNode implements SpatialItem {
   }
 
   /**
-   * Update position based on acceleration (Verlet integration with elasticity)
-   * Based on Gource's RDirNode::move()
+   * Update position using Gource's simple integration: position += acceleration × dt.
+   * No velocity accumulation prevents jitter - forces don't carry over between frames.
+   * Acceleration is reset at the start of each frame by applyForces().
    */
-  integrate(dt: number, elasticity: number = 0.0): void {
+  integrate(dt: number): void {
     // Root node is fixed at origin
     if (!this.parent) {
       this.position.set(0, 0, 0);
       return;
     }
 
-    // Basic integration: pos += accel * dt
+    // Gource's simple integration: pos += accel × dt
     this.position.x += this.acceleration.x * dt;
     this.position.z += this.acceleration.z * dt;
-
-    // Optional elasticity (smoothing)
-    if (elasticity > 0.0) {
-      const diffX = this.acceleration.x - this.prevAcceleration.x;
-      const diffZ = this.acceleration.z - this.prevAcceleration.z;
-
-      const m = dt * elasticity;
-
-      const accel3X = this.prevAcceleration.x * (1.0 - m) + diffX * m;
-      const accel3Z = this.prevAcceleration.z * (1.0 - m) + diffZ * m;
-
-      this.position.x += accel3X;
-      this.position.z += accel3Z;
-
-      this.prevAcceleration.x = accel3X;
-      this.prevAcceleration.z = accel3Z;
-    }
 
     // Keep Y position fixed at 0 (true flat 2D layout like Gource)
     // All nodes on same plane, no hierarchical depth
