@@ -12,6 +12,7 @@ import { calculateDirectorySize } from './lib/node-sizing';
 import { shouldShowGrid } from './lib/grid-visibility';
 import { shouldShowFog } from './lib/fog-visibility';
 import { getCameraFOV, getControlsConfig } from './lib/camera-configuration';
+import { getRootYPosition } from './lib/layout-positioning';
 import { GhostRenderer } from './GhostRenderer';
 import { ILayoutStrategy, LayoutNode } from './ILayoutStrategy';
 import { HierarchicalLayoutStrategy } from './HierarchicalLayoutStrategy';
@@ -1190,9 +1191,12 @@ export class TreeVisualizer {
     const maxFileLoc = this.findMaxLoc(tree);
     const maxDirLoc = this.findMaxDirectoryLoc(tree);
 
+    // Determine layout mode for positioning decisions
+    const is2DLayout = this.layoutStrategy.needsContinuousUpdate?.() ?? false;
+
     // Layout the tree
     // Force-Directed layout uses Y=0 (true flat 2D), others use Y=10 (hierarchical)
-    const rootY = this.layoutStrategy.needsContinuousUpdate?.() ? 0 : 10;
+    const rootY = getRootYPosition(is2DLayout);
     const rootPosition = new THREE.Vector3(0, rootY, 0);
     this.layoutNodes = this.layoutStrategy.layoutTree(tree, rootPosition, 0, 0, Math.PI * 2);
 
@@ -1200,7 +1204,7 @@ export class TreeVisualizer {
     this.createVisuals(this.layoutNodes, maxFileLoc, maxDirLoc);
 
     // Update edge positions to match current node positions (for Force-Directed layout)
-    if (this.layoutStrategy.needsContinuousUpdate?.()) {
+    if (is2DLayout) {
       this.updateEdgePositions();
     }
 
@@ -1218,7 +1222,7 @@ export class TreeVisualizer {
 
       // In 3D mode, update controls to sync camera with new target
       // In 2D mode, skip update to avoid recalculating camera orientation (preserves overhead view)
-      if (!this.layoutStrategy.needsContinuousUpdate?.()) {
+      if (!is2DLayout) {
         this.controls.update();
       }
     }
