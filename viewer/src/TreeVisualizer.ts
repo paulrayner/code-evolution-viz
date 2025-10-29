@@ -10,6 +10,7 @@ import { calculateDominantColor } from './lib/directory-color-aggregation';
 import { calculateFramingPosition } from './lib/cameraPositioning';
 import { calculateDirectorySize } from './lib/node-sizing';
 import { shouldShowGrid } from './lib/grid-visibility';
+import { shouldShowFog } from './lib/fog-visibility';
 import { GhostRenderer } from './GhostRenderer';
 import { ILayoutStrategy, LayoutNode } from './ILayoutStrategy';
 import { HierarchicalLayoutStrategy } from './HierarchicalLayoutStrategy';
@@ -253,8 +254,6 @@ export class TreeVisualizer {
       // Force-directed 2D: narrower FOV (less perspective distortion)
       this.camera.fov = 30;
       this.camera.updateProjectionMatrix();
-      // Disable fog for true 2D appearance
-      this.scene.fog = null;
       // Disable rotation - only allow pan and zoom in 2D view
       this.controls.enableRotate = false;
     } else {
@@ -266,12 +265,20 @@ export class TreeVisualizer {
       console.log('[setLayoutStrategy] 3D mode - saving state at:', this.camera.position.toArray());
       this.controls.saveState(); // GREEN PHASE: Save (30,30,30) as OrbitControls home
 
-      // 3D layouts: standard FOV and fog
+      // 3D layouts: standard FOV
       this.camera.fov = 60;
       this.camera.updateProjectionMatrix();
-      this.scene.fog = new THREE.Fog(0x1a1a1a, 50, 200);
       // Re-enable rotation for 3D views
       this.controls.enableRotate = true;
+    }
+
+    // Apply fog based on layout mode (2D disables fog to prevent dimming when zoomed out)
+    const is2DLayout = strategy.needsContinuousUpdate?.() ?? false;
+    const bgColor = (this.scene.background as THREE.Color)?.getHex() ?? 0x1a1a1a;
+    if (shouldShowFog(is2DLayout)) {
+      this.scene.fog = new THREE.Fog(bgColor, 50, 200);
+    } else {
+      this.scene.fog = null;
     }
 
     // Re-layout tree with new strategy (don't reset camera - we just did above)
@@ -282,15 +289,19 @@ export class TreeVisualizer {
 
   /**
    * Set theme (light or dark)
-   * Updates 3D scene background and fog colors
+   * Updates 3D scene background and fog colors (respects 2D mode fog setting)
    */
   setTheme(theme: 'light' | 'dark') {
-    if (theme === 'light') {
-      this.scene.background = new THREE.Color(0xf5f5f5);
-      this.scene.fog = new THREE.Fog(0xf5f5f5, 50, 200);
+    const is2DLayout = this.layoutStrategy.needsContinuousUpdate?.() ?? false;
+    const fogColor = theme === 'light' ? 0xf5f5f5 : 0x1a1a1a;
+
+    this.scene.background = new THREE.Color(fogColor);
+
+    // Only set fog if not in 2D mode (2D overhead view doesn't need fog)
+    if (shouldShowFog(is2DLayout)) {
+      this.scene.fog = new THREE.Fog(fogColor, 50, 200);
     } else {
-      this.scene.background = new THREE.Color(0x1a1a1a);
-      this.scene.fog = new THREE.Fog(0x1a1a1a, 50, 200);
+      this.scene.fog = null;
     }
   }
 
