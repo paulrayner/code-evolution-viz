@@ -11,6 +11,7 @@ import { calculateFramingPosition } from './lib/cameraPositioning';
 import { calculateDirectorySize } from './lib/node-sizing';
 import { shouldShowGrid } from './lib/grid-visibility';
 import { shouldShowFog } from './lib/fog-visibility';
+import { getCameraFOV, getControlsConfig } from './lib/camera-configuration';
 import { GhostRenderer } from './GhostRenderer';
 import { ILayoutStrategy, LayoutNode } from './ILayoutStrategy';
 import { HierarchicalLayoutStrategy } from './HierarchicalLayoutStrategy';
@@ -236,12 +237,18 @@ export class TreeVisualizer {
     console.log('[setLayoutStrategy] ENTER - current camera:', this.camera.position.toArray());
     this.layoutStrategy = strategy;
 
+    // Determine layout mode for all configuration decisions
+    const is2DLayout = strategy.needsContinuousUpdate?.() ?? false;
+
     // Apply camera defaults for this layout
     const { position, lookAt } = strategy.getCameraDefaults();
     console.log('[setLayoutStrategy] Strategy defaults:', position.toArray(), 'lookAt:', lookAt.toArray());
 
-    // Adjust camera FOV and scene fog for layout type
-    if (strategy.needsContinuousUpdate?.()) {
+    // Apply camera and controls configuration
+    const fov = getCameraFOV(is2DLayout);
+    const controlsConfig = getControlsConfig(is2DLayout);
+
+    if (is2DLayout) {
       // Force-directed 2D: ensure true overhead view
       this.camera.up.set(0, 1, 0);
       this.camera.position.copy(position);
@@ -249,13 +256,12 @@ export class TreeVisualizer {
       this.controls.target.copy(lookAt);
       this.controls.update();
       console.log('[setLayoutStrategy] 2D mode - saving state at:', this.camera.position.toArray());
-      this.controls.saveState(); // GREEN PHASE: Save (0,150,0.1) as OrbitControls home
+      this.controls.saveState(); // Save (0,150,0.1) as OrbitControls home
 
-      // Force-directed 2D: narrower FOV (less perspective distortion)
-      this.camera.fov = 30;
+      // Apply 2D-specific camera and controls settings
+      this.camera.fov = fov;
       this.camera.updateProjectionMatrix();
-      // Disable rotation - only allow pan and zoom in 2D view
-      this.controls.enableRotate = false;
+      this.controls.enableRotate = controlsConfig.enableRotate;
     } else {
       // 3D layouts: standard camera setup
       this.camera.position.copy(position);
@@ -263,17 +269,15 @@ export class TreeVisualizer {
       this.controls.target.copy(lookAt);
       this.controls.update();
       console.log('[setLayoutStrategy] 3D mode - saving state at:', this.camera.position.toArray());
-      this.controls.saveState(); // GREEN PHASE: Save (30,30,30) as OrbitControls home
+      this.controls.saveState(); // Save (30,30,30) as OrbitControls home
 
-      // 3D layouts: standard FOV
-      this.camera.fov = 60;
+      // Apply 3D-specific camera and controls settings
+      this.camera.fov = fov;
       this.camera.updateProjectionMatrix();
-      // Re-enable rotation for 3D views
-      this.controls.enableRotate = true;
+      this.controls.enableRotate = controlsConfig.enableRotate;
     }
 
     // Apply fog based on layout mode (2D disables fog to prevent dimming when zoomed out)
-    const is2DLayout = strategy.needsContinuousUpdate?.() ?? false;
     const bgColor = (this.scene.background as THREE.Color)?.getHex() ?? 0x1a1a1a;
     if (shouldShowFog(is2DLayout)) {
       this.scene.fog = new THREE.Fog(bgColor, 50, 200);
