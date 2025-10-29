@@ -8,6 +8,7 @@ import { FilterManager } from './filterManager';
 import { CouplingLoader } from './couplingLoader';
 import { calculateDominantColor } from './lib/directory-color-aggregation';
 import { calculateFramingPosition } from './lib/cameraPositioning';
+import { calculateDirectorySize } from './lib/node-sizing';
 import { GhostRenderer } from './GhostRenderer';
 import { ILayoutStrategy, LayoutNode } from './ILayoutStrategy';
 import { HierarchicalLayoutStrategy } from './HierarchicalLayoutStrategy';
@@ -929,10 +930,9 @@ export class TreeVisualizer {
           this.dirStats.set(dirNode, stats);
         }
 
-        // Size based on total LOC (sqrt scaling for better visual differentiation)
-        // Using sqrt to give small directories more visible size while keeping large ones manageable
-        const ratio = Math.sqrt(stats.totalLoc / maxDirLoc);
-        const normalizedSize = 0.5 + (ratio * 2.5); // Range: 0.5 to 3.0
+        // Size calculation: uniform for 2D layouts, LOC-based for 3D
+        const is2DLayout = this.layoutStrategy.needsContinuousUpdate?.() ?? false;
+        const normalizedSize = calculateDirectorySize(stats.totalLoc, maxDirLoc, is2DLayout);
 
         // Color based on dominant color from stats (calculated per color mode)
         const color = stats.dominantColor;

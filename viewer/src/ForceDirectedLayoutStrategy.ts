@@ -9,11 +9,16 @@ import { SpatialIndex } from './SpatialIndex';
  */
 interface ForceDirectedConfig {
   gravity: number;           // Parent attraction strength (default: 10.0)
-  elasticity: number;        // Motion smoothing (default: 0.0)
-  damping: number;           // Velocity decay (default: 0.9)
   collisionPadding: number;  // Extra space between nodes (default: 1.5)
-  maxSpeed: number;          // Speed limiter (default: 100)
   fileDiameter: number;      // File diameter for ring spacing (default: 1.5)
+  territoryPadding: number;  // Extra space beyond file orbit for territory (default: 2.0)
+
+  // Spiral positioning config
+  spiralBaseSpacing: number;     // Safety margin beyond territory radii (default: 3.5)
+  spiralRadialMultiplier: number; // How much each step expands spiral (default: 0.7)
+
+  // Territory-based repulsion config
+  repulsionStrength: number;     // Force multiplier for territory repulsion (default: 10.0)
 }
 
 /**
@@ -31,8 +36,19 @@ interface FileOrbitInfo {
  * Creates organic, breathing tree visualization using real-time physics simulation.
  * Based on Gource's RDirNode force calculations.
  *
+ * Key features:
+ * 1. Territory-based collision detection (includes file orbit space)
+ * 2. Area-based directory sizing (Gource's recursive algorithm)
+ * 3. Real-time physics forces (collision, gravity, alignment, spacing)
+ * 4. Incremental updates for smooth timeline transitions
+ *
+ * Sizing strategy (Gource's algorithm):
+ * - dir_area = (file_area × visible_count) + Σ(child.getArea())
+ * - dir_radius = sqrt(dir_area) × padding
+ * - Territory radius: Collision radius + max file orbit + padding
+ *
  * Key forces:
- * 1. Collision avoidance (repulsion between overlapping nodes)
+ * 1. Collision avoidance (repulsion between overlapping territories)
  * 2. Parent gravity (attraction to parent at radius distance)
  * 3. Grandparent alignment (push along parent→grandparent direction)
  * 4. Sibling spacing (spread evenly around parent circumference)
@@ -47,29 +63,62 @@ export class ForceDirectedLayoutStrategy implements ILayoutStrategy {
   constructor(config?: Partial<ForceDirectedConfig>) {
     this.config = {
       gravity: 10.0,
-      elasticity: 0.0,
-      damping: 0.9,
-      collisionPadding: 1.5,
-      maxSpeed: 100,
+      collisionPadding: 0.5, // Reduced from 1.5 for tighter packing
       fileDiameter: 1.5, // Scaled for Three.js world coords (Gource uses 8.0 for pixels)
+      territoryPadding: 2.0, // Extra space to prevent file cloud overlap
+      spiralBaseSpacing: 0.5, // Reduced from 3.5 for compact layout
+      spiralRadialMultiplier: 0.7, // Spiral expansion rate
+      repulsionStrength: 1.0, // Match Gource: use overlap directly without amplification
       ...config
     };
   }
 
   /**
-   * Calculate radius based on directory size (like Gource)
+   * Calculate directory area recursively (Gource's algorithm)
+   *
+   * dir_area = (file_area × visible_count) + Σ(child.getArea())
+   *
+   * This includes:
+   * - Area of all direct files
+   * - Recursive area of all subdirectories (which includes their files + subdirs)
+   *
+   * @param dirNode Directory to calculate area for
+   * @returns Total area occupied by this directory and all descendants
    */
-  calculateRadius(childCount: number): number {
-    if (childCount === 0) return 3;
+  private calculateArea(dirNode: DirectoryNode): number {
+    const file_area = this.config.fileDiameter * this.config.fileDiameter * Math.PI;
 
-    // Gource-style: sqrt of area
-    const padded_file_radius = this.config.fileDiameter * 0.5; // Half file diameter
-    const file_area = padded_file_radius * padded_file_radius * Math.PI;
-    const total_area = file_area * childCount;
-    const dir_radius = Math.max(1.0, Math.sqrt(total_area)) * 1.5; // Padding multiplier
+    // Count direct files
+    const visible_count = dirNode.children.filter(c => c.type === 'file').length;
+    const total_file_area = file_area * visible_count;
+
+    let dir_area = total_file_area;
+
+    // Add area of subdirectories (recursive)
+    for (const child of dirNode.children) {
+      if (child.type === 'directory') {
+        dir_area += this.calculateArea(child);
+      }
+    }
+
+    return dir_area;
+  }
+
+  /**
+   * Calculate directory radius from area (Gource's algorithm)
+   *
+   * dir_radius = sqrt(dir_area) × padding
+   *
+   * @param dirNode Directory to calculate radius for
+   * @returns Collision radius for this directory
+   */
+  private calculateRadius(dirNode: DirectoryNode): number {
+    const dir_area = this.calculateArea(dirNode);
+    const dir_radius = Math.max(1.0, Math.sqrt(dir_area)) * 0.3; // Reduced from 1.5 for very compact cubes
 
     return dir_radius;
   }
+
 
   /**
    * Get camera defaults for top-down 2D view (Gource style)
@@ -117,15 +166,17 @@ export class ForceDirectedLayoutStrategy implements ILayoutStrategy {
 
   /**
    * Recursively create physics nodes for directory tree
+   *
+   * Uses Gource's area-based sizing: directory radius includes area of all descendants.
+   * This ensures parent directories are large enough to accommodate their entire subtree.
    */
   private createPhysicsNodes(
     dirNode: DirectoryNode,
     position: THREE.Vector3,
     parent: PhysicsNode | null
   ): PhysicsNode {
-    // Calculate radius for this directory
-    const childCount = dirNode.children.filter(c => c.type === 'file').length;
-    const radius = this.calculateRadius(childCount);
+    // Gource's area-based sizing: radius includes all descendants
+    const radius = this.calculateRadius(dirNode);
 
     // Create layout node
     const layoutNode: LayoutNode = {
@@ -154,7 +205,10 @@ export class ForceDirectedLayoutStrategy implements ILayoutStrategy {
   }
 
   /**
-   * Set initial positions for all physics nodes (Gource style)
+   * Set initial positions for all physics nodes using spiral positioning
+   *
+   * Uses golden angle spiral for even distribution of siblings based on territory size.
+   * This prevents initial overlaps that require many physics iterations to resolve.
    */
   private setInitialPositions(root: PhysicsNode): void {
     // Root is fixed at origin
@@ -166,23 +220,72 @@ export class ForceDirectedLayoutStrategy implements ILayoutStrategy {
     while (queue.length > 0) {
       const node = queue.shift()!;
 
+      // Position children in golden angle spiral around parent
+      this.positionChildrenInSpiral(node);
+
+      // Add children to queue for recursive processing
       for (const child of node.children) {
-        if (!child.isInitialized) {
-          // Start at parent position + random offset
-          child.position.copy(node.position);
-
-          // Add pseudo-random offset based on path (deterministic)
-          const hash = this.hashString(child.directoryNode.path);
-          const offsetX = ((hash % 100) - 50) / 50; // -1 to 1
-          const offsetZ = (((hash * 17) % 100) - 50) / 50;
-          child.position.x += offsetX;
-          child.position.z += offsetZ;
-
-          child.isInitialized = true;
-        }
         queue.push(child);
       }
     }
+  }
+
+  /**
+   * Position children in golden angle spiral around parent
+   *
+   * Golden angle (137.5°) creates even distribution without obvious patterns.
+   * Distance from center increases with each child to prevent overlap.
+   */
+  private positionChildrenInSpiral(parent: PhysicsNode): void {
+    const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5)); // ~137.5° in radians
+
+    for (let i = 0; i < parent.children.length; i++) {
+      const child = parent.children[i];
+      if (child.isInitialized) continue;
+
+      const angle = i * GOLDEN_ANGLE;
+      const distance = this.calculateSpiralDistance(
+        parent.territoryRadius,
+        child.territoryRadius,
+        i
+      );
+
+      // Convert polar to cartesian coordinates
+      const offsetX = Math.cos(angle) * distance;
+      const offsetZ = Math.sin(angle) * distance;
+
+      // Position child relative to parent
+      child.position.set(
+        parent.position.x + offsetX,
+        0,
+        parent.position.z + offsetZ
+      );
+
+      child.isInitialized = true;
+    }
+  }
+
+  /**
+   * Calculate distance from parent for child at given spiral index
+   *
+   * Formula: baseDistance + (index * childRadius * multiplier)
+   * - Base: Ensures territories don't touch (parent + child + margin)
+   * - Radial offset: Expands spiral to prevent overlap as it grows
+   */
+  private calculateSpiralDistance(
+    parentTerritory: number,
+    childTerritory: number,
+    index: number
+  ): number {
+    const baseDistance =
+      parentTerritory +
+      childTerritory +
+      this.config.spiralBaseSpacing;
+
+    const radialOffset =
+      index * childTerritory * this.config.spiralRadialMultiplier;
+
+    return baseDistance + radialOffset;
   }
 
   /**
@@ -210,16 +313,15 @@ export class ForceDirectedLayoutStrategy implements ILayoutStrategy {
 
       if (files.length === 0) return;
 
-      // Gource's ring algorithm adapted for our coordinate system
-      // Start close to directory center, independent of collision radius
+      // Gource's ring algorithm: first ring has 1 file, subsequent rings use diameter × π
+      // Start at directory center (distance 0.0), independent of collision radius
+      let maxFilesInRing = 1; // First ring: 1 file (Gource hardcodes this)
       let diameter = 1;
-      let distance = 3.0; // Start at fixed distance for visible rings
+      let distance = 0.0; // First ring at center (Gource's approach)
       let fileIndex = 0;
       let filesRemaining = files.length;
 
       while (filesRemaining > 0) {
-        // Max files in this ring: scaled up for much denser packing
-        const maxFilesInRing = Math.max(1, Math.floor(diameter * Math.PI * 8.0));
         const filesInRing = Math.min(filesRemaining, maxFilesInRing);
         const angleStep = (Math.PI * 2) / filesInRing;
         const angleOffset = (diameter - 1) * 0.5; // Rotate each ring to stagger files organically
@@ -253,12 +355,60 @@ export class ForceDirectedLayoutStrategy implements ILayoutStrategy {
 
         filesRemaining -= filesInRing;
         diameter++;
-        distance += this.config.fileDiameter * 1.0; // Tighter ring spacing
+        distance += this.config.fileDiameter * 0.5;
+        maxFilesInRing = Math.max(1, Math.floor(diameter * Math.PI)); // Next ring uses formula
       }
     });
 
     // Initial position update
     this.updateFilePositions();
+
+    // Update territory radius for each directory to include file orbit space
+    this.updateTerritoryRadii();
+  }
+
+  /**
+   * Calculate territory radius for each directory (collision radius + max file orbit distance)
+   *
+   * Territory radius defines the true space occupied by a directory, including its orbiting files.
+   * This is critical for collision detection in large projects where file clouds extend far
+   * beyond the directory's visual collision radius.
+   *
+   * Formula: territoryRadius = collisionRadius + maxFileOrbitDistance + padding
+   *
+   * Example: A directory with collision radius 5 and files orbiting at distance 12
+   *          has territory radius = 5 + 12 + 2 = 19 units
+   */
+  private updateTerritoryRadii(): void {
+    this.physicsNodes.forEach(physicsNode => {
+      const maxOrbitDistance = this.calculateMaxFileOrbitDistance(physicsNode);
+      physicsNode.territoryRadius =
+        physicsNode.radius +
+        maxOrbitDistance +
+        this.config.territoryPadding;
+    });
+  }
+
+  /**
+   * Calculate the maximum orbit distance for files around a directory
+   * @param physicsNode The directory's physics node
+   * @returns Maximum distance from directory center to any of its files
+   */
+  private calculateMaxFileOrbitDistance(physicsNode: PhysicsNode): number {
+    let maxDistance = 0;
+
+    for (const fileInfo of this.fileOrbitInfo) {
+      if (fileInfo.parentPhysicsNode === physicsNode) {
+        // Calculate distance from directory center to file position (2D distance in X/Z plane)
+        const orbitDistance = Math.sqrt(
+          fileInfo.relativeOffset.x * fileInfo.relativeOffset.x +
+          fileInfo.relativeOffset.y * fileInfo.relativeOffset.y
+        );
+        maxDistance = Math.max(maxDistance, orbitDistance);
+      }
+    }
+
+    return maxDistance;
   }
 
   /**
@@ -285,7 +435,7 @@ export class ForceDirectedLayoutStrategy implements ILayoutStrategy {
 
     // 3. Integrate (move nodes)
     this.physicsNodes.forEach(node => {
-      node.integrate(dt, this.config.elasticity);
+      node.integrate(dt);
     });
 
     // 4. Update file positions (orbit parents)
@@ -299,10 +449,11 @@ export class ForceDirectedLayoutStrategy implements ILayoutStrategy {
     node.resetAcceleration();
 
     // 1. Collision avoidance (repulsion from nearby nodes)
+    // Use territory radius for search to catch file cloud overlaps
     const nearby = this.spatialIndex.queryNearPoint(
       node.position.x,
       node.position.z,
-      node.radius * 3 // Search radius
+      node.territoryRadius * 2 // Search radius based on territory, not collision
     );
 
     for (const other of nearby) {
@@ -332,19 +483,36 @@ export class ForceDirectedLayoutStrategy implements ILayoutStrategy {
   }
 
   /**
-   * Force 1: Repulsion from overlapping node
+   * Force 1: Territory-based repulsion from overlapping nodes
+   *
+   * Uses territory radius (collision + file cloud) instead of just collision radius.
+   * Territory awareness comes from the overlap calculation, not force scaling.
+   *
+   * Formula: force = -overlap × repulsionStrength
+   * - overlap: Negative when territories intersect (dist < territory1 + territory2)
+   * - repulsionStrength: Configurable multiplier (default 1.0, like original Gource)
    */
   private applyRepulsion(node: PhysicsNode, other: PhysicsNode): void {
-    const dir = node.directionTo(other);
     const dx = other.position.x - node.position.x;
     const dz = other.position.z - node.position.z;
     const dist = Math.sqrt(dx * dx + dz * dz);
 
-    // Overlap distance (negative = overlapping)
-    const overlap = dist - node.radius - other.radius;
+    if (dist < 0.00001) return; // Avoid division by zero
 
-    // Push apart proportional to overlap
-    node.applyForce(overlap * dir.x, overlap * dir.y);
+    // Calculate overlap using territory radius (includes file clouds)
+    const overlap = dist - node.territoryRadius - other.territoryRadius;
+
+    // Only apply repulsion if territories overlap (overlap < 0)
+    if (overlap >= 0) return;
+
+    // Force proportional to overlap distance (like original Gource)
+    const forceMagnitude = -overlap * this.config.repulsionStrength;
+
+    // Direction: push away from other node
+    const dirX = -dx / dist;
+    const dirZ = -dz / dist;
+
+    node.applyForce(forceMagnitude * dirX, forceMagnitude * dirZ);
   }
 
   /**
@@ -463,11 +631,21 @@ export class ForceDirectedLayoutStrategy implements ILayoutStrategy {
       info => info.parentPhysicsNode === parentPhysicsNode
     );
 
-    // Place on new outer ring
-    const ringIndex = Math.floor(existingFiles.length / 8); // 8 files per ring
-    const posInRing = existingFiles.length % 8;
-    const distance = 3.0 + ringIndex * this.config.fileDiameter * 1.0;
-    const angle = (Math.PI * 2 / 8) * posInRing + ringIndex * 0.5;
+    // Determine which ring to place this file in (Gource: ring 1 has 1 file, others use diameter × π)
+    let maxFilesInRing = 1; // First ring: 1 file
+    let diameter = 1;
+    let distance = 0.0;
+    let filesPlaced = 0;
+
+    while (filesPlaced + maxFilesInRing <= existingFiles.length) {
+      filesPlaced += maxFilesInRing;
+      diameter++;
+      distance += this.config.fileDiameter * 0.5;
+      maxFilesInRing = Math.max(1, Math.floor(diameter * Math.PI));
+    }
+
+    const posInRing = existingFiles.length - filesPlaced;
+    const angle = (Math.PI * 2 / maxFilesInRing) * posInRing + (diameter - 1) * 0.5;
 
     const relativeOffset = new THREE.Vector2(
       Math.cos(angle) * distance,
