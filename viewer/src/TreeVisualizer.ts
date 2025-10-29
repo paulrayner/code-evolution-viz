@@ -1261,6 +1261,9 @@ export class TreeVisualizer {
     const maxFileLoc = this.findMaxLoc(newTree);
     const maxDirLoc = this.findMaxDirectoryLoc(newTree);
 
+    // Determine layout mode for positioning decisions
+    const is2DLayout = this.layoutStrategy.needsContinuousUpdate?.() ?? false;
+
     // Step 1: Remove deleted nodes and their edges
     for (const deletedPath of deletedPaths) {
       // Find and remove the layout node
@@ -1300,7 +1303,7 @@ export class TreeVisualizer {
     }
 
     // Step 2: Add new nodes
-    const rootY = this.layoutStrategy.needsContinuousUpdate?.() ? 0 : 10;
+    const rootY = getRootYPosition(is2DLayout);
 
     for (const addedPath of addedPaths) {
       const node = pathToNode.get(addedPath);
@@ -1411,7 +1414,7 @@ export class TreeVisualizer {
     }
 
     // Update edge positions (for Force-Directed layout)
-    if (this.layoutStrategy.needsContinuousUpdate?.()) {
+    if (is2DLayout) {
       this.updateEdgePositions();
     }
   }
