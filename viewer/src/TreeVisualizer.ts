@@ -9,6 +9,7 @@ import { CouplingLoader } from './couplingLoader';
 import { calculateDominantColor } from './lib/directory-color-aggregation';
 import { calculateFramingPosition } from './lib/cameraPositioning';
 import { calculateDirectorySize } from './lib/node-sizing';
+import { shouldShowGrid } from './lib/grid-visibility';
 import { GhostRenderer } from './GhostRenderer';
 import { ILayoutStrategy, LayoutNode } from './ILayoutStrategy';
 import { HierarchicalLayoutStrategy } from './HierarchicalLayoutStrategy';
@@ -57,6 +58,9 @@ export class TreeVisualizer {
   // Layout strategy for tree positioning (supports multiple layout algorithms)
   private layoutStrategy: ILayoutStrategy = new HierarchicalLayoutStrategy();
   private currentTree: DirectoryNode | null = null; // Store tree for re-layout when strategy changes
+
+  // Grid helper for 3D spatial reference (hidden in 2D overhead view)
+  private gridHelper: THREE.GridHelper | null = null;
 
   // Physics animation timing
   private lastFrameTime: number = 0;
@@ -980,10 +984,16 @@ export class TreeVisualizer {
       }
     }
 
-    // Add grid helper
-    const gridHelper = new THREE.GridHelper(100, 20, 0x444444, 0x222222);
-    gridHelper.position.y = -20;
-    this.scene.add(gridHelper);
+    // Create grid helper if not already created (provides spatial reference for 3D)
+    if (!this.gridHelper) {
+      this.gridHelper = new THREE.GridHelper(100, 20, 0x444444, 0x222222);
+      this.gridHelper.position.y = -20;
+      this.scene.add(this.gridHelper);
+    }
+
+    // Toggle grid visibility based on layout mode
+    const is2DLayout = this.layoutStrategy.needsContinuousUpdate?.() ?? false;
+    this.gridHelper.visible = shouldShowGrid(is2DLayout);
   }
 
 
