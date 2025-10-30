@@ -1,6 +1,6 @@
 {
   "name": "codecohesion-processor",
-  "version": "0.4.4",
+  "version": "0.5.0",
   "description": "Repository analyzer for code cohesion and evolution visualization",
   "main": "dist/analyze.js",
   "scripts": {

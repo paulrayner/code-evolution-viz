@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.5.0] - 2025-10-30
+
+- Force-Directed 2D layout mode with Gource-style physics for organic, breathing visualization
+- Improved 2D layout clarity with proper file ring spacing preventing node overlaps
+- Overhead camera view for true top-down perspective in 2D mode
+- Grid and fog automatically hidden in 2D mode for cleaner visualization
+- Uniform directory sizes in 2D mode for consistent visual hierarchy
+- Territory radius collision detection for better file cloud spacing
+- Layout and view mode preferences now persist between sessions
+- Generated file detection expanded with additional build artifact patterns
+- Camera orientation properly preserved when switching between 2D and 3D layouts
+- File ring spacing fixed to use full diameter matching Gource algorithm
+- 2D layout parent-child spacing improved with Gource two-radius system
+- Color dimming issue resolved by disabling fog in 2D overhead view
+- Test infrastructure upgraded (vitest with jsdom for DOM testing)
+- Code quality improvements with extracted pure functions for camera, layout, and legend logic
+
 ## [0.4.4] - 2025-10-25
 
 - Generated file detection and filtering with pattern matching for build artifacts
