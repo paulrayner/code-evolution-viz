@@ -1095,6 +1095,41 @@ describe('ForceDirectedLayoutStrategy - Territory Management', () => {
     // Ring 2 (diameter=2): max 6 files (2 × π ≈ 6.28)
     expect(sortedRings[1][1]).toBeLessThanOrEqual(6);
   });
+
+  /**
+   * Adjacent file rings should be separated by full diameter spacing to prevent
+   * visual overlap. Files are spheres with radius 0.5, so rings spaced 1.5 units
+   * apart provide a 0.5 unit gap between spheres.
+   */
+  it('should space file rings by full diameter to prevent overlap', () => {
+    const strategy = new ForceDirectedLayoutStrategy();
+    const fileDiameter = 1.5;
+    const fileVisualRadius = 0.5;
+
+    const dir = createDirWithFiles('test-dir', 20);
+    const root = createRoot([dir]);
+
+    strategy.layoutTree(root, new THREE.Vector3(0, 0, 0), 0, 0, Math.PI * 2);
+
+    const rings = extractFileRings(strategy);
+    const sortedRings = Array.from(rings.entries()).sort((a, b) => a[0] - b[0]);
+
+    console.log(`\nFile ring spacing test:`);
+    console.log(`  Total rings: ${sortedRings.length}`);
+
+    // Adjacent rings separated by full diameter
+    for (let i = 0; i < sortedRings.length - 1; i++) {
+      const ringGap = sortedRings[i + 1][0] - sortedRings[i][0];
+
+      console.log(`  Ring ${i+1} -> ${i+2}: gap = ${ringGap.toFixed(3)} (expected: ${fileDiameter.toFixed(3)})`);
+      expect(ringGap).toBeCloseTo(fileDiameter, 2);
+    }
+
+    // No files overlap
+    const overlapCount = countOverlappingFiles(rings, fileVisualRadius);
+    console.log(`  Overlapping pairs: ${overlapCount} (expected: 0)`);
+    expect(overlapCount).toBe(0);
+  });
 });
 
 describe('ForceDirectedLayoutStrategy - Subdirectory Spacing', () => {
@@ -1210,3 +1245,85 @@ describe('ForceDirectedLayoutStrategy - Subdirectory Spacing', () => {
     expect(finalDistance).toBeLessThan(7.0);
   });
 });
+
+// Helper functions for file ring spacing tests
+
+function createDirWithFiles(name: string, fileCount: number): DirectoryNode {
+  const files: FileNode[] = Array(fileCount).fill(null).map((_, i) => ({
+    type: 'file',
+    name: `file${i}.ts`,
+    path: `${name}/file${i}.ts`,
+    extension: 'ts',
+    loc: 100,
+    commits: 1,
+    lastModified: new Date().toISOString(),
+    contributors: 1
+  }));
+
+  return {
+    type: 'directory',
+    name,
+    path: name,
+    children: files
+  };
+}
+
+function createRoot(children: DirectoryNode[]): DirectoryNode {
+  return {
+    type: 'directory',
+    name: 'root',
+    path: 'root',
+    children
+  };
+}
+
+function extractFileRings(strategy: ForceDirectedLayoutStrategy): Map<number, Array<{ x: number; y: number }>> {
+  const fileOrbitInfo = (strategy as any).fileOrbitInfo;
+  const ringTolerance = 0.01;
+  const rings = new Map<number, Array<{ x: number; y: number }>>();
+
+  for (const fileInfo of fileOrbitInfo) {
+    const distance = Math.sqrt(
+      fileInfo.relativeOffset.x ** 2 + fileInfo.relativeOffset.y ** 2
+    );
+
+    let foundRing = false;
+    for (const [ringDist, positions] of rings) {
+      if (Math.abs(distance - ringDist) < ringTolerance) {
+        positions.push({ x: fileInfo.relativeOffset.x, y: fileInfo.relativeOffset.y });
+        foundRing = true;
+        break;
+      }
+    }
+    if (!foundRing) {
+      rings.set(distance, [{ x: fileInfo.relativeOffset.x, y: fileInfo.relativeOffset.y }]);
+    }
+  }
+
+  return rings;
+}
+
+function countOverlappingFiles(rings: Map<number, Array<{ x: number; y: number }>>, fileRadius: number): number {
+  const allPositions: Array<{ x: number; y: number }> = [];
+  for (const positions of rings.values()) {
+    allPositions.push(...positions);
+  }
+
+  let overlapCount = 0;
+  const minDist = fileRadius * 2;
+  const tolerance = 0.01;
+
+  for (let i = 0; i < allPositions.length; i++) {
+    for (let j = i + 1; j < allPositions.length; j++) {
+      const dx = allPositions[j].x - allPositions[i].x;
+      const dy = allPositions[j].y - allPositions[i].y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dist < minDist - tolerance) {
+        overlapCount++;
+      }
+    }
+  }
+
+  return overlapCount;
+}

@@ -364,7 +364,7 @@ export class ForceDirectedLayoutStrategy implements ILayoutStrategy {
 
         filesRemaining -= filesInRing;
         diameter++;
-        distance += this.config.fileDiameter * 0.5;
+        distance += this.config.fileDiameter;
         maxFilesInRing = Math.max(1, Math.floor(diameter * Math.PI)); // Next ring uses formula
       }
     });
@@ -602,7 +602,7 @@ export class ForceDirectedLayoutStrategy implements ILayoutStrategy {
     while (filesPlaced + maxFilesInRing <= existingFiles.length) {
       filesPlaced += maxFilesInRing;
       diameter++;
-      distance += this.config.fileDiameter * 0.5;
+      distance += this.config.fileDiameter;
       maxFilesInRing = Math.max(1, Math.floor(diameter * Math.PI));
     }
 
