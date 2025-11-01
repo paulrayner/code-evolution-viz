@@ -24,6 +24,5 @@ yarn-error.log*
 .vscode/
 .idea/
 
-# Production data files (ignore JSON files in data/, keep test fixtures)
-data/*.json
+# Keep .gitkeep
 !data/.gitkeep
