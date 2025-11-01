@@ -5,7 +5,6 @@ import { ColorMode, getLegendItems, getColorModeName, getColorForFile, assignAut
 import { DeltaReplayController } from './DeltaReplayController';
 import { couplingLoader } from './couplingLoader';
 import { HierarchicalLayoutStrategy } from './HierarchicalLayoutStrategy';
-import { FlatLayoutStrategy } from './FlatLayoutStrategy';
 import { ForceDirectedLayoutStrategy } from './ForceDirectedLayoutStrategy';
 import { calculateDirectoryStats, calculateMaxDepth, countDirectories, collectModificationDates, collectLocValues } from './lib/tree-stats';
 import { buildCommitIndex, buildPathIndex } from './lib/tree-indexers';

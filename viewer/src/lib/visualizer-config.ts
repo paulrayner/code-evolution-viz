@@ -1,6 +1,5 @@
 import { ILayoutStrategy } from '../ILayoutStrategy';
 import { HierarchicalLayoutStrategy } from '../HierarchicalLayoutStrategy';
-import { FlatLayoutStrategy } from '../FlatLayoutStrategy';
 import { ForceDirectedLayoutStrategy } from '../ForceDirectedLayoutStrategy';
 
 /**
@@ -10,7 +9,7 @@ export interface SavedPreferences {
   labelMode: 'always' | 'hover' | null;
   colorMode: string | null; // ColorMode type
   viewMode: 'navigate' | 'overview' | null;
-  layoutMode: string | null; // 'hierarchical' | 'flat' | 'forceDirected'
+  layoutMode: string | null; // 'hierarchical' | 'forceDirected'
 }
 
 /**
@@ -28,14 +27,12 @@ export interface VisualizerConfiguration {
 /**
  * Create a layout strategy instance based on the mode string
  *
- * @param layoutMode - Layout mode string ('hierarchical', 'flat', or 'forceDirected')
+ * @param layoutMode - Layout mode string ('hierarchical' or 'forceDirected')
  * @returns Layout strategy instance
  */
 export function createLayoutStrategy(layoutMode: string | null): ILayoutStrategy {
   if (layoutMode === 'forceDirected') {
     return new ForceDirectedLayoutStrategy();
-  } else if (layoutMode === 'flat') {
-    return new FlatLayoutStrategy();
   } else {
     // Default to hierarchical
     return new HierarchicalLayoutStrategy();

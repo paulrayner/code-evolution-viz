@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { buildVisualizerConfig, createLayoutStrategy, SavedPreferences } from './visualizer-config';
 import { HierarchicalLayoutStrategy } from '../HierarchicalLayoutStrategy';
-import { FlatLayoutStrategy } from '../FlatLayoutStrategy';
 import { ForceDirectedLayoutStrategy } from '../ForceDirectedLayoutStrategy';
 
 describe('createLayoutStrategy', () => {
@@ -13,11 +12,6 @@ describe('createLayoutStrategy', () => {
   it('should return HierarchicalLayoutStrategy when layoutMode is "hierarchical"', () => {
     const strategy = createLayoutStrategy('hierarchical');
     expect(strategy).toBeInstanceOf(HierarchicalLayoutStrategy);
-  });
-
-  it('should return FlatLayoutStrategy when layoutMode is "flat"', () => {
-    const strategy = createLayoutStrategy('flat');
-    expect(strategy).toBeInstanceOf(FlatLayoutStrategy);
   });
 
   it('should return ForceDirectedLayoutStrategy when layoutMode is "forceDirected"', () => {
@@ -140,19 +134,6 @@ describe('buildVisualizerConfig', () => {
     expect(config.layoutStrategy).toBeInstanceOf(HierarchicalLayoutStrategy);
   });
 
-  it('should build config with flat layout strategy', () => {
-    const preferences: SavedPreferences = {
-      labelMode: null,
-      colorMode: null,
-      viewMode: null,
-      layoutMode: 'flat',
-    };
-
-    const config = buildVisualizerConfig('dark', preferences);
-
-    expect(config.layoutStrategy).toBeInstanceOf(FlatLayoutStrategy);
-  });
-
   it('should build config with force-directed layout strategy', () => {
     const preferences: SavedPreferences = {
       labelMode: null,
@@ -206,7 +187,7 @@ describe('buildVisualizerConfig', () => {
       labelMode: 'always',
       colorMode: 'fileType',
       viewMode: 'overview',
-      layoutMode: 'flat',
+      layoutMode: 'forceDirected',
     };
 
     const config1 = buildVisualizerConfig('dark', preferences);
@@ -216,7 +197,7 @@ describe('buildVisualizerConfig', () => {
     expect(config1.labelMode).toBe(config2.labelMode);
     expect(config1.colorMode).toBe(config2.colorMode);
     expect(config1.viewMode).toBe(config2.viewMode);
-    expect(config1.layoutStrategy).toBeInstanceOf(FlatLayoutStrategy);
-    expect(config2.layoutStrategy).toBeInstanceOf(FlatLayoutStrategy);
+    expect(config1.layoutStrategy).toBeInstanceOf(ForceDirectedLayoutStrategy);
+    expect(config2.layoutStrategy).toBeInstanceOf(ForceDirectedLayoutStrategy);
   });
 });
