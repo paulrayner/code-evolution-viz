@@ -1,0 +1,15 @@
+# Development
+node_modules/
+*.log
+
+# Testing
+coverage/
+*.test.ts
+
+# Source (only deploy dist/)
+src/
+tsconfig.json
+vitest.config.ts
+
+# Test data
+test/
