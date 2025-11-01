@@ -5,17 +5,9 @@ import { createRoutes } from './routes';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// CORS - allow viewer and local dev servers
+// CORS - allow all origins
 app.use(cors({
-  origin: [
-    'https://thepaulrayner.com',
-    'https://paulrayner.github.io',
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:3002',
-    'http://localhost:3003'
-  ],
-  credentials: true
+  origin: '*'
 }));
 
 app.use(express.json());
