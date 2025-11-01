@@ -1,6 +1,6 @@
 {
   "name": "codecohesion-api",
-  "version": "1.0.0",
+  "version": "0.7.0",
   "description": "REST API for CodeCohesion repository analysis data",
   "main": "dist/server.js",
   "scripts": {

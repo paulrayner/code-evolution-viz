@@ -26,7 +26,7 @@ app.get('/', (req: Request, res: Response) => {
 
   res.json({
     service: 'CodeCohesion API',
-    version: '1.0.0',
+    version: '0.7.0',
     description: 'Repository analysis and metrics API',
 
     _links: {

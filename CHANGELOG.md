@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.7.0] - 2025-11-01
+
+- API discoverability improvements with HATEOAS links in all responses
+- Enhanced root endpoint (/) with examples, capabilities list, and navigation links
+- Structured error responses with helpful suggestions and working curl examples
+- Fuzzy matching for repository lookup errors with "Did you mean?" suggestions
+- Limit parameter for contributors endpoints to get top N contributors
+- Contributors endpoints now support ?limit=N parameter (1-100) for top N results
+- Updated API documentation with DISCOVERABILITY.md best practices guide
+- 41 passing API tests (7 new tests for discoverability and limit features)
+
 ## [0.6.0] - 2025-11-01
 
 - CodeCohesion REST API (Milestone 1) with 8 endpoints for repository analysis data
