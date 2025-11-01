@@ -63,10 +63,36 @@ export interface TimelineDataV2 {
  * API Response Types for CodeCohesion API
  */
 
+/**
+ * HATEOAS Link Types
+ */
+
+export interface Link {
+  href: string;
+  description?: string;
+  templated?: boolean;
+}
+
+export interface Links {
+  [rel: string]: Link;
+}
+
+export interface Action {
+  method: string;
+  href: string;
+  description: string;
+}
+
+export interface Actions {
+  [name: string]: Action;
+}
+
 export interface RepoListItem {
   id: string;
   name: string;
   format?: string;
+  _links?: Links;
+  _actions?: Actions;
 }
 
 export interface RepoInfo extends RepoListItem {
@@ -75,6 +101,7 @@ export interface RepoInfo extends RepoListItem {
 
 export interface ReposResponse {
   repos: RepoListItem[];
+  _links?: Links;
 }
 
 export interface StatsResponse {
@@ -121,15 +148,39 @@ export interface HotspotsResponse {
   topContributors: FileNode[];
 }
 
+export interface HelpAction {
+  description: string;
+  method: string;
+  url: string;
+  example?: string;
+}
+
 export interface ErrorResponse {
   error: string;
-  details?: string;
+  code?: string;
+  message?: string;
+  details?: any;
+  help?: {
+    message?: string;
+    actions?: HelpAction[];
+  };
+  docs?: string;
+}
+
+export interface Example {
+  description: string;
+  request: string;
 }
 
 export interface RootResponse {
   service: string;
   version: string;
-  docs: string;
+  description: string;
+  _links: Links;
+  examples: {
+    [name: string]: Example;
+  };
+  capabilities: string[];
 }
 
 export interface HealthResponse {

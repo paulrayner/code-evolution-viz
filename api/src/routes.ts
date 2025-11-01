@@ -1,6 +1,11 @@
 import { Router, Request, Response } from 'express';
 import { DataLoader } from './data-loader';
 import { QueryService } from './query-service';
+import {
+  createRepoNotFoundError,
+  createInvalidParameterError,
+  createMissingParameterError
+} from './error-helper';
 
 export function createRoutes(): Router {
   const router = Router();
@@ -18,13 +23,80 @@ export function createRoutes(): Router {
       if (url) {
         const repo = await queryService.findRepoByUrl(url as string);
         if (!repo) {
-          return res.status(404).json({ error: 'Repository not found' });
+          const allRepos = await dataLoader.listRepos();
+          const error = createRepoNotFoundError(url as string, allRepos);
+          return res.status(404).json(error);
         }
-        return res.json(repo);
+
+        // Add HATEOAS links to single repo response
+        const enrichedRepo = {
+          ...repo,
+          _links: {
+            self: { href: `/api/repos/${repo.id}` },
+            stats: {
+              href: `/api/repos/${repo.id}/stats`,
+              description: 'Get repository statistics'
+            },
+            contributors: {
+              href: `/api/repos/${repo.id}/contributors{?since,until}`,
+              templated: true,
+              description: 'Get contributors with optional date filtering'
+            },
+            files: {
+              href: `/api/repos/${repo.id}/files{?path,metric}`,
+              templated: true,
+              description: 'Get files with optional path prefix and metric sorting'
+            },
+            hotspots: {
+              href: `/api/repos/${repo.id}/hotspots{?limit}`,
+              templated: true,
+              description: 'Get top N high-churn/high-contributor files'
+            }
+          }
+        };
+
+        return res.json(enrichedRepo);
       }
 
+      // List all repos with HATEOAS links
       const repos = await dataLoader.listRepos();
-      res.json({ repos });
+      const enrichedRepos = repos.map(repo => ({
+        ...repo,
+        _links: {
+          self: { href: `/api/repos/${repo.id}` },
+          stats: {
+            href: `/api/repos/${repo.id}/stats`,
+            description: 'Get repository statistics'
+          },
+          contributors: {
+            href: `/api/repos/${repo.id}/contributors{?since,until}`,
+            templated: true,
+            description: 'Get contributors with optional date filtering'
+          },
+          files: {
+            href: `/api/repos/${repo.id}/files{?path,metric}`,
+            templated: true,
+            description: 'Get files with optional path prefix and metric sorting'
+          },
+          hotspots: {
+            href: `/api/repos/${repo.id}/hotspots{?limit}`,
+            templated: true,
+            description: 'Get top N high-churn/high-contributor files'
+          }
+        }
+      }));
+
+      res.json({
+        repos: enrichedRepos,
+        _links: {
+          self: { href: '/api/repos' },
+          find: {
+            href: '/api/repos{?url}',
+            templated: true,
+            description: 'Find repository by GitHub URL'
+          }
+        }
+      });
     } catch (error) {
       console.error('Error listing repos:', error);
       res.status(500).json({ error: 'Failed to list repositories' });
@@ -42,7 +114,9 @@ export function createRoutes(): Router {
       res.json(stats);
     } catch (error) {
       console.error('Error getting stats:', error);
-      res.status(404).json({ error: 'Repository not found' });
+      const allRepos = await dataLoader.listRepos();
+      const errorResponse = createRepoNotFoundError(req.params.repoId, allRepos);
+      res.status(404).json(errorResponse);
     }
   });
 
@@ -64,7 +138,9 @@ export function createRoutes(): Router {
       res.json(contributors);
     } catch (error) {
       console.error('Error getting contributors:', error);
-      res.status(404).json({ error: 'Repository not found' });
+      const allRepos = await dataLoader.listRepos();
+      const errorResponse = createRepoNotFoundError(req.params.repoId, allRepos);
+      res.status(404).json(errorResponse);
     }
   });
 
@@ -77,12 +153,20 @@ export function createRoutes(): Router {
       const { url, days, since, until } = req.query;
 
       if (!url) {
-        return res.status(400).json({ error: 'url parameter required' });
+        const error = createMissingParameterError(
+          'url',
+          'string',
+          'GitHub repository URL (e.g., https://github.com/facebook/react)',
+          'https://codecohesion-api.railway.app/api/contributors?url=https://github.com/facebook/react&days=30'
+        );
+        return res.status(400).json(error);
       }
 
       const repo = await queryService.findRepoByUrl(url as string);
       if (!repo) {
-        return res.status(404).json({ error: 'Repository not found' });
+        const allRepos = await dataLoader.listRepos();
+        const error = createRepoNotFoundError(url as string, allRepos);
+        return res.status(404).json(error);
       }
 
       // Calculate date range from 'days' parameter
@@ -131,7 +215,9 @@ export function createRoutes(): Router {
       res.json(files);
     } catch (error) {
       console.error('Error getting files:', error);
-      res.status(404).json({ error: 'Repository not found' });
+      const allRepos = await dataLoader.listRepos();
+      const errorResponse = createRepoNotFoundError(req.params.repoId, allRepos);
+      res.status(404).json(errorResponse);
     }
   });
 
@@ -147,17 +233,22 @@ export function createRoutes(): Router {
       const limitNum = limit ? parseInt(limit as string, 10) : 20;
 
       if (limitNum < 1 || limitNum > 100) {
-        return res.status(400).json({
-          error: 'Invalid limit parameter',
-          details: 'Limit must be between 1 and 100'
-        });
+        const error = createInvalidParameterError(
+          'limit',
+          limitNum,
+          'must be between 1 and 100',
+          `https://codecohesion-api.railway.app/api/repos/${repoId}/hotspots?limit=20`
+        );
+        return res.status(400).json(error);
       }
 
       const hotspots = await queryService.getHotspots(repoId, limitNum);
       res.json(hotspots);
     } catch (error) {
       console.error('Error getting hotspots:', error);
-      res.status(404).json({ error: 'Repository not found' });
+      const allRepos = await dataLoader.listRepos();
+      const errorResponse = createRepoNotFoundError(req.params.repoId, allRepos);
+      res.status(404).json(errorResponse);
     }
   });
 
