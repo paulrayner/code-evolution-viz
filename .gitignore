@@ -11,3 +11,6 @@ processor/output/*.json
 
 # Viewer data
 viewer/public/data/*.json
+
+# Marketing content
+marketing/
