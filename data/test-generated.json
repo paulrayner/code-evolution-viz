@@ -1,0 +1,126 @@
+{
+  "repositoryPath": "/tmp/test-generated-files",
+  "commit": "86f6e400ec41347cde48d9116d37c315019903f3",
+  "timestamp": "2025-10-25T06:29:20+02:00",
+  "author": "Test",
+  "message": "Initial commit",
+  "tree": {
+    "path": "",
+    "name": "root",
+    "type": "directory",
+    "children": [
+      {
+        "path": "build",
+        "name": "build",
+        "type": "directory",
+        "children": [
+          {
+            "path": "build/bundle.js",
+            "name": "bundle.js",
+            "type": "file",
+            "loc": 1,
+            "extension": "js",
+            "lastModified": "2025-10-25T06:29:20+02:00",
+            "lastAuthor": "Test",
+            "lastCommitHash": "86f6e400ec41347cde48d9116d37c315019903f3",
+            "commitCount": 1,
+            "contributorCount": 1,
+            "firstCommitDate": "2025-10-25T06:29:20+02:00",
+            "recentLinesChanged": 1,
+            "avgLinesPerCommit": 1,
+            "daysSinceLastModified": 0,
+            "isGenerated": true
+          }
+        ]
+      },
+      {
+        "path": "dist",
+        "name": "dist",
+        "type": "directory",
+        "children": [
+          {
+            "path": "dist/app.min.js",
+            "name": "app.min.js",
+            "type": "file",
+            "loc": 1,
+            "extension": "js",
+            "lastModified": "2025-10-25T06:29:20+02:00",
+            "lastAuthor": "Test",
+            "lastCommitHash": "86f6e400ec41347cde48d9116d37c315019903f3",
+            "commitCount": 1,
+            "contributorCount": 1,
+            "firstCommitDate": "2025-10-25T06:29:20+02:00",
+            "recentLinesChanged": 1,
+            "avgLinesPerCommit": 1,
+            "daysSinceLastModified": 0,
+            "isGenerated": true
+          }
+        ]
+      },
+      {
+        "path": "node_modules",
+        "name": "node_modules",
+        "type": "directory",
+        "children": [
+          {
+            "path": "node_modules/react",
+            "name": "react",
+            "type": "directory",
+            "children": [
+              {
+                "path": "node_modules/react/index.js",
+                "name": "index.js",
+                "type": "file",
+                "loc": 1,
+                "extension": "js",
+                "lastModified": "2025-10-25T06:29:20+02:00",
+                "lastAuthor": "Test",
+                "lastCommitHash": "86f6e400ec41347cde48d9116d37c315019903f3",
+                "commitCount": 1,
+                "contributorCount": 1,
+                "firstCommitDate": "2025-10-25T06:29:20+02:00",
+                "recentLinesChanged": 1,
+                "avgLinesPerCommit": 1,
+                "daysSinceLastModified": 0,
+                "isGenerated": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "src",
+        "name": "src",
+        "type": "directory",
+        "children": [
+          {
+            "path": "src/app.js",
+            "name": "app.js",
+            "type": "file",
+            "loc": 1,
+            "extension": "js",
+            "lastModified": "2025-10-25T06:29:20+02:00",
+            "lastAuthor": "Test",
+            "lastCommitHash": "86f6e400ec41347cde48d9116d37c315019903f3",
+            "commitCount": 1,
+            "contributorCount": 1,
+            "firstCommitDate": "2025-10-25T06:29:20+02:00",
+            "recentLinesChanged": 1,
+            "avgLinesPerCommit": 1,
+            "daysSinceLastModified": 0
+          }
+        ]
+      }
+    ]
+  },
+  "commitMessages": {
+    "86f6e400ec41347cde48d9116d37c315019903f3": "Initial commit"
+  },
+  "stats": {
+    "totalFiles": 4,
+    "totalLoc": 4,
+    "filesByExtension": {
+      "js": 4
+    }
+  }
+}
