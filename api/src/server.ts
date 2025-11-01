@@ -66,8 +66,8 @@ app.get('/', (req: Request, res: Response) => {
         request: 'GET /api/repos/react-timeline-full/stats'
       },
       recent_contributors: {
-        description: 'Get contributors from last 30 days',
-        request: 'GET /api/contributors?url=https://github.com/facebook/react&days=30'
+        description: 'Get top 5 contributors from last 90 days',
+        request: 'GET /api/contributors?url=https://github.com/facebook/react&days=90&limit=5'
       },
       hotspot_files: {
         description: 'Get top 10 high-churn files',

@@ -38,9 +38,9 @@ export function createRoutes(): Router {
               description: 'Get repository statistics'
             },
             contributors: {
-              href: `/api/repos/${repo.id}/contributors{?since,until}`,
+              href: `/api/repos/${repo.id}/contributors{?since,until,limit}`,
               templated: true,
-              description: 'Get contributors with optional date filtering'
+              description: 'Get contributors with optional date filtering and limit'
             },
             files: {
               href: `/api/repos/${repo.id}/files{?path,metric}`,
@@ -69,9 +69,9 @@ export function createRoutes(): Router {
             description: 'Get repository statistics'
           },
           contributors: {
-            href: `/api/repos/${repo.id}/contributors{?since,until}`,
+            href: `/api/repos/${repo.id}/contributors{?since,until,limit}`,
             templated: true,
-            description: 'Get contributors with optional date filtering'
+            description: 'Get contributors with optional date filtering and limit'
           },
           files: {
             href: `/api/repos/${repo.id}/files{?path,metric}`,
@@ -122,17 +122,33 @@ export function createRoutes(): Router {
 
   /**
    * GET /api/repos/:repoId/contributors
-   * Get contributors with optional date filtering
+   * Get contributors with optional date filtering and limit
    */
   router.get('/repos/:repoId/contributors', async (req: Request, res: Response) => {
     try {
       const { repoId } = req.params;
-      const { since, until } = req.query;
+      const { since, until, limit } = req.query;
+
+      // Validate limit parameter if provided
+      let limitNum: number | undefined;
+      if (limit) {
+        limitNum = parseInt(limit as string, 10);
+        if (isNaN(limitNum) || limitNum < 1 || limitNum > 100) {
+          const error = createInvalidParameterError(
+            'limit',
+            limit,
+            'must be between 1 and 100',
+            `https://codecohesion-api.railway.app/api/repos/${repoId}/contributors?limit=10`
+          );
+          return res.status(400).json(error);
+        }
+      }
 
       const contributors = await queryService.getContributors(
         repoId,
         since as string | undefined,
-        until as string | undefined
+        until as string | undefined,
+        limitNum
       );
 
       res.json(contributors);
@@ -146,18 +162,18 @@ export function createRoutes(): Router {
 
   /**
    * GET /api/contributors
-   * Convenience endpoint: query contributors by URL with days parameter
+   * Convenience endpoint: query contributors by URL with days and limit parameters
    */
   router.get('/contributors', async (req: Request, res: Response) => {
     try {
-      const { url, days, since, until } = req.query;
+      const { url, days, since, until, limit } = req.query;
 
       if (!url) {
         const error = createMissingParameterError(
           'url',
           'string',
           'GitHub repository URL (e.g., https://github.com/facebook/react)',
-          'https://codecohesion-api.railway.app/api/contributors?url=https://github.com/facebook/react&days=30'
+          'https://codecohesion-api.railway.app/api/contributors?url=https://github.com/facebook/react&days=30&limit=5'
         );
         return res.status(400).json(error);
       }
@@ -167,6 +183,21 @@ export function createRoutes(): Router {
         const allRepos = await dataLoader.listRepos();
         const error = createRepoNotFoundError(url as string, allRepos);
         return res.status(404).json(error);
+      }
+
+      // Validate limit parameter if provided
+      let limitNum: number | undefined;
+      if (limit) {
+        limitNum = parseInt(limit as string, 10);
+        if (isNaN(limitNum) || limitNum < 1 || limitNum > 100) {
+          const error = createInvalidParameterError(
+            'limit',
+            limit,
+            'must be between 1 and 100',
+            `https://codecohesion-api.railway.app/api/contributors?url=${encodeURIComponent(url as string)}&days=90&limit=10`
+          );
+          return res.status(400).json(error);
+        }
       }
 
       // Calculate date range from 'days' parameter
@@ -180,7 +211,8 @@ export function createRoutes(): Router {
       const contributors = await queryService.getContributors(
         repo.id,
         sinceDate,
-        until as string | undefined
+        until as string | undefined,
+        limitNum
       );
 
       res.json({

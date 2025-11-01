@@ -83,6 +83,37 @@ describe('QueryService', () => {
       expect(filtered.total).toBeLessThanOrEqual(allContributors.total);
       expect(filtered.period.since).toBe(since);
     });
+
+    it('should limit contributors to top N', async () => {
+      const limit = 5;
+      const result = await queryService.getContributors(testRepoId, undefined, undefined, limit);
+
+      expect(result.contributors.length).toBeLessThanOrEqual(limit);
+      expect(result.period.limit).toBe(limit);
+
+      // Total should still reflect all contributors
+      expect(result.total).toBeGreaterThanOrEqual(result.contributors.length);
+    });
+
+    it('should return all contributors when no limit specified', async () => {
+      const result = await queryService.getContributors(testRepoId);
+
+      expect(result.contributors.length).toBe(result.total);
+      expect(result.period.limit).toBeUndefined();
+    });
+
+    it('should combine date filtering and limit', async () => {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const since = thirtyDaysAgo.toISOString().split('T')[0];
+      const limit = 3;
+
+      const result = await queryService.getContributors(testRepoId, since, undefined, limit);
+
+      expect(result.contributors.length).toBeLessThanOrEqual(limit);
+      expect(result.period.since).toBe(since);
+      expect(result.period.limit).toBe(limit);
+    });
   });
 
   describe('getFiles', () => {

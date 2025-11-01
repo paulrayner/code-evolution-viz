@@ -133,6 +133,7 @@ export interface ContributorsResponse {
     since?: string;
     until?: string;
     days?: number;
+    limit?: number;
   };
   contributors: ContributorInfo[];
   total: number;

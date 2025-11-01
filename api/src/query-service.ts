@@ -41,12 +41,13 @@ export class QueryService {
   }
 
   /**
-   * Get contributors with optional date filtering
+   * Get contributors with optional date filtering and limit
    */
   async getContributors(
     repoId: string,
     since?: string,
-    until?: string
+    until?: string,
+    limit?: number
   ): Promise<ContributorsResponse> {
     const data = await this.dataLoader.loadRepo(repoId);
     const snapshot = this.extractSnapshot(data);
@@ -75,11 +76,17 @@ export class QueryService {
       }
     });
 
+    const sortedContributors = Array.from(contributorMap.values())
+      .sort((a, b) => b.filesChanged - a.filesChanged);
+
+    const contributors = limit
+      ? sortedContributors.slice(0, limit)
+      : sortedContributors;
+
     return {
       repository: { id: repoId },
-      period: { since, until },
-      contributors: Array.from(contributorMap.values())
-        .sort((a, b) => b.filesChanged - a.filesChanged),
+      period: { since, until, limit },
+      contributors,
       total: contributorMap.size
     };
   }
