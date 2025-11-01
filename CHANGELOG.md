@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.6.0] - 2025-11-01
+
+- CodeCohesion REST API (Milestone 1) with 8 endpoints for repository analysis data
+- API deployed to Railway at https://codecohesion-api-production.up.railway.app
+- Production data for 6 repositories (cbioportal, cbioportal-frontend, codecohesion, editor, gource, react)
+- API endpoints: /api/repos, /api/repos/:id/stats, /api/repos/:id/contributors, /api/repos/:id/files, /api/repos/:id/hotspots
+- CORS enabled for all origins to support external app integration
+- Support for both static snapshots and timeline-v2 formats
+- Removed Flat 2D layout mode to simplify viewer (kept 3D Hierarchy and Force-Directed 2D)
+- TypeScript compilation fixes for production builds
+- 26 passing API tests (unit + integration with vitest)
+
 ## [0.5.0] - 2025-10-30
 
 - Force-Directed 2D layout mode with Gource-style physics for organic, breathing visualization
